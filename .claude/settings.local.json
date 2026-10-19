@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(msbuild SuperPutty.sln /p:Configuration=Debug /t:Build /v:minimal)",
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" \"P:/dk@/lab/SuperPutty/SuperPutty.sln\" /p:Configuration=Debug /t:Build /v:minimal)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"P:\\\\dk@\\\\lab\\\\SuperPutty\\\\SuperPutty.sln\" /p:Configuration=Debug /t:Build /v:minimal 2>&1 | Select-Object -Last 100)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"P:\\\\dk@\\\\lab\\\\SuperPutty\\\\SuperPutty\\\\SuperPutty.csproj\" /p:Configuration=Debug /t:Build /v:minimal 2>&1)",
+      "PowerShell(& \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Community\\\\MSBuild\\\\Current\\\\Bin\\\\MSBuild.exe\" \"P:\\\\dk@\\\\lab\\\\SuperPutty\\\\SuperPutty.sln\" /p:Configuration=Debug /t:SuperPutty /v:minimal 2>&1)",
+      "Bash(MSBuild.exe SuperPutty/SuperPutty.csproj /p:Configuration=Debug /t:Build /v:minimal)"
+    ]
+  }
+}
