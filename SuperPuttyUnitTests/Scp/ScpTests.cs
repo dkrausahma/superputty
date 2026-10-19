@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using System.Diagnostics;
 using log4net;
 using System.Threading;
@@ -117,7 +118,7 @@ namespace SuperPuttyUnitTests.Scp
         public void ListDirSuccess()
         {
             ListDirectory(ScpConfig.UserName, ScpConfig.Password, ScpConfig.KnownHost);
-            Assert.Greater(this.outData.Count, 0);
+            ClassicAssert.Greater(this.outData.Count, 0);
         }
 
         /// <summary>
@@ -144,9 +145,9 @@ namespace SuperPuttyUnitTests.Scp
             {
                 Monitor.Wait(this, 5000);
             }
-            Assert.False(returned);
-            Assert.AreEqual(0, this.outData.Count);
-            Assert.AreEqual(0, this.errData.Count);
+            ClassicAssert.False(returned);
+            ClassicAssert.AreEqual(0, this.outData.Count);
+            ClassicAssert.AreEqual(0, this.errData.Count);
         }
 
         /// <summary>
@@ -172,10 +173,10 @@ namespace SuperPuttyUnitTests.Scp
             {
                 Monitor.Wait(this, 5000);
             }
-            Assert.False(returned);
-            Assert.AreEqual(0, this.outData.Count);
-            Assert.Greater(this.errData.Count, 1);
-            Assert.IsTrue(this.errData[0].Contains("The server's host key is not cached "));
+            ClassicAssert.False(returned);
+            ClassicAssert.AreEqual(0, this.outData.Count);
+            ClassicAssert.Greater(this.errData.Count, 1);
+            ClassicAssert.IsTrue(this.errData[0].Contains("The server's host key is not cached "));
         }
     }
 
@@ -199,8 +200,8 @@ namespace SuperPuttyUnitTests.Scp
 
             ListDirectoryResult res = client.ListDirectory(new BrowserFileInfo { Path = "." });
 
-            Assert.AreEqual(ResultStatusCode.Success, res.StatusCode);
-            Assert.Greater(res.Files.Count, 0);
+            ClassicAssert.AreEqual(ResultStatusCode.Success, res.StatusCode);
+            ClassicAssert.Greater(res.Files.Count, 0);
             foreach (BrowserFileInfo file in res.Files)
             {
                 Log.Info(file);
@@ -224,8 +225,8 @@ namespace SuperPuttyUnitTests.Scp
 
             ListDirectoryResult res = client.ListDirectory(new BrowserFileInfo { Path = "." });
 
-            Assert.AreEqual(ResultStatusCode.RetryAuthentication, res.StatusCode);
-            Assert.AreEqual(res.Files.Count, 0);
+            ClassicAssert.AreEqual(ResultStatusCode.RetryAuthentication, res.StatusCode);
+            ClassicAssert.AreEqual(res.Files.Count, 0);
 
             Log.InfoFormat("Result: {0}", res);
         }
@@ -245,8 +246,8 @@ namespace SuperPuttyUnitTests.Scp
 
             ListDirectoryResult res = client.ListDirectory(new BrowserFileInfo { Path = "." });
 
-            Assert.AreEqual(ResultStatusCode.Error, res.StatusCode);
-            Assert.AreEqual(res.Files.Count, 0);
+            ClassicAssert.AreEqual(ResultStatusCode.Error, res.StatusCode);
+            ClassicAssert.AreEqual(res.Files.Count, 0);
 
             Log.InfoFormat("Result: {0}", res);
         }
@@ -266,9 +267,9 @@ namespace SuperPuttyUnitTests.Scp
 
             ListDirectoryResult res = client.ListDirectory(new BrowserFileInfo { Path = "some_non_existant_dir" });
 
-            Assert.AreEqual(ResultStatusCode.Error, res.StatusCode);
-            Assert.AreEqual(0, res.Files.Count);
-            Assert.IsTrue(res.ErrorMsg != null && res.ErrorMsg.StartsWith("Unable to open"));
+            ClassicAssert.AreEqual(ResultStatusCode.Error, res.StatusCode);
+            ClassicAssert.AreEqual(0, res.Files.Count);
+            ClassicAssert.IsTrue(res.ErrorMsg != null && res.ErrorMsg.StartsWith("Unable to open"));
             Log.InfoFormat("Result: {0}", res);
         }
     }
@@ -283,7 +284,7 @@ namespace SuperPuttyUnitTests.Scp
             Program.InitLoggingForUnitTests();
         }
 
-        [Test, Category("Netowk Tests")]
+        [Test, Category("NetworkTest")]
         public void LocalToRemote()
         {
             SessionData session = new SessionData
@@ -322,8 +323,8 @@ namespace SuperPuttyUnitTests.Scp
             /*
             ListDirectoryResult res = client.ListDirectory(new BrowserFileInfo { Path = "." });
 
-            Assert.AreEqual(ResultStatusCode.Success, res.StatusCode);
-            Assert.Greater(res.Files.Count, 0);
+            ClassicAssert.AreEqual(ResultStatusCode.Success, res.StatusCode);
+            ClassicAssert.Greater(res.Files.Count, 0);
             foreach (BrowserFileInfo file in res.Files)
             {
                 Log.Info(file);
