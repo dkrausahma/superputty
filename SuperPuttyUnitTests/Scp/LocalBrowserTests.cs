@@ -29,6 +29,9 @@ namespace SuperPuttyUnitTests.Scp
         public void LocalViewModel()
         {
             BrowserViewModel viewModel = new BrowserViewModel();
+            // the view model posts PropertyChanged to the SynchronizationContext captured at
+            // construction (the test runner may install one); clear it to get synchronous events
+            viewModel.Context = null;
 
             // test notify
             string updatedProp = null;
