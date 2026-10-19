@@ -15,6 +15,7 @@ namespace SuperPutty.Scp
         public event EventHandler Update;
 
         private Thread thread = null;
+        private CancellationTokenSource cancellation = null;
         Status status = Status.Initializing;
 
         public FileTransfer(PscpOptions options, FileTransferRequest request)
@@ -35,7 +36,9 @@ namespace SuperPutty.Scp
 
                     this.StartTime = DateTime.Now;
 
-                    this.thread = new Thread(this.DoTransfer) {IsBackground = false};
+                    this.cancellation = new CancellationTokenSource();
+                    CancellationToken token = this.cancellation.Token;
+                    this.thread = new Thread(() => this.DoTransfer(token)) {IsBackground = false};
                     this.thread.Start();
 
                     this.UpdateStatus(0, Status.Running, "Started transfer");
@@ -54,7 +57,8 @@ namespace SuperPutty.Scp
                 if (CanCancel(this.TransferStatus))
                 {
                     Log.InfoFormat("Canceling active transfer, id={0}", this.Id);
-                    this.thread.Abort();
+                    // kills the pscp process; DoTransfer then returns without overwriting the status
+                    this.cancellation.Cancel();
                     Log.InfoFormat("Canceled active transfer, id={0}", this.Id);
                     this.UpdateStatus(this.PercentComplete, Status.Canceled, "Canceled");
                 }
@@ -65,7 +69,7 @@ namespace SuperPutty.Scp
             }
         }
 
-        void DoTransfer()
+        void DoTransfer(CancellationToken cancellationToken)
         {
             try
             {
@@ -97,7 +101,14 @@ namespace SuperPutty.Scp
                             msg = string.Format("{0}, ({1} KB, {2})", s.Filename, s.BytesTransferred, s.TimeLeft);
                         }
                         this.UpdateStatus(s.PercentComplete, Status.Running, msg);
-                    });
+                    },
+                    cancellationToken);
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    // Cancel() already reported Status.Canceled
+                    return;
+                }
 
                 this.EndTime = DateTime.Now;
                 switch (res.StatusCode)
@@ -111,10 +122,6 @@ namespace SuperPutty.Scp
                         this.UpdateStatus(this.PercentComplete, Status.Error, res.ErrorMsg);
                         break;
                 }
-            }
-            catch (ThreadAbortException)
-            {
-                this.UpdateStatus(this.PercentComplete, Status.Canceled, "");
             }
             catch (Exception ex)
             {
