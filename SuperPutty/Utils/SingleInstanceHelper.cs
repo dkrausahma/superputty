@@ -1,65 +1,124 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
+using System.Text;
+using System.Threading;
 using SuperPutty.Data;
-using System.Runtime.Remoting.Channels.Ipc;
-using System.Runtime.Remoting.Channels;
-using System.Runtime.Remoting;
 using log4net;
-using System.Runtime.Remoting.Messaging;
 
 namespace SuperPutty.Utils
 {
-    public class SingleInstanceHelper : MarshalByRefObject
+    /// <summary>
+    /// Forwards the command line of a second SuperPuTTY instance to the running one over a named pipe
+    /// that only the current user (in the current Windows session) can connect to.
+    /// </summary>
+    public static class SingleInstanceHelper
     {
         private static readonly ILog Log = LogManager.GetLogger(typeof(SingleInstanceHelper));
 
-        public const string ChannelName = "SuperPuTTY";
-        public const string SingleInstanceServiceName = "SingleInstance";
+        private const int ConnectTimeoutMs = 5000;
 
+        /// <summary>Default pipe name, unique per Windows session and user</summary>
+        public static readonly string PipeName = string.Format(
+            "SuperPuTTY.SingleInstance.{0}.{1}", Process.GetCurrentProcess().SessionId, Environment.UserName);
+
+        /// <summary>Start listening for command lines sent by other instances</summary>
         public static void RegisterRemotingService()
+        {
+            StartListener(PipeName, Run);
+        }
+
+        /// <summary>Send the command line to the running instance</summary>
+        public static void LaunchInExistingInstance(string[] args)
         {
             try
             {
-                IpcChannel ipcCh = new IpcChannel(ChannelName);
-                ChannelServices.RegisterChannel(ipcCh, false);
-                RemotingConfiguration.RegisterWellKnownServiceType(
-                    typeof(SingleInstanceHelper), SingleInstanceServiceName, WellKnownObjectMode.SingleCall);
-
-                Log.InfoFormat("Registered IpcChannel and Service: [ipc://{0}/{1}]", ChannelName, SingleInstanceServiceName);
+                Send(PipeName, args);
             }
             catch (Exception ex)
             {
-                Log.Warn("Unable to register ipcchannel for single instance support...feature unavailable", ex);
+                Log.Error("Unable to send command to the running instance", ex);
             }
         }
 
-        public static void LaunchInExistingInstance(string[] args)
+        /// <summary>
+        /// Starts a background thread that accepts connections on <paramref name="pipeName"/> and passes
+        /// each received argument list to <paramref name="onArgs"/> (on that background thread).
+        /// </summary>
+        public static Thread StartListener(string pipeName, Action<string[]> onArgs)
         {
-            IpcChannel channel = new IpcChannel();
-            ChannelServices.RegisterChannel(channel, false);
-            string url = String.Format("ipc://{0}/{1}", ChannelName, SingleInstanceServiceName);
-
-            // Register as client for remote object.
-            WellKnownClientTypeEntry remoteType = new WellKnownClientTypeEntry(typeof(SingleInstanceHelper), url);
-            RemotingConfiguration.RegisterWellKnownClientType(remoteType);
-
-            // Create a message sink.
-            string objectUri;
-            IMessageSink messageSink = channel.CreateMessageSink(url, null, out objectUri);
-
-            /*
-            Console.WriteLine("The URI of the message sink is {0}.", objectUri);
-            if (messageSink != null)
+            Thread listener = new Thread(() => Listen(pipeName, onArgs))
             {
-                Console.WriteLine("The type of the message sink is {0}.", messageSink.GetType().ToString());
-            }
-            */
-
-            SingleInstanceHelper helper = new SingleInstanceHelper();
-            helper.Run(args);
+                IsBackground = true,
+                Name = "SingleInstanceListener"
+            };
+            listener.Start();
+            Log.InfoFormat("Listening for single instance commands: [\\\\.\\pipe\\{0}]", pipeName);
+            return listener;
         }
 
+        /// <summary>Sends <paramref name="args"/> to the listener on <paramref name="pipeName"/></summary>
+        public static void Send(string pipeName, string[] args)
+        {
+            using (NamedPipeClientStream client = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.CurrentUserOnly))
+            {
+                client.Connect(ConnectTimeoutMs);
+                using (BinaryWriter writer = new BinaryWriter(client, Encoding.UTF8))
+                {
+                    writer.Write(args.Length);
+                    foreach (string arg in args)
+                    {
+                        writer.Write(arg);
+                    }
+                }
+            }
+        }
 
-        public void Run(String[] args)
+        private static void Listen(string pipeName, Action<string[]> onArgs)
+        {
+            while (true)
+            {
+                NamedPipeServerStream server;
+                try
+                {
+                    server = new NamedPipeServerStream(
+                        pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.CurrentUserOnly);
+                }
+                catch (Exception ex)
+                {
+                    // e.g. pipe name already in use by another instance
+                    Log.Warn("Unable to listen for single instance commands...feature unavailable", ex);
+                    return;
+                }
+
+                try
+                {
+                    using (server)
+                    {
+                        server.WaitForConnection();
+
+                        string[] args;
+                        using (BinaryReader reader = new BinaryReader(server, Encoding.UTF8))
+                        {
+                            int count = reader.ReadInt32();
+                            args = new string[count];
+                            for (int i = 0; i < count; i++)
+                            {
+                                args[i] = reader.ReadString();
+                            }
+                        }
+                        onArgs(args);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error handling single instance command", ex);
+                }
+            }
+        }
+
+        private static void Run(String[] args)
         {
             Log.InfoFormat("Received remote Run command: [{0}]", String.Join(" ", args));
             CommandLineOptions cmd = new CommandLineOptions(args);

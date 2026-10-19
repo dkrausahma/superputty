@@ -64,7 +64,7 @@ namespace SuperPutty
                         return titleAttribute.Title;
                     }
                 }
-                return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().CodeBase);
+                return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location);
             }
         }
 
@@ -125,13 +125,13 @@ namespace SuperPutty
 
         private void richTextBox1_LinkClicked(object sender, LinkClickedEventArgs e)
         {
-            Process.Start(e.LinkText);
+            Process.Start(new ProcessStartInfo(e.LinkText) { UseShellExecute = true });
         }
 
         private void linkLabelCompany2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             LinkLabel link = (LinkLabel)sender;
-            Process.Start(link.Text);
+            Process.Start(new ProcessStartInfo(link.Text) { UseShellExecute = true });
         }
     }
 }

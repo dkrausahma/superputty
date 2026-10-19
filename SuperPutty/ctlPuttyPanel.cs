@@ -357,7 +357,7 @@ namespace SuperPutty
 
         private void aboutPuttyToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("http://www.chiark.greenend.org.uk/~sgtatham/putty/");
+            Process.Start(new ProcessStartInfo("http://www.chiark.greenend.org.uk/~sgtatham/putty/") { UseShellExecute = true });
         }
 
  
@@ -427,7 +427,7 @@ namespace SuperPutty
                     this.SetFocusToChildApplication("MenuHandler");
                     for (int i = 0; i < commands.Length; ++i)
                     {
-                        NativeMethods.SendMessage(m_AppPanel.AppWindowHandle, (uint)NativeMethods.WM.SYSCOMMAND, commands[i], 0);
+                        NativeMethods.SendMessage(m_AppPanel.AppWindowHandle, (uint)NativeMethods.WM.SYSCOMMAND, commands[i], 0L);
                     }
                 }
                 catch (Exception ex)

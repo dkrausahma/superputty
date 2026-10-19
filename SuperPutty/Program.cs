@@ -49,8 +49,17 @@ namespace SuperPutty
         [STAThread]
         static void Main(string[] args)
         {
+            // Keep the .NET Framework look: DPI unaware (scaled by Windows) and the old default font.
+            // Modern WinForms defaults to SystemAware and Segoe UI 9pt, which changes every form's layout.
+            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+            Application.SetDefaultFont(new Font(new FontFamily("Microsoft Sans Serif"), 8.25f));
+
             // send log to console
             log4net.Config.BasicConfigurator.Configure();
+
+            // .NET stores user.config under a different folder name than .NET Framework did;
+            // must run before the first access to SuperPuTTY.Settings
+            LegacyUserConfig.ImportIfMissing();
 
             bool onlyInstance = false;
             mutex = new Mutex(true, "SuperPutty", out onlyInstance);
@@ -102,6 +111,9 @@ namespace SuperPutty
             }
         }
 
+        /// <summary>Name of the WinForms field holding the icon used by forms without their own icon</summary>
+        internal const string DefaultIconFieldName = "s_defaultIcon";
+
         static void SetDefaultIcon(Form form)
         {
             // pure evil
@@ -113,7 +125,9 @@ namespace SuperPutty
                     form.Icon = new Icon(iconFile);
                 }
 
-                FieldInfo field = typeof(Form).GetField("defaultIcon", BindingFlags.NonPublic | BindingFlags.Static);
+                // private static Form.defaultIcon (.NET Framework) / Form.s_defaultIcon (.NET)
+                FieldInfo field = typeof(Form).GetField(DefaultIconFieldName, BindingFlags.NonPublic | BindingFlags.Static)
+                    ?? typeof(Form).GetField("defaultIcon", BindingFlags.NonPublic | BindingFlags.Static);
                 field.SetValue(null, form.Icon);
             }
             catch (Exception ex)

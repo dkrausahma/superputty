@@ -172,7 +172,7 @@ namespace SuperPutty.Scp
             Source = SourceType.Local;
             try
             {
-                FileSecurity fs = File.GetAccessControl(fsi.FullName);
+                FileSecurity fs = new FileSecurity(fsi.FullName, AccessControlSections.Access | AccessControlSections.Owner | AccessControlSections.Group);
                 Owner = fs.GetOwner(typeof(NTAccount)).ToString();
                 Group = fs.GetGroup(typeof(NTAccount)).ToString();
             }
