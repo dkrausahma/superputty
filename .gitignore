@@ -1,10 +1,22 @@
+# Visual Studio / user-specific
 .vs/
-bin/*
-SuperPutty/obj/*
-SuperPuttySetup/Debug/*
-SuperPuttySetup/Release/*
-SuperPuttyUnitTests/bin/*
-SuperPuttyUnitTests/obj/*
-SuperPuttyInstaller/bin/
-SuperPuttyInstaller/obj/
-SuperPutty.v12.suo
+*.suo
+*.user
+*.userprefs
+
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.nupkg
+packages/
+
+# Test results
+TestResult*.xml
+TestResults/
+
+# Upgrade/migration leftovers
+UpgradeLog*.htm
+_UpgradeReport_Files/
+Backup*/
