@@ -488,7 +488,7 @@ namespace SuperPutty
 
         private void editSessionsInNotepadToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start(XmlEditor ?? "notepad", Path.Combine(SuperPuTTY.Settings.SettingsFolder, "Sessions.XML"));
+            Process.Start(new ProcessStartInfo(XmlEditor ?? "notepad", Path.Combine(SuperPuTTY.Settings.SettingsFolder, "Sessions.XML")) { UseShellExecute = true });
         }
 
         private void reloadSessionsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1060,21 +1060,21 @@ namespace SuperPutty
 
         private void superPuttyWebsiteToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("https://github.com/jimradford/superputty/");
+            Process.Start(new ProcessStartInfo("https://github.com/jimradford/superputty/") { UseShellExecute = true });
         }
 
         private void helpToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             if (File.Exists(Application.StartupPath + @"\superputty.chm"))
             {
-                Process.Start(Application.StartupPath + @"\superputty.chm");
+                Process.Start(new ProcessStartInfo(Application.StartupPath + @"\superputty.chm") { UseShellExecute = true });
             }
             else
             {
                 DialogResult result = MessageBox.Show("Local documentation could not be found. Would you like to view the documentation online instead?", "Documentation Not Found", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (result == DialogResult.Yes)
                 {
-                    Process.Start("https://github.com/jimradford/superputty/wiki/Documentation");
+                    Process.Start(new ProcessStartInfo("https://github.com/jimradford/superputty/wiki/Documentation") { UseShellExecute = true });
                 }
             }
         }
@@ -1253,11 +1253,11 @@ namespace SuperPutty
             IntPtr handle = NativeMethods.GetWindow(this.tsSendCommandCombo.ComboBox.Handle, NativeMethods.GetWindowCmd.GW_CHILD);
             if (this.tbBtnMaskText.Checked)
             {
-                NativeMethods.SendMessage(handle, NativeMethods.EM_SETPASSWORDCHAR, (int)'*', 0);
+                NativeMethods.SendMessage(handle, NativeMethods.EM_SETPASSWORDCHAR, (int)'*', 0L);
             }
             else
             {
-                NativeMethods.SendMessage(handle, NativeMethods.EM_SETPASSWORDCHAR, 0, 0);
+                NativeMethods.SendMessage(handle, NativeMethods.EM_SETPASSWORDCHAR, 0, 0L);
             }
             this.tsSendCommandCombo.ComboBox.Refresh();
         }
@@ -1806,7 +1806,7 @@ namespace SuperPutty
                                 MessageBoxDefaultButton.Button1,
                                 MessageBoxOptions.DefaultDesktopOnly) == DialogResult.Yes)
                             {
-                                Process.Start(latest.release_url);
+                                Process.Start(new ProcessStartInfo(latest.release_url) { UseShellExecute = true });
                             }
                         }
                         else

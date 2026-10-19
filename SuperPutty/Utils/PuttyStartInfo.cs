@@ -116,7 +116,8 @@ namespace SuperPutty.Utils
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = this.Executable,
-                Arguments = this.Args
+                Arguments = this.Args,
+                UseShellExecute = true
             };
             if (this.WorkingDir != null && Directory.Exists(this.WorkingDir))
             {

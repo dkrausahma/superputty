@@ -272,13 +272,13 @@ namespace SuperPutty
         public static void LoadLayoutInNewInstance(LayoutData layout)
         {
             ReportStatus("Starting new instance with layout, {0}", layout.Name);
-            Process.Start(Assembly.GetExecutingAssembly().Location, "-layout \"" + layout.Name + "\"");
+            Process.Start(new ProcessStartInfo(Application.ExecutablePath, "-layout \"" + layout.Name + "\"") { UseShellExecute = true });
         }
 
         public static void LoadSessionInNewInstance(string sessionId)
         {
             ReportStatus("Starting session in new instance, {0}", sessionId);
-            Process.Start(Assembly.GetExecutingAssembly().Location, "-session \"" + sessionId + "\"");
+            Process.Start(new ProcessStartInfo(Application.ExecutablePath, "-session \"" + sessionId + "\"") { UseShellExecute = true });
         }
 
         public static void SetLayoutAsDefault(string layoutName)
@@ -471,7 +471,7 @@ namespace SuperPutty
 
                         if (panel.InvokeRequired)
                         {
-                            panel.BeginInvoke((MethodInvoker)delegate {
+                            panel.BeginInvoke((System.Windows.Forms.MethodInvoker)delegate {
                                 panel.Close();
                             });
                         }

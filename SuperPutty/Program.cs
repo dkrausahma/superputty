@@ -49,8 +49,17 @@ namespace SuperPutty
         [STAThread]
         static void Main(string[] args)
         {
+            // Keep the .NET Framework look: DPI unaware (scaled by Windows) and the old default font.
+            // Modern WinForms defaults to SystemAware and Segoe UI 9pt, which changes every form's layout.
+            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+            Application.SetDefaultFont(new Font(new FontFamily("Microsoft Sans Serif"), 8.25f));
+
             // send log to console
             log4net.Config.BasicConfigurator.Configure();
+
+            // .NET stores user.config under a different folder name than .NET Framework did;
+            // must run before the first access to SuperPuTTY.Settings
+            LegacyUserConfig.ImportIfMissing();
 
             bool onlyInstance = false;
             mutex = new Mutex(true, "SuperPutty", out onlyInstance);

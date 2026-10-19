@@ -28,7 +28,7 @@ namespace SuperPutty.Utils
             String param = "sftp://" + userPw + session.Host + ":" + session.Port + rp + lp;
             
             Log.Debug("Send to FileZilla:" + SuperPuTTY.Settings.FileZillaExe + " params="+ "sftp://" + userPwLog + session.Host + ":" + session.Port + rp + lp);
-            Process.Start(SuperPuTTY.Settings.FileZillaExe, param);
+            Process.Start(new ProcessStartInfo(SuperPuTTY.Settings.FileZillaExe, param) { UseShellExecute = true });
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace SuperPutty.Utils
             String lp = String.IsNullOrEmpty(session.LocalPath) ? "" : " -rawsettings localDirectory=\"" + session.LocalPath + "\" ";
             String param = "sftp://" + userPw + session.Host + ":" + session.Port + rp + lp;
             Log.Debug("Send to WinSCP:" + SuperPuTTY.Settings.WinSCPExe + " params="+ "sftp://" + userPwLog + session.Host + ":" + session.Port + rp + lp);
-            Process.Start(SuperPuTTY.Settings.WinSCPExe, param);
+            Process.Start(new ProcessStartInfo(SuperPuTTY.Settings.WinSCPExe, param) { UseShellExecute = true });
         }
 
     }

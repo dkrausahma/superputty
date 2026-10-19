@@ -257,7 +257,7 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
 
         private void UpdateTitle()
         {
-            int length = NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXTLENGTH, 0, 0) + 1;
+            int length = NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXTLENGTH, 0L, 0L) + 1;
             StringBuilder sb = new StringBuilder(length + 1);
             NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXT, sb.Capacity, sb);
             string controlText = sb.ToString();
@@ -325,7 +325,8 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
                         StartInfo =
                         {
                             FileName = ApplicationName,
-                            Arguments = ApplicationParameters
+                            Arguments = ApplicationParameters,
+                            UseShellExecute = true
                         }
                     };
                     //m_Process.Exited += new EventHandler(p_Exited);
