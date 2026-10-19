@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using SuperPutty.Scp;
 using log4net;
 using System.IO;
@@ -37,9 +38,9 @@ namespace SuperPuttyUnitTests.Scp
                 updatedProp = e.PropertyName;
             };
             viewModel.Status = "foobar";
-            Assert.AreEqual("Status", updatedProp);
+            ClassicAssert.AreEqual("Status", updatedProp);
 
-            Assert.IsNotNull(viewModel.Files);
+            ClassicAssert.IsNotNull(viewModel.Files);
         }
 
         [Test]
@@ -77,20 +78,20 @@ namespace SuperPuttyUnitTests.Scp
             {
                 Log.InfoFormat("BFI: {0}", bfi);
             }
-            Assert.IsNotNull(viewModel.Files);
-            Assert.AreEqual(8, viewModel.Files.Count);
-            Assert.AreEqual("..", viewModel.Files[0].Name);
-            Assert.AreEqual(new DirectoryInfo(Path.GetTempPath()), new DirectoryInfo(viewModel.Files[0].Path));
-            Assert.AreEqual(FileType.ParentDirectory, viewModel.Files[0].Type);
-            Assert.AreEqual("A", viewModel.Files[1].Name);
-            Assert.AreEqual(FileType.Directory, viewModel.Files[1].Type);
-            Assert.AreEqual(0, viewModel.Files[1].Size);
+            ClassicAssert.IsNotNull(viewModel.Files);
+            ClassicAssert.AreEqual(8, viewModel.Files.Count);
+            ClassicAssert.AreEqual("..", viewModel.Files[0].Name);
+            ClassicAssert.AreEqual(new DirectoryInfo(Path.GetTempPath()), new DirectoryInfo(viewModel.Files[0].Path));
+            ClassicAssert.AreEqual(FileType.ParentDirectory, viewModel.Files[0].Type);
+            ClassicAssert.AreEqual("A", viewModel.Files[1].Name);
+            ClassicAssert.AreEqual(FileType.Directory, viewModel.Files[1].Type);
+            ClassicAssert.AreEqual(0, viewModel.Files[1].Size);
 
-            Assert.AreEqual("file1", viewModel.Files[4].Name, "file1");
-            Assert.AreEqual(FileType.File, viewModel.Files[4].Type);
-            Assert.AreEqual(0, viewModel.Files[4].Size);
+            ClassicAssert.AreEqual("file1", viewModel.Files[4].Name, "file1");
+            ClassicAssert.AreEqual(FileType.File, viewModel.Files[4].Type);
+            ClassicAssert.AreEqual(0, viewModel.Files[4].Size);
 
-            Assert.AreEqual(1, viewModel.Files[7].Size);
+            ClassicAssert.AreEqual(1, viewModel.Files[7].Size);
         }
     }
 

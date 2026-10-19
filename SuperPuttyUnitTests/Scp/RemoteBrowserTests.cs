@@ -1,5 +1,6 @@
 ﻿using System;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using SuperPutty.Scp;
 using System.Windows.Forms;
 using System.Drawing;
@@ -22,21 +23,21 @@ namespace SuperPuttyUnitTests.Scp
             PscpClient.ScpLineParser parser = new PscpClient.ScpLineParser();
             DateTime dt;
 
-            Assert.True(parser.TryParseTimestamp("May 15 2012", out dt));
-            Assert.AreEqual(2012, dt.Year);
-            Assert.AreEqual(5, dt.Month);
-            Assert.AreEqual(15, dt.Day);
-            Assert.AreEqual(0, dt.Hour);
-            Assert.AreEqual(0, dt.Minute);
-            Assert.AreEqual(DateTimeKind.Local, dt.Kind);
+            ClassicAssert.True(parser.TryParseTimestamp("May 15 2012", out dt));
+            ClassicAssert.AreEqual(2012, dt.Year);
+            ClassicAssert.AreEqual(5, dt.Month);
+            ClassicAssert.AreEqual(15, dt.Day);
+            ClassicAssert.AreEqual(0, dt.Hour);
+            ClassicAssert.AreEqual(0, dt.Minute);
+            ClassicAssert.AreEqual(DateTimeKind.Local, dt.Kind);
 
-            Assert.True(parser.TryParseTimestamp("May  5 2012", out dt));
-            Assert.AreEqual(2012, dt.Year);
-            Assert.AreEqual(5, dt.Month);
-            Assert.AreEqual(5, dt.Day);
-            Assert.AreEqual(0, dt.Hour);
-            Assert.AreEqual(0, dt.Minute);
-            Assert.AreEqual(DateTimeKind.Local, dt.Kind);
+            ClassicAssert.True(parser.TryParseTimestamp("May  5 2012", out dt));
+            ClassicAssert.AreEqual(2012, dt.Year);
+            ClassicAssert.AreEqual(5, dt.Month);
+            ClassicAssert.AreEqual(5, dt.Day);
+            ClassicAssert.AreEqual(0, dt.Hour);
+            ClassicAssert.AreEqual(0, dt.Minute);
+            ClassicAssert.AreEqual(DateTimeKind.Local, dt.Kind);
         }
 
         [Test]
@@ -45,29 +46,29 @@ namespace SuperPuttyUnitTests.Scp
             PscpClient.ScpLineParser parser = new PscpClient.ScpLineParser();
             DateTime dt;
 
-            Assert.True(parser.TryParseTimestamp("May 15 12:32", out dt));
-            Assert.AreEqual(DateTime.Now.Year, dt.Year);
-            Assert.AreEqual(5, dt.Month);
-            Assert.AreEqual(15, dt.Day);
-            Assert.AreEqual(12, dt.Hour);
-            Assert.AreEqual(32, dt.Minute);
-            Assert.AreEqual(DateTimeKind.Local, dt.Kind);
+            ClassicAssert.True(parser.TryParseTimestamp("May 15 12:32", out dt));
+            ClassicAssert.AreEqual(DateTime.Now.Year, dt.Year);
+            ClassicAssert.AreEqual(5, dt.Month);
+            ClassicAssert.AreEqual(15, dt.Day);
+            ClassicAssert.AreEqual(12, dt.Hour);
+            ClassicAssert.AreEqual(32, dt.Minute);
+            ClassicAssert.AreEqual(DateTimeKind.Local, dt.Kind);
 
-            Assert.True(parser.TryParseTimestamp("Mar  3 03:37", out dt));
-            Assert.AreEqual(DateTime.Now.Year, dt.Year);
-            Assert.AreEqual(3, dt.Month);
-            Assert.AreEqual(3, dt.Day);
-            Assert.AreEqual(3, dt.Hour);
-            Assert.AreEqual(37, dt.Minute);
-            Assert.AreEqual(DateTimeKind.Local, dt.Kind);
+            ClassicAssert.True(parser.TryParseTimestamp("Mar  3 03:37", out dt));
+            ClassicAssert.AreEqual(DateTime.Now.Year, dt.Year);
+            ClassicAssert.AreEqual(3, dt.Month);
+            ClassicAssert.AreEqual(3, dt.Day);
+            ClassicAssert.AreEqual(3, dt.Hour);
+            ClassicAssert.AreEqual(37, dt.Minute);
+            ClassicAssert.AreEqual(DateTimeKind.Local, dt.Kind);
 
-            Assert.True(parser.TryParseTimestamp("Nov 18 18:19", out dt));
-            Assert.AreEqual(DateTime.Now.Year, dt.Year);
-            Assert.AreEqual(11, dt.Month);
-            Assert.AreEqual(18, dt.Day);
-            Assert.AreEqual(18, dt.Hour);
-            Assert.AreEqual(19, dt.Minute);
-            Assert.AreEqual(DateTimeKind.Local, dt.Kind);
+            ClassicAssert.True(parser.TryParseTimestamp("Nov 18 18:19", out dt));
+            ClassicAssert.AreEqual(DateTime.Now.Year, dt.Year);
+            ClassicAssert.AreEqual(11, dt.Month);
+            ClassicAssert.AreEqual(18, dt.Day);
+            ClassicAssert.AreEqual(18, dt.Hour);
+            ClassicAssert.AreEqual(19, dt.Minute);
+            ClassicAssert.AreEqual(DateTimeKind.Local, dt.Kind);
         }
 
     }
