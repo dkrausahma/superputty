@@ -1,0 +1,11 @@
+<Project>
+  <!-- Settings shared by all projects in the solution -->
+  <PropertyGroup>
+    <!-- Built-in .NET code analyzers; findings are warnings, never build errors.
+         Try the stricter set with: msbuild -p:AnalysisMode=Recommended -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Default</AnalysisMode>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>
