@@ -111,6 +111,9 @@ namespace SuperPutty
             }
         }
 
+        /// <summary>Name of the WinForms field holding the icon used by forms without their own icon</summary>
+        internal const string DefaultIconFieldName = "s_defaultIcon";
+
         static void SetDefaultIcon(Form form)
         {
             // pure evil
@@ -122,7 +125,9 @@ namespace SuperPutty
                     form.Icon = new Icon(iconFile);
                 }
 
-                FieldInfo field = typeof(Form).GetField("defaultIcon", BindingFlags.NonPublic | BindingFlags.Static);
+                // private static Form.defaultIcon (.NET Framework) / Form.s_defaultIcon (.NET)
+                FieldInfo field = typeof(Form).GetField(DefaultIconFieldName, BindingFlags.NonPublic | BindingFlags.Static)
+                    ?? typeof(Form).GetField("defaultIcon", BindingFlags.NonPublic | BindingFlags.Static);
                 field.SetValue(null, form.Icon);
             }
             catch (Exception ex)

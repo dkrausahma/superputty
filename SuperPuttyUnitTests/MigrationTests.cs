@@ -67,6 +67,14 @@ namespace SuperPuttyUnitTests
             }
         }
 
+        /// <summary>Program.SetDefaultIcon overwrites this private WinForms field via reflection</summary>
+        [Test]
+        public void DefaultIconFieldExists()
+        {
+            ClassicAssert.IsNotNull(typeof(System.Windows.Forms.Form).GetField(
+                "s_defaultIcon", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static));
+        }
+
         [Test]
         public void LegacyUserConfigIsFoundForNewLocation()
         {
