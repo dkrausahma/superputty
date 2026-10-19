@@ -95,6 +95,9 @@ namespace SuperPutty
 
             InitializeComponent();
 
+            // DockPanelSuite 3.x needs an explicit theme; VS2005 matches the look of the 2.x library
+            this.DockPanel.Theme = new VS2005Theme();
+
             // force toolbar locations...designer likes to flip them around
             this.tsConnect.Location = new System.Drawing.Point(0, 24);
             this.tsCommands.Location = new System.Drawing.Point(0, 49);

@@ -26,9 +26,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="WeifenLuo.WinFormsUI.Docking">
-      <HintPath>_Lib\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
-    </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Runtime.Remoting" />
@@ -40,6 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DockPanelSuite" Version="3.1.1" />
+    <PackageReference Include="DockPanelSuite.ThemeVS2005" Version="3.1.1" />
     <PackageReference Include="log4net" Version="3.5.0" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
