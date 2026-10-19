@@ -649,7 +649,7 @@ namespace SuperPutty.Scp
             {
                 bool success = false;
 
-                if (line.StartsWith("Listing directory"))
+                if (line.StartsWith("Listing directory", StringComparison.Ordinal))
                 {
                     // ignore header line and current dir
                     fileInfo = null;
@@ -672,7 +672,7 @@ namespace SuperPutty.Scp
                         };
                         fileInfo.Type = fileInfo.Name == ".."
                             ? FileType.ParentDirectory
-                            : fileInfo.Permissions != null && fileInfo.Permissions.StartsWith("d")
+                            : fileInfo.Permissions != null && fileInfo.Permissions.StartsWith("d", StringComparison.Ordinal)
                                 ? FileType.Directory : FileType.File;
 
 
@@ -682,7 +682,7 @@ namespace SuperPutty.Scp
                             fileInfo.LastModTime = lastMod;
                         }
                         int blocks;
-                        if (int.TryParse(match.Groups["BlockCount"].Value, out blocks))
+                        if (int.TryParse(match.Groups["BlockCount"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out blocks))
                         {
                             fileInfo.Size = blocks;
                         }
@@ -699,17 +699,18 @@ namespace SuperPutty.Scp
             }
 
             // May 15 12:32, Mar  3 03:37, Nov 18 18:19, May 27  2012
+            // pscp/ls output uses English month names, so parse culture-invariant
             public bool TryParseTimestamp(string timeStamp, out DateTime dateTime)
             {
                 bool success = false;
 
                 DateTimeStyles style = DateTimeStyles.AllowInnerWhite | DateTimeStyles.AssumeLocal;
-                if (DateTime.TryParseExact(timeStamp, "MMM d yyyy", null, style, out dateTime))
+                if (DateTime.TryParseExact(timeStamp, "MMM d yyyy", CultureInfo.InvariantCulture, style, out dateTime))
                 {
                     // May 27  2012 or Nov  1  2013
                     success = true;
                 }
-                else if (DateTime.TryParseExact(timeStamp, "MMM d H:mm", null, style, out dateTime))
+                else if (DateTime.TryParseExact(timeStamp, "MMM d H:mm", CultureInfo.InvariantCulture, style, out dateTime))
                 {
                     // Nov 18 18:19 or Mar  3 03:37
                     success = true;
