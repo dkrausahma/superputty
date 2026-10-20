@@ -68,6 +68,7 @@ namespace SuperPutty
             this.TextOverride = session.SessionName;
 
             CreatePanel();
+            EnableFileDrop();
             AdjustMenu();
         }
 
@@ -94,6 +95,32 @@ namespace SuperPutty
         {
             base.OnTextChanged(e);
             ApplyTabText();
+        }
+
+        /// <summary>Files or folders dropped from Explorer on the terminal area: (tab, paths)</summary>
+        public event Action<ctlPuttyPanel, string[]> FilesDropped;
+
+        /// <summary>
+        /// Accept files dropped on the panel behind PuTTY. Whether Windows hands a drop over PuTTY's window on to
+        /// this panel depends on how PuTTY is attached; dropping on the tab header always works.
+        /// </summary>
+        private void EnableFileDrop()
+        {
+            this.m_AppPanel.AllowDrop = true;
+            DragEventHandler over = delegate (object sender, DragEventArgs e)
+            {
+                e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) && this.FilesDropped != null ? DragDropEffects.Copy : DragDropEffects.None;
+            };
+            this.m_AppPanel.DragEnter += over;
+            this.m_AppPanel.DragOver += over;
+            this.m_AppPanel.DragDrop += delegate (object sender, DragEventArgs e)
+            {
+                string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files != null && files.Length > 0 && this.FilesDropped != null)
+                {
+                    this.BeginInvoke((MethodInvoker)delegate { this.FilesDropped(this, files); });
+                }
+            };
         }
 
         /// <summary>The session's SSH tunnels (PuTTY profile and -L/-R/-D arguments), read when the tab opens</summary>

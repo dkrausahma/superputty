@@ -36,6 +36,7 @@ using SuperPuTTY.Scripting;
 using System.Configuration;
 using System.Linq;
 using SuperPutty.Gui;
+using SuperPutty.Scp;
 using log4net.Core;
 using System.Text.RegularExpressions;
 using System.Runtime.Serialization.Json;
@@ -111,6 +112,10 @@ namespace SuperPutty
             this.DockPanel.Theme.Extender.DockPaneCaptionFactory = new NoAutoHideCaptionFactory(this.DockPanel.Theme.Extender.DockPaneCaptionFactory);
             // tab tooltips also while PuTTY has the focus (the main window then counts as inactive)
             this.DockPanel.Theme.Extender.DockPaneStripFactory = new ShowAlwaysTabToolTipFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory);
+            // files dropped from Explorer on a terminal tab's header are uploaded to that host
+            this.DockPanel.Theme.Extender.DockPaneStripFactory = new FileDropTabStripFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory,
+                content => content is ctlPuttyPanel && CanUpload(((ctlPuttyPanel)content).Session),
+                (content, files) => UploadFiles((ctlPuttyPanel)content, files));
 
             // force toolbar locations...designer likes to flip them around
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
@@ -234,6 +239,7 @@ namespace SuperPutty
             if (p != null)
             {
                 p.TextChanged += puttyPanel_TextChanged;
+                p.FilesDropped += UploadFiles;
             }
             else
             {
@@ -248,6 +254,7 @@ namespace SuperPutty
             if (p != null)
             {
                 p.TextChanged -= puttyPanel_TextChanged;
+                p.FilesDropped -= UploadFiles;
             }
             else
             {
@@ -649,7 +656,127 @@ namespace SuperPutty
             bool canCopy = panel != null && panel.SupportsPuttyCommands;
             this.btnCopySession.Enabled = canCopy;
             this.copySessionToolStripMenuItem.Enabled = canCopy;
+            this.btnUploadFiles.Enabled = panel != null && CanUpload(panel.Session);
         }
+
+        #region Upload
+
+        /// <summary>Uploads need an SSH session and pscp</summary>
+        private static bool CanUpload(SessionData session)
+        {
+            return RemoteCommandTab.IsSupported(session) && SuperPuTTY.IsScpEnabled;
+        }
+
+        private void btnUploadFiles_Click(object sender, EventArgs e)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (panel != null && this.openFileDialogUpload.ShowDialog(this) == DialogResult.OK)
+            {
+                UploadFiles(panel, this.openFileDialogUpload.FileNames);
+            }
+        }
+
+        /// <summary>Files dropped on the icon bar's upload button go to the active terminal's host</summary>
+        private void tsIcons_DragOver(object sender, DragEventArgs e)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            bool overButton = this.tsIcons.GetItemAt(this.tsIcons.PointToClient(new Point(e.X, e.Y))) == this.btnUploadFiles;
+            e.Effect = overButton && panel != null && CanUpload(panel.Session) && e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? DragDropEffects.Copy : DragDropEffects.None;
+        }
+
+        private void tsIcons_DragDrop(object sender, DragEventArgs e)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (panel != null && files != null && files.Length > 0)
+            {
+                this.BeginInvoke((MethodInvoker)delegate { UploadFiles(panel, files); });
+            }
+        }
+
+        /// <summary>
+        /// Upload files and folders to a tab's host with pscp, into the folder confirmed in a dialog (preset with
+        /// the shell's current directory if the window title shows it). Runs in the background; progress and
+        /// result appear in the status bar.
+        /// </summary>
+        private void UploadFiles(ctlPuttyPanel panel, string[] paths)
+        {
+            SessionData session = panel.Session;
+            if (!RemoteCommandTab.IsSupported(session))
+            {
+                SuperPuTTY.ReportStatus("Uploads need an SSH session");
+                return;
+            }
+            if (!SuperPuTTY.IsScpEnabled)
+            {
+                MessageBox.Show(this, "pscp.exe is not set or not found. Set its location in Tools > Options.", "Upload Files", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            List<BrowserFileInfo> sources = new List<BrowserFileInfo>();
+            foreach (string path in paths)
+            {
+                if (Directory.Exists(path)) { sources.Add(new BrowserFileInfo(new DirectoryInfo(path))); }
+                else if (File.Exists(path)) { sources.Add(new BrowserFileInfo(new FileInfo(path))); }
+            }
+            if (sources.Count == 0)
+            {
+                return;
+            }
+
+            string detected = RemotePath.FromWindowTitle(panel.AppPanel.GetWindowTitle());
+            string targetFolder;
+            using (dlgUploadFiles dialog = new dlgUploadFiles(panel.Text, paths, detected ?? "~", detected != null))
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                targetFolder = dialog.TargetFolder;
+            }
+
+            BrowserFileInfo target = new BrowserFileInfo { Path = RemotePath.ToPscpPath(targetFolder), Source = SourceType.Remote, Type = FileType.Directory };
+            string where = string.Format("{0}:{1}", panel.Text, targetFolder);
+            SuperPuTTY.ReportStatus("Uploading {0} item(s) to {1}…", sources.Count, where);
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                FileTransferResult result;
+                try
+                {
+                    PscpClient client = new PscpClient(new PscpOptions { PscpLocation = SuperPuTTY.Settings.PscpExe }, session);
+                    result = client.CopyFiles(sources, target, (complete, cancelAll, status) =>
+                    {
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            SuperPuTTY.ReportStatus("Uploading to {0}: {1} {2}%", where, status.Filename, status.PercentComplete);
+                        });
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Upload failed", ex);
+                    result = new FileTransferResult();
+                    result.SetError(ex.Message, ex);
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    if (result.StatusCode == ResultStatusCode.Success)
+                    {
+                        SuperPuTTY.ReportStatus("Uploaded {0} item(s) to {1}", sources.Count, where);
+                    }
+                    else
+                    {
+                        SuperPuTTY.ReportStatus("Upload to {0} failed: {1}", where, result.ErrorMsg);
+                        MessageBox.Show(this, string.Format("Upload to {0} failed:\n\n{1}\n\nUploads need key-based login (e.g. Pageant) or a stored password, and write access to the folder.", where, result.ErrorMsg),
+                            "Upload Files", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                });
+            });
+        }
+
+        #endregion
 
         private void copySession_Click(object sender, EventArgs e)
         {

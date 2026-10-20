@@ -271,12 +271,22 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
             }
         }
 
-        private void UpdateTitle()
+        /// <summary>The embedded window's title, e.g. "user@host: ~/dir" if the remote shell sets it</summary>
+        public string GetWindowTitle()
         {
+            if (m_AppWin == IntPtr.Zero)
+            {
+                return string.Empty;
+            }
             int length = NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXTLENGTH, 0L, 0L) + 1;
             StringBuilder sb = new StringBuilder(length + 1);
             NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXT, sb.Capacity, sb);
-            string controlText = sb.ToString();
+            return sb.ToString();
+        }
+
+        private void UpdateTitle()
+        {
+            string controlText = GetWindowTitle();
             string parentText = ((ctlPuttyPanel)this.Parent).TextOverride;
 
             switch ((SuperPutty.frmSuperPutty.TabTextBehavior)Enum.Parse(typeof(frmSuperPutty.TabTextBehavior), SuperPuTTY.Settings.TabTextBehavior))
