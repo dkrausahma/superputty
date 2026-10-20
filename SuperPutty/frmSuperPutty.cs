@@ -212,6 +212,7 @@ namespace SuperPutty
             this.healthTimer.Tick += delegate { CheckOpenTabsHealth(); };
             this.healthTimer.Start();
             this.healthChecksToolStripMenuItem.Checked = SuperPuTTY.Settings.AutoHealthCheck;
+            this.sessionLoggingToolStripMenuItem.Checked = SuperPuTTY.Settings.SessionLogging;
 
             // Apply Settings
             this.ApplySettings();
@@ -669,6 +670,8 @@ namespace SuperPutty
             bool canCopy = panel != null && panel.SupportsPuttyCommands;
             this.btnCopySession.Enabled = canCopy;
             this.copySessionToolStripMenuItem.Enabled = canCopy;
+            this.copyLastCommandToolStripMenuItem.Enabled = canCopy;
+            this.openSessionLogToolStripMenuItem.Enabled = panel != null && panel.LogFile != null;
             this.btnUploadFiles.Enabled = panel != null && CanUpload(panel.Session);
         }
 
@@ -865,14 +868,20 @@ namespace SuperPutty
 
         private void copySession_Click(object sender, EventArgs e)
         {
-            CopyActiveSessionToClipboard();
+            CopyActiveSessionToClipboard(false);
+        }
+
+        private void copyLastCommand_Click(object sender, EventArgs e)
+        {
+            CopyActiveSessionToClipboard(true);
         }
 
         /// <summary>
         /// Copy the active terminal's screen and scrollback to the clipboard (PuTTY's "Copy All to Clipboard"),
-        /// e.g. to paste a session into a chat, and report the number of lines in the status bar
+        /// e.g. to paste a session into a chat, and report the number of lines in the status bar. With
+        /// <paramref name="lastCommandOnly"/> only the last command and its output are kept (cut at the prompts).
         /// </summary>
-        private void CopyActiveSessionToClipboard()
+        private void CopyActiveSessionToClipboard(bool lastCommandOnly)
         {
             ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
             if (panel == null || !panel.SupportsPuttyCommands)
@@ -902,18 +911,37 @@ namespace SuperPutty
                         return;
                     }
                     int lines = 0;
+                    bool cut = false;
                     try
                     {
                         if (Clipboard.ContainsText())
                         {
-                            lines = Clipboard.GetText().Split('\n').Length;
+                            string text = Clipboard.GetText();
+                            if (lastCommandOnly)
+                            {
+                                string last = TerminalText.LastCommand(text);
+                                if (last != null)
+                                {
+                                    Clipboard.SetText(last);
+                                    text = last;
+                                    cut = true;
+                                }
+                            }
+                            lines = text.Split('\n').Length;
                         }
                     }
                     catch (System.Runtime.InteropServices.ExternalException ex)
                     {
                         Log.Warn("Could not read clipboard to count lines", ex);
                     }
-                    SuperPuTTY.ReportStatus("Copied {0} lines from {1} to the clipboard", lines, tabName);
+                    if (lastCommandOnly && !cut)
+                    {
+                        SuperPuTTY.ReportStatus("No shell prompt recognised in {0}: copied the whole session ({1} lines)", tabName, lines);
+                    }
+                    else
+                    {
+                        SuperPuTTY.ReportStatus("Copied {0} {1} lines from {2} to the clipboard", lines, lastCommandOnly ? "last-command" : "session", tabName);
+                    }
                 });
             });
         }
@@ -1777,6 +1805,41 @@ namespace SuperPutty
                 .Where(s => s != null).Distinct().ToList(), false);
         }
 
+        private void sessionLoggingToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.sessionLoggingToolStripMenuItem.Checked = !this.sessionLoggingToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.SessionLogging = this.sessionLoggingToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.Save();
+            SuperPuTTY.ReportStatus(SuperPuTTY.Settings.SessionLogging
+                ? "Session logging on: new tabs write their output to " + SessionLog.Folder
+                : "Session logging off for new tabs");
+        }
+
+        /// <summary>Open the active tab's session log as plain text (control codes removed)</summary>
+        private void openSessionLog_Click(object sender, EventArgs e)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (panel == null || panel.LogFile == null || !File.Exists(panel.LogFile))
+            {
+                SuperPuTTY.ReportStatus("The active tab has no session log (turn on View > Log Sessions to Files, then open the session)");
+                return;
+            }
+            try
+            {
+                Process.Start(new ProcessStartInfo(SessionLog.WriteCleanCopy(panel.LogFile)) { UseShellExecute = true });
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is System.ComponentModel.Win32Exception)
+            {
+                MessageBox.Show(this, "Could not open the session log:\n" + ex.Message, "Session Log", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void openLogFolder_Click(object sender, EventArgs e)
+        {
+            Directory.CreateDirectory(SessionLog.Folder);
+            Process.Start(new ProcessStartInfo(SessionLog.Folder) { UseShellExecute = true });
+        }
+
         private void healthChecksToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.healthChecksToolStripMenuItem.Checked = !this.healthChecksToolStripMenuItem.Checked;
@@ -2049,6 +2112,7 @@ namespace SuperPutty
             this.optionsToolStripMenuItem.ShortcutKeys = Keys.None;
             this.kioskModeToolStripMenuItem.ShortcutKeys = Keys.None;
             this.copySessionToolStripMenuItem.ShortcutKeys = Keys.None;
+            this.copyLastCommandToolStripMenuItem.ShortcutKeys = Keys.None;
 
             // reload new definitions
             foreach (KeyboardShortcut ks in SuperPuTTY.Settings.LoadShortcuts())
@@ -2074,6 +2138,9 @@ namespace SuperPutty
                             break;
                         case SuperPuttyAction.CopySessionToClipboard:
                             this.copySessionToolStripMenuItem.ShortcutKeys = keys;
+                            break;
+                        case SuperPuttyAction.CopyLastCommand:
+                            this.copyLastCommandToolStripMenuItem.ShortcutKeys = keys;
                             break;
                         case SuperPuttyAction.OpenSession:
                             this.openSessionToolStripMenuItem.ShortcutKeys = keys;
@@ -2113,7 +2180,10 @@ namespace SuperPutty
                     this.ToggleKiosk();
                     break;
                 case SuperPuttyAction.CopySessionToClipboard:
-                    this.CopyActiveSessionToClipboard();
+                    this.CopyActiveSessionToClipboard(false);
+                    break;
+                case SuperPuttyAction.CopyLastCommand:
+                    this.CopyActiveSessionToClipboard(true);
                     break;
                 case SuperPuttyAction.OpenSession:
                     KeyEventWindowActivator.ActivateForm(this);

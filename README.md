@@ -51,6 +51,8 @@ and Pageant integration) but adds the window management on top.
 - **Health badges** — the session tree marks hosts with full disks, high load or memory, failed systemd
   units or unhealthy containers (orange/red, details in the tooltip). Open tabs are checked every five
   minutes; any session or folder on demand.
+- **Copy last command** — copies just the last command and its output; with **session logs** switched on,
+  every tab's output is also written to a file you can open as clean text.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**
