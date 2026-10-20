@@ -93,6 +93,9 @@ namespace SuperPutty
         /// <summary>Send command history, per session</summary>
         private readonly CommandHistory commandHistory;
 
+        /// <summary>Checks the SSH tunnels of the open tabs and updates their tab markers</summary>
+        private readonly System.Windows.Forms.Timer tunnelTimer = new System.Windows.Forms.Timer { Interval = 5000 };
+
         /// <summary>The main SuperPuTTY application form</summary>
         public frmSuperPutty()
         {
@@ -106,6 +109,8 @@ namespace SuperPutty
             this.DockPanel.Theme = new VS2005Theme();
             // tool windows don't auto-hide (slide in/out); their captions get no pin button
             this.DockPanel.Theme.Extender.DockPaneCaptionFactory = new NoAutoHideCaptionFactory(this.DockPanel.Theme.Extender.DockPaneCaptionFactory);
+            // tab tooltips also while PuTTY has the focus (the main window then counts as inactive)
+            this.DockPanel.Theme.Extender.DockPaneStripFactory = new ShowAlwaysTabToolTipFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory);
 
             // force toolbar locations...designer likes to flip them around
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
@@ -189,6 +194,10 @@ namespace SuperPutty
 
             // command files of tabs opened with a remote command, left behind by an earlier run
             RemoteCommandTab.CleanUp();
+
+            // SSH tunnel markers on the tabs
+            this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
+            this.tunnelTimer.Start();
 
             // Apply Settings
             this.ApplySettings();
@@ -1481,6 +1490,89 @@ namespace SuperPutty
                 NativeMethods.SendMessage(handle, NativeMethods.EM_SETPASSWORDCHAR, 0, 0L);
             }
             this.tsSendCommandCombo.ComboBox.Refresh();
+        }
+
+        /// <summary>
+        /// Show on each tab with SSH tunnels how many it has and whether their local ports are held by its PuTTY
+        /// (or by another SuperPuTTY tab of the same profile); details in the tab tooltip
+        /// </summary>
+        private void UpdateTunnelDisplays()
+        {
+            List<ctlPuttyPanel> panels = this.DockPanel.Contents.OfType<ctlPuttyPanel>().ToList();
+            List<ctlPuttyPanel> withTunnels = panels.Where(p => p.Tunnels != null && p.Tunnels.Count > 0).ToList();
+            if (withTunnels.Count == 0)
+            {
+                return;
+            }
+
+            Dictionary<int, HashSet<int>> listeners;
+            try
+            {
+                listeners = TcpListeners.Snapshot();
+            }
+            catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException)
+            {
+                Log.Warn("Could not read the TCP listener table, tunnel markers disabled", ex);
+                this.tunnelTimer.Stop();
+                return;
+            }
+
+            // PuTTY process -> tab, to name the tab that holds a port
+            Dictionary<int, ctlPuttyPanel> tabsByProcess = new Dictionary<int, ctlPuttyPanel>();
+            foreach (ctlPuttyPanel panel in panels)
+            {
+                int id = panel.AppPanel.ProcessId;
+                if (id != 0)
+                {
+                    tabsByProcess[id] = panel;
+                }
+            }
+
+            foreach (ctlPuttyPanel panel in withTunnels)
+            {
+                int processId = panel.AppPanel.ProcessId;
+                List<int> sameHost = tabsByProcess
+                    .Where(t => t.Key != processId && TunnelMonitor.SameTarget(t.Value.Session, panel.Session))
+                    .Select(t => t.Key).ToList();
+                bool inStartup = DateTime.UtcNow - panel.StartedUtc < TunnelMonitor.StartupGrace;
+                List<TunnelState> states = panel.Tunnels
+                    .Select(t => TunnelMonitor.StateOf(t, processId, listeners, sameHost, inStartup))
+                    .ToList();
+
+                Dictionary<int, string> holders = new Dictionary<int, string>();
+                for (int i = 0; i < states.Count; i++)
+                {
+                    if (states[i] == TunnelState.Conflict)
+                    {
+                        holders[panel.Tunnels[i].ListenPort] = DescribeProcesses(listeners[panel.Tunnels[i].ListenPort], tabsByProcess);
+                    }
+                }
+                panel.SetTunnelDisplay(TunnelMonitor.TabSuffix(states), TunnelMonitor.ToolTip(panel.Tunnels, states, holders));
+            }
+        }
+
+        /// <summary>The holders of a port, for tunnel conflicts: "tab 'name'" for SuperPuTTY tabs, else "name (PID)"</summary>
+        private static string DescribeProcesses(IEnumerable<int> processIds, Dictionary<int, ctlPuttyPanel> tabsByProcess)
+        {
+            return string.Join(", ", processIds.Select(id =>
+            {
+                ctlPuttyPanel tab;
+                if (tabsByProcess.TryGetValue(id, out tab))
+                {
+                    return string.Format("tab '{0}'", tab.Text);
+                }
+                try
+                {
+                    using (Process process = Process.GetProcessById(id))
+                    {
+                        return string.Format("{0} (PID {1})", process.ProcessName, id);
+                    }
+                }
+                catch (ArgumentException)
+                {
+                    return "PID " + id;
+                }
+            }));
         }
 
         /// <summary>Send command from send command toolbar to open sessions</summary>

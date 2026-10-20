@@ -69,6 +69,22 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
 
         public IntPtr AppWindowHandle { get { return this.m_AppWin; } } 
 
+        /// <summary>ID of the embedded process, or 0 if it isn't running</summary>
+        public int ProcessId
+        {
+            get
+            {
+                try
+                {
+                    return this.m_Process != null && !this.m_Process.HasExited ? this.m_Process.Id : 0;
+                }
+                catch (InvalidOperationException)
+                {
+                    return 0;
+                }
+            }
+        }
+
         #endregion
 
         public ApplicationPanel()
