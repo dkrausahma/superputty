@@ -81,6 +81,8 @@ namespace SuperPutty
             this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripSeparator();
             this.kioskModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copySessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItemCopySessionSep = new System.Windows.Forms.ToolStripSeparator();
             this.puTTYConfigurationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripSeparator();
             this.toggleCommandMaskToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -133,6 +135,8 @@ namespace SuperPutty
             this.btnSessionsPane = new System.Windows.Forms.ToolStripButton();
             this.btnLayoutsPane = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons = new System.Windows.Forms.ToolStripSeparator();
+            this.btnCopySession = new System.Windows.Forms.ToolStripButton();
+            this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             this.toolStripContainer1.ContentPanel.SuspendLayout();
@@ -418,6 +422,8 @@ namespace SuperPutty
             // toolsToolStripMenuItem
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.copySessionToolStripMenuItem,
+            this.toolStripMenuItemCopySessionSep,
             this.puTTYConfigurationToolStripMenuItem,
             this.toolStripMenuItem11,
             this.toggleCommandMaskToolStripMenuItem,
@@ -426,6 +432,19 @@ namespace SuperPutty
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(47, 20);
             this.toolsToolStripMenuItem.Text = "&Tools";
+            // 
+            // copySessionToolStripMenuItem
+            // 
+            this.copySessionToolStripMenuItem.Image = global::SuperPutty.Properties.Resources.copy_session;
+            this.copySessionToolStripMenuItem.Name = "copySessionToolStripMenuItem";
+            this.copySessionToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.copySessionToolStripMenuItem.Text = "&Copy Session to Clipboard";
+            this.copySessionToolStripMenuItem.Click += new System.EventHandler(this.copySession_Click);
+            // 
+            // toolStripMenuItemCopySessionSep
+            // 
+            this.toolStripMenuItemCopySessionSep.Name = "toolStripMenuItemCopySessionSep";
+            this.toolStripMenuItemCopySessionSep.Size = new System.Drawing.Size(266, 6);
             // 
             // puTTYConfigurationToolStripMenuItem
             // 
@@ -660,6 +679,8 @@ namespace SuperPutty
             this.btnSessionsPane,
             this.btnLayoutsPane,
             this.toolStripSeparatorIcons,
+            this.btnCopySession,
+            this.toolStripSeparatorIcons2,
             this.btnKioskToggle});
             this.tsIcons.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
@@ -693,6 +714,21 @@ namespace SuperPutty
             //
             this.toolStripSeparatorIcons.Name = "toolStripSeparatorIcons";
             this.toolStripSeparatorIcons.Size = new System.Drawing.Size(6, 25);
+            //
+            // btnCopySession
+            //
+            this.btnCopySession.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnCopySession.Image = global::SuperPutty.Properties.Resources.copy_session;
+            this.btnCopySession.Name = "btnCopySession";
+            this.btnCopySession.Size = new System.Drawing.Size(23, 22);
+            this.btnCopySession.Text = "Copy Session to Clipboard";
+            this.btnCopySession.ToolTipText = "Copy the active terminal's screen and scrollback to the clipboard";
+            this.btnCopySession.Click += new System.EventHandler(this.copySession_Click);
+            //
+            // toolStripSeparatorIcons2
+            //
+            this.toolStripSeparatorIcons2.Name = "toolStripSeparatorIcons2";
+            this.toolStripSeparatorIcons2.Size = new System.Drawing.Size(6, 25);
             //
             // btnKioskToggle
             //
@@ -1069,6 +1105,10 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnSessionsPane;
         private System.Windows.Forms.ToolStripButton btnLayoutsPane;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
+        private System.Windows.Forms.ToolStripButton btnCopySession;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;
+        private System.Windows.Forms.ToolStripMenuItem copySessionToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItemCopySessionSep;
         private System.Windows.Forms.ToolStripMenuItem iconsToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton btnKioskExit;
     }

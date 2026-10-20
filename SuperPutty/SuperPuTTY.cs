@@ -847,7 +847,9 @@ namespace SuperPutty
         /// <summary>Rename active tab</summary>
         RenameTab,
         /// <summary>Enter or leave kiosk mode</summary>
-        KioskMode
+        KioskMode,
+        /// <summary>Copy the active terminal's screen and scrollback to the clipboard</summary>
+        CopySessionToClipboard
     } 
     #endregion
 

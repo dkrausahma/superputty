@@ -80,6 +80,9 @@
     <Setting Name="Action_KioskMode_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">F11</Value>
     </Setting>
+    <Setting Name="Action_CopySessionToClipboard_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
+      <Value Profile="(Default)">None</Value>
+    </Setting>
     <Setting Name="Action_CloseTab_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">None</Value>
     </Setting>

@@ -320,6 +320,7 @@ namespace SuperPutty
         {
             FocusActiveDocument("ActiveDocumentChanged");
             RefreshCommandHistory();
+            UpdateIconBar();
         }
 
         public void FocusActiveDocument(string caller)
@@ -593,6 +594,66 @@ namespace SuperPutty
             this.btnSessionsPane.Checked = IsOpen(this.sessions);
             this.btnLayoutsPane.Checked = IsOpen(this.layouts);
             this.btnKioskToggle.Checked = this.isKioskMode;
+
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            bool canCopy = panel != null && panel.SupportsPuttyCommands;
+            this.btnCopySession.Enabled = canCopy;
+            this.copySessionToolStripMenuItem.Enabled = canCopy;
+        }
+
+        private void copySession_Click(object sender, EventArgs e)
+        {
+            CopyActiveSessionToClipboard();
+        }
+
+        /// <summary>
+        /// Copy the active terminal's screen and scrollback to the clipboard (PuTTY's "Copy All to Clipboard"),
+        /// e.g. to paste a session into a chat, and report the number of lines in the status bar
+        /// </summary>
+        private void CopyActiveSessionToClipboard()
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (panel == null || !panel.SupportsPuttyCommands)
+            {
+                SuperPuTTY.ReportStatus("Copy to clipboard: no PuTTY terminal tab is active");
+                return;
+            }
+
+            string tabName = panel.Text;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                bool copied = false;
+                try
+                {
+                    copied = panel.CopyAllToClipboard();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error copying session to clipboard", ex);
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    if (!copied)
+                    {
+                        SuperPuTTY.ReportStatus("Copy to clipboard failed for {0}", tabName);
+                        return;
+                    }
+                    int lines = 0;
+                    try
+                    {
+                        if (Clipboard.ContainsText())
+                        {
+                            lines = Clipboard.GetText().Split('\n').Length;
+                        }
+                    }
+                    catch (System.Runtime.InteropServices.ExternalException ex)
+                    {
+                        Log.Warn("Could not read clipboard to count lines", ex);
+                    }
+                    SuperPuTTY.ReportStatus("Copied {0} lines from {1} to the clipboard", lines, tabName);
+                });
+            });
         }
 
         /// <summary>Update the icon bar once the current docking operation has finished</summary>
@@ -1506,6 +1567,7 @@ namespace SuperPutty
             this.shortcuts.Clear();
             this.optionsToolStripMenuItem.ShortcutKeys = Keys.None;
             this.kioskModeToolStripMenuItem.ShortcutKeys = Keys.None;
+            this.copySessionToolStripMenuItem.ShortcutKeys = Keys.None;
 
             // reload new definitions
             foreach (KeyboardShortcut ks in SuperPuTTY.Settings.LoadShortcuts())
@@ -1528,6 +1590,9 @@ namespace SuperPutty
                             break;
                         case SuperPuttyAction.KioskMode:
                             this.kioskModeToolStripMenuItem.ShortcutKeys = keys;
+                            break;
+                        case SuperPuttyAction.CopySessionToClipboard:
+                            this.copySessionToolStripMenuItem.ShortcutKeys = keys;
                             break;
                         case SuperPuttyAction.OpenSession:
                             this.openSessionToolStripMenuItem.ShortcutKeys = keys;
@@ -1565,6 +1630,9 @@ namespace SuperPutty
                     break;
                 case SuperPuttyAction.KioskMode:
                     this.ToggleKiosk();
+                    break;
+                case SuperPuttyAction.CopySessionToClipboard:
+                    this.CopyActiveSessionToClipboard();
                     break;
                 case SuperPuttyAction.OpenSession:
                     KeyEventWindowActivator.ActivateForm(this);
