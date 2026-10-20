@@ -32,6 +32,9 @@ and Pageant integration) but adds the window management on top.
   a session.
 - **Icon bar** with toggle buttons (pressed while active, click again to undo): show/close the Sessions pane (with Session Detail below it), show/close the Layouts
   pane, and toggle **kiosk mode** (F11; full screen, menus and panels hidden, only terminal tabs visible).
+- **Commands pane** — a library of frequently used commands, grouped by category with a Favorites folder at the top, and filterable. One
+  click types a command into the active terminal, a double click types and runs it. Starts with common
+  Linux commands; add, edit and delete your own.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**

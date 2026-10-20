@@ -57,6 +57,7 @@ namespace SuperPutty
         private SingletonToolWindowHelper<LayoutsList> layouts;
         private SingletonToolWindowHelper<Log4netLogViewer> logViewer;
         private SingletonToolWindowHelper<SessionDetail> sessionDetail;
+        private SingletonToolWindowHelper<CommandsPane> commandsPane;
 
         private TextBoxFocusHelper tbFocusHelperHost;
         private TextBoxFocusHelper tbFocusHelperUserName;
@@ -128,6 +129,7 @@ namespace SuperPutty
                                                                                   return new SessionDetail(x.InitializerResource as SingletonToolWindowHelper<SessionTreeview>);
                                                                               });
             this.sessions.InstanceChanged += SessionsInstanceChanged;
+            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions));
 
             // for toolbar
             this.tbFocusHelperHost = new TextBoxFocusHelper(this.tbTxtBoxHost.TextBox);
@@ -575,6 +577,20 @@ namespace SuperPutty
         }
 
         /// <summary>Layouts icon: opens the Layouts pane, or closes it when pressed</summary>
+        /// <summary>Commands icon: opens the Commands pane, or closes it when pressed</summary>
+        private void btnCommandsPane_Click(object sender, EventArgs e)
+        {
+            if (IsOpen(this.commandsPane))
+            {
+                this.commandsPane.Instance.Close();
+            }
+            else
+            {
+                this.commandsPaneToolStripMenuItem_Click(sender, e);
+            }
+            UpdateIconBar();
+        }
+
         private void btnLayoutsPane_Click(object sender, EventArgs e)
         {
             if (IsOpen(this.layouts))
@@ -593,6 +609,7 @@ namespace SuperPutty
         {
             this.btnSessionsPane.Checked = IsOpen(this.sessions);
             this.btnLayoutsPane.Checked = IsOpen(this.layouts);
+            this.btnCommandsPane.Checked = IsOpen(this.commandsPane);
             this.btnKioskToggle.Checked = this.isKioskMode;
 
             ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
@@ -697,6 +714,62 @@ namespace SuperPutty
             {
                 this.sessions.ShowWindow(DockState.DockRight);
             }
+        }
+
+        private void commandsPaneToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.commandsPane.ShowWindow(DockState.DockLeft);
+        }
+
+        /// <summary>
+        /// Type a command into the active terminal tab, optionally followed by Enter, and put the focus there.
+        /// Run commands are recorded in that session's command bar history. Returns false without an active terminal.
+        /// </summary>
+        private bool SendToActiveSession(string command, bool execute)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (panel == null || !panel.AppPanel.ExternalProcessCaptured)
+            {
+                return false;
+            }
+
+            CommandData data = execute ? new CommandData(command, new KeyEventArgs(Keys.Enter)) : new CommandData(command);
+            data.SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
+            if (execute)
+            {
+                this.commandHistory.Add(CommandHistory.KeyFor(panel.Session), command.Trim());
+                RefreshCommandHistory();
+            }
+            panel.SetFocusToChildApplication("CommandsPane");
+            return true;
+        }
+
+        /// <summary>
+        /// Run a command in all terminal tabs that accept commands, after a confirmation, and record it in each
+        /// session's history. Returns the number of terminals it was sent to.
+        /// </summary>
+        private int RunInAllSessions(string command)
+        {
+            List<ctlPuttyPanel> targets = GetCommandTargets();
+            if (targets.Count == 0)
+            {
+                SuperPuTTY.ReportStatus("No terminal tab accepts commands");
+                return 0;
+            }
+            if (MessageBox.Show(this, string.Format("Run this command in {0} terminal(s)?\n\n{1}", targets.Count, command.Trim()),
+                "Run in All Terminals", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            {
+                return 0;
+            }
+
+            foreach (ctlPuttyPanel panel in targets)
+            {
+                new CommandData(command, new KeyEventArgs(Keys.Enter)).SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
+                this.commandHistory.Add(CommandHistory.KeyFor(panel.Session), command.Trim());
+            }
+            RefreshCommandHistory();
+            SuperPuTTY.ReportStatus("Ran \"{0}\" in {1} terminal(s)", command.Trim(), targets.Count);
+            return targets.Count;
         }
 
         private void logViewerToolStripMenuItem_Click(object sender, EventArgs e)
@@ -821,6 +894,7 @@ namespace SuperPutty
             public bool LogWindow { get; set; }
             public bool LayoutWindow { get; set; }
             public bool SessionDetail { get; set; }
+            public bool CommandsWindow { get; set; }
 
             public FormBorderStyle FormBorderStyle { get; set; }
             public FormWindowState FormWindowState { get; set; }
@@ -840,6 +914,7 @@ namespace SuperPutty
                 this.LogWindow = this.MainForm.logViewer.IsVisible;
                 this.LayoutWindow = this.MainForm.layouts.IsVisible;
                 this.SessionDetail = this.MainForm.sessionDetail.IsVisible;
+                this.CommandsWindow = this.MainForm.commandsPane.IsVisible;
 
                 this.FormBorderStyle = this.MainForm.FormBorderStyle;
                 this.FormWindowState = this.MainForm.WindowState;
@@ -857,6 +932,7 @@ namespace SuperPutty
                     this.MainForm.layouts.Hide();
                     this.MainForm.logViewer.Hide();
                     this.MainForm.sessionDetail.Hide();
+                    this.MainForm.commandsPane.Hide();
 
                     // status bar
                     this.MainForm.statusStrip1.Hide();
@@ -895,6 +971,7 @@ namespace SuperPutty
                     if (this.LayoutWindow) { this.MainForm.layouts.Restore(); }
                     if (this.LogWindow) { this.MainForm.logViewer.Restore(); }
                     if (this.SessionDetail) { this.MainForm.sessionDetail.Restore(); }
+                    if (this.CommandsWindow) { this.MainForm.commandsPane.Restore(); }
 
                     // status bar, toolbars, menu bar and always-on-top as set in the View menu
                     this.MainForm.ApplySettingsToToolbars();
@@ -1065,6 +1142,10 @@ namespace SuperPutty
             else if (typeof(Log4netLogViewer).FullName == persistString)
             {
                 return this.logViewer.Instance ?? this.logViewer.Initialize();
+            }
+            else if (typeof(CommandsPane).FullName == persistString)
+            {
+                return this.commandsPane.Instance ?? this.commandsPane.Initialize();
             }
             else if (typeof(SessionDetail).FullName == persistString)
             {
@@ -1341,6 +1422,18 @@ namespace SuperPutty
         /// <param name="command">The <seealso cref="CommandData"/> object containing text and or keyboard commands</param>
         /// <param name="saveHistory">If True, save the history in the command toolbar combobox</param>
         /// <returns>The number terminals commands have been sent to</returns>
+        /// <summary>
+        /// The terminal tabs that receive commands sent to several sessions (command bar, "Run in All Terminals"),
+        /// in tab order: tabs with "Accept Commands" checked, or only visible tabs if so chosen in the document selector
+        /// </summary>
+        private List<ctlPuttyPanel> GetCommandTargets()
+        {
+            return VisualOrderTabSwitchStrategy.GetDocuments(this.DockPanel)
+                .OfType<ctlPuttyPanel>()
+                .Where(panel => this.sendCommandsDocumentSelector.IsDocumentSelected(panel) && panel.AppPanel.ExternalProcessCaptured)
+                .ToList();
+        }
+
         private int TrySendCommandsFromToolbar(CommandData command, bool saveHistory)
         {
             int sent = 0;
@@ -1348,23 +1441,12 @@ namespace SuperPutty
 
             if(this.DockPanel.Contents.Count > 0)
             {
-                foreach (IDockContent doc in VisualOrderTabSwitchStrategy.GetDocuments(this.DockPanel))
+                foreach (ctlPuttyPanel panel in GetCommandTargets())
                 {
-                    if (doc is ctlPuttyPanel)
-                    {
-                        ctlPuttyPanel panel = doc as ctlPuttyPanel;
-                        if (this.sendCommandsDocumentSelector.IsDocumentSelected(panel))
-                        {
-                            System.IntPtr hPtr = panel.AppPanel.AppWindowHandle;
-                            int handle = hPtr.ToInt32();
-                            //Log.InfoFormat("SendCommand: session={0}, command=[{1}], handle={2}", panel.Session.SessionId, command, handle);
+                    command.SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
 
-                            command.SendToTerminal(handle);
-
-                            sent++;
-                            sessionKeys.Add(CommandHistory.KeyFor(panel.Session));
-                        }
-                    }
+                    sent++;
+                    sessionKeys.Add(CommandHistory.KeyFor(panel.Session));
                 }
 
                 if (sent > 0)
