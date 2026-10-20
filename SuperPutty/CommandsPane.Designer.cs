@@ -26,6 +26,7 @@ namespace SuperPutty
             this.typeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runInAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runInNewTabToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.addToFavoritesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -105,6 +106,7 @@ namespace SuperPutty
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.typeToolStripMenuItem,
             this.runToolStripMenuItem,
+            this.runInNewTabToolStripMenuItem,
             this.runInAllToolStripMenuItem,
             this.toolStripMenuItem1,
             this.addToFavoritesToolStripMenuItem,
@@ -130,6 +132,14 @@ namespace SuperPutty
             this.runToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
             this.runToolStripMenuItem.Text = "&Run in Terminal";
             this.runToolStripMenuItem.Click += new System.EventHandler(this.runToolStripMenuItem_Click);
+            //
+            // runInNewTabToolStripMenuItem
+            //
+            this.runInNewTabToolStripMenuItem.Name = "runInNewTabToolStripMenuItem";
+            this.runInNewTabToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.runInNewTabToolStripMenuItem.Text = "Run in &New Tab";
+            this.runInNewTabToolStripMenuItem.ToolTipText = "Run on the active terminal's host in a new tab; a shell stays open afterwards";
+            this.runInNewTabToolStripMenuItem.Click += new System.EventHandler(this.runInNewTabToolStripMenuItem_Click);
             //
             // runInAllToolStripMenuItem
             //
@@ -205,6 +215,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem typeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runInAllToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runInNewTabToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem addToFavoritesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addToolStripMenuItem;

@@ -23,19 +23,23 @@ namespace SuperPutty
         /// <summary>Runs a command in all terminals that accept commands: command => number of terminals</summary>
         private readonly Func<string, int> runInAllTerminals;
 
+        /// <summary>Runs a command in a new tab on the active terminal's host: command => opened</summary>
+        private readonly Func<string, bool> runInNewTab;
+
         private readonly Timer singleClickTimer = new Timer();
         private CommandSnippet pendingSingleClick;
 
         private CommandLibrary library;
 
         /// <summary>For the layout restore and the designer; commands can't be sent without a sender</summary>
-        public CommandsPane() : this(null, null) { }
+        public CommandsPane() : this(null, null, null) { }
 
-        public CommandsPane(Func<string, bool, bool> sendToTerminal, Func<string, int> runInAllTerminals)
+        public CommandsPane(Func<string, bool, bool> sendToTerminal, Func<string, int> runInAllTerminals, Func<string, bool> runInNewTab)
         {
             InitializeComponent();
             this.sendToTerminal = sendToTerminal;
             this.runInAllTerminals = runInAllTerminals;
+            this.runInNewTab = runInNewTab;
 
             this.singleClickTimer.Interval = SystemInformation.DoubleClickTime;
             this.singleClickTimer.Tick += singleClickTimer_Tick;
@@ -124,6 +128,7 @@ namespace SuperPutty
             this.typeToolStripMenuItem.Enabled = hasCommand;
             this.runToolStripMenuItem.Enabled = hasCommand;
             this.runInAllToolStripMenuItem.Enabled = hasCommand && this.runInAllTerminals != null;
+            this.runInNewTabToolStripMenuItem.Enabled = hasCommand && this.runInNewTab != null;
             this.editToolStripMenuItem.Enabled = hasCommand;
             this.addToFavoritesToolStripMenuItem.Enabled = hasCommand && !CommandLibrary.IsFavorites(CommandLibrary.CategoryOf(SelectedCommand));
             this.deleteToolStripMenuItem.Enabled = hasCommand;
@@ -222,6 +227,14 @@ namespace SuperPutty
         private void runToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (SelectedCommand != null) { Send(SelectedCommand, true); }
+        }
+
+        private void runInNewTabToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (SelectedCommand != null && this.runInNewTab != null)
+            {
+                this.runInNewTab(SelectedCommand.Command);
+            }
         }
 
         private void runInAllToolStripMenuItem_Click(object sender, EventArgs e)
