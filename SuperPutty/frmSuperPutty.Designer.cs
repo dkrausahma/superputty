@@ -68,6 +68,7 @@ namespace SuperPutty
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sessionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.layoutsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.commandsPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
             this.toolbarsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -134,6 +135,7 @@ namespace SuperPutty
             this.tsIcons = new SuperPutty.Gui.ClickThroughToolStrip();
             this.btnSessionsPane = new System.Windows.Forms.ToolStripButton();
             this.btnLayoutsPane = new System.Windows.Forms.ToolStripButton();
+            this.btnCommandsPane = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons = new System.Windows.Forms.ToolStripSeparator();
             this.btnCopySession = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
@@ -299,6 +301,7 @@ namespace SuperPutty
             this.sessionsToolStripMenuItem,
             this.sessionDetailToolStripMenuItem,
             this.layoutsToolStripMenuItem,
+            this.commandsPaneToolStripMenuItem,
             this.logViewerToolStripMenuItem,
             this.toolStripMenuItem8,
             this.toolbarsToolStripMenuItem,
@@ -325,6 +328,14 @@ namespace SuperPutty
             this.layoutsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.layoutsToolStripMenuItem.Text = "&Layouts";
             this.layoutsToolStripMenuItem.Click += new System.EventHandler(this.layoutsToolStripMenuItem_Click);
+            // 
+            // commandsPaneToolStripMenuItem
+            // 
+            this.commandsPaneToolStripMenuItem.Image = global::SuperPutty.Properties.Resources.commands_pane;
+            this.commandsPaneToolStripMenuItem.Name = "commandsPaneToolStripMenuItem";
+            this.commandsPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.commandsPaneToolStripMenuItem.Text = "&Commands";
+            this.commandsPaneToolStripMenuItem.Click += new System.EventHandler(this.commandsPaneToolStripMenuItem_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -678,6 +689,7 @@ namespace SuperPutty
             this.tsIcons.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.btnSessionsPane,
             this.btnLayoutsPane,
+            this.btnCommandsPane,
             this.toolStripSeparatorIcons,
             this.btnCopySession,
             this.toolStripSeparatorIcons2,
@@ -709,6 +721,16 @@ namespace SuperPutty
             this.btnLayoutsPane.Text = "Layouts";
             this.btnLayoutsPane.ToolTipText = "Show or close the Layouts pane";
             this.btnLayoutsPane.Click += new System.EventHandler(this.btnLayoutsPane_Click);
+            //
+            // btnCommandsPane
+            //
+            this.btnCommandsPane.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnCommandsPane.Image = global::SuperPutty.Properties.Resources.commands_pane;
+            this.btnCommandsPane.Name = "btnCommandsPane";
+            this.btnCommandsPane.Size = new System.Drawing.Size(23, 22);
+            this.btnCommandsPane.Text = "Commands";
+            this.btnCommandsPane.ToolTipText = "Show or close the Commands pane";
+            this.btnCommandsPane.Click += new System.EventHandler(this.btnCommandsPane_Click);
             //
             // toolStripSeparatorIcons
             //
@@ -1104,6 +1126,8 @@ namespace SuperPutty
         private SuperPutty.Gui.ClickThroughToolStrip tsIcons;
         private System.Windows.Forms.ToolStripButton btnSessionsPane;
         private System.Windows.Forms.ToolStripButton btnLayoutsPane;
+        private System.Windows.Forms.ToolStripButton btnCommandsPane;
+        private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
         private System.Windows.Forms.ToolStripButton btnCopySession;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;
