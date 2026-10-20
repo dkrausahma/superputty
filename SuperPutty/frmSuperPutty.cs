@@ -129,7 +129,7 @@ namespace SuperPutty
                                                                                   return new SessionDetail(x.InitializerResource as SingletonToolWindowHelper<SessionTreeview>);
                                                                               });
             this.sessions.InstanceChanged += SessionsInstanceChanged;
-            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions));
+            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab));
 
             // for toolbar
             this.tbFocusHelperHost = new TextBoxFocusHelper(this.tbTxtBoxHost.TextBox);
@@ -184,6 +184,9 @@ namespace SuperPutty
 
             // kiosk
             this.kioskViewState = new ViewState(this);
+
+            // command files of tabs opened with a remote command, left behind by an earlier run
+            RemoteCommandTab.CleanUp();
 
             // Apply Settings
             this.ApplySettings();
@@ -770,6 +773,26 @@ namespace SuperPutty
             RefreshCommandHistory();
             SuperPuTTY.ReportStatus("Ran \"{0}\" in {1} terminal(s)", command.Trim(), targets.Count);
             return targets.Count;
+        }
+
+        /// <summary>
+        /// Run a command in a new tab on the active terminal's host; the tab keeps a shell open after the command.
+        /// Returns false without an active SSH terminal.
+        /// </summary>
+        private bool RunInNewTab(string command)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (panel == null || !RemoteCommandTab.IsSupported(panel.Session))
+            {
+                SuperPuTTY.ReportStatus("Run in new tab: no SSH terminal tab is active");
+                return false;
+            }
+            string title = command.Trim();
+            if (title.Length > 30)
+            {
+                title = title.Substring(0, 29) + "…";
+            }
+            return RemoteCommandTab.Open(panel.Session, RemoteCommandTab.KeepShellAfter(command), title) != null;
         }
 
         private void logViewerToolStripMenuItem_Click(object sender, EventArgs e)
