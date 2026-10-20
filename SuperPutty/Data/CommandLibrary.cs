@@ -24,14 +24,34 @@ namespace SuperPutty.Data
         /// <summary>Category always shown first, even when empty</summary>
         public const string FavoritesCategory = "Favorites";
 
-        /// <summary>File format version; 1 added the Favorites category</summary>
-        public const int CurrentVersion = 1;
+        /// <summary>File format version; 1 added the Favorites category, 2 the Docker Compose commands</summary>
+        public const int CurrentVersion = 2;
 
         [XmlAttribute]
         public int Version { get; set; }
 
         [XmlElement("Command")]
         public List<CommandSnippet> Commands { get; set; } = new List<CommandSnippet>();
+
+        /// <summary>Remembered placeholder values per session</summary>
+        [XmlElement("Value")]
+        public List<PlaceholderValue> Values { get; set; } = new List<PlaceholderValue>();
+
+        /// <summary>The value last entered for a placeholder in a session, or null</summary>
+        public string GetValue(string sessionId, string name)
+        {
+            PlaceholderValue value = this.Values.FirstOrDefault(v => (v.Session ?? string.Empty) == (sessionId ?? string.Empty)
+                && string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase));
+            return value == null ? null : value.Value;
+        }
+
+        /// <summary>Remember a placeholder value for a session</summary>
+        public void SetValue(string sessionId, string name, string text)
+        {
+            this.Values.RemoveAll(v => (v.Session ?? string.Empty) == (sessionId ?? string.Empty)
+                && string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase));
+            this.Values.Add(new PlaceholderValue { Session = sessionId ?? string.Empty, Name = name, Value = text });
+        }
 
         /// <summary>The distinct categories: Favorites first (always), then in order of first appearance</summary>
         public List<string> Categories()
@@ -60,6 +80,55 @@ namespace SuperPutty.Data
             favorite = command.Clone();
             favorite.Category = FavoritesCategory;
             this.Commands.Insert(0, favorite);
+            return true;
+        }
+
+        /// <summary>True if two commands are the same entry (command, category and scope)</summary>
+        public static bool SameEntry(CommandSnippet a, CommandSnippet b)
+        {
+            return a.Command == b.Command && a.Scope == b.Scope && (a.ScopeKey ?? string.Empty) == (b.ScopeKey ?? string.Empty)
+                && string.Equals(CategoryOf(a), CategoryOf(b), StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Add the commands of another library that aren't here yet; returns how many were added</summary>
+        public int Merge(CommandLibrary other)
+        {
+            int added = 0;
+            foreach (CommandSnippet command in other.Commands)
+            {
+                if (!this.Commands.Any(c => SameEntry(c, command)))
+                {
+                    this.Commands.Add(command.Clone());
+                    added++;
+                }
+            }
+            return added;
+        }
+
+        /// <summary>
+        /// Move a command up (-1) or down (+1) among the commands of the same category and scope, i.e. the
+        /// commands shown next to it; false at the top/bottom
+        /// </summary>
+        public bool Move(CommandSnippet command, int direction)
+        {
+            Func<CommandSnippet, bool> sameGroup = c => c.Scope == command.Scope && (c.ScopeKey ?? string.Empty) == (command.ScopeKey ?? string.Empty)
+                && string.Equals(CategoryOf(c), CategoryOf(command), StringComparison.OrdinalIgnoreCase);
+            int index = this.Commands.IndexOf(command);
+            if (index < 0)
+            {
+                return false;
+            }
+            int other = index + direction;
+            while (other >= 0 && other < this.Commands.Count && !sameGroup(this.Commands[other]))
+            {
+                other += direction;
+            }
+            if (other < 0 || other >= this.Commands.Count)
+            {
+                return false;
+            }
+            this.Commands[index] = this.Commands[other];
+            this.Commands[other] = command;
             return true;
         }
 
@@ -158,8 +227,31 @@ namespace SuperPutty.Data
                 // Favorites with "clear" (added once; a user who deletes it keeps it deleted)
                 this.Commands.Insert(0, ClearCommand());
             }
+            if (this.Version < 2)
+            {
+                this.Commands.AddRange(ComposeCommands());
+            }
             this.Version = CurrentVersion;
             return true;
+        }
+
+        /// <summary>Docker Compose commands; the project directory is a placeholder remembered per session</summary>
+        private static List<CommandSnippet> ComposeCommands()
+        {
+            const string category = "Docker Compose";
+            const string compose = "docker compose --project-directory {{compose dir:~}} ";
+            return new List<CommandSnippet>
+            {
+                new CommandSnippet { Category = category, Name = "compose ps", Command = compose + "ps", Description = "Containers of the compose project" },
+                new CommandSnippet { Category = category, Name = "compose up -d", Command = compose + "up -d", Description = "Start the project in the background" },
+                new CommandSnippet { Category = category, Name = "compose up -d --build", Command = compose + "up -d --build", Description = "Rebuild the images and start" },
+                new CommandSnippet { Category = category, Name = "compose build", Command = compose + "build", Description = "Build the images (use Run in New Tab for long builds)" },
+                new CommandSnippet { Category = category, Name = "compose pull", Command = compose + "pull", Description = "Pull newer images" },
+                new CommandSnippet { Category = category, Name = "compose down", Command = compose + "down", Description = "Stop and remove the project's containers" },
+                new CommandSnippet { Category = category, Name = "compose restart service", Command = compose + "restart {{service}}", Description = "Restart one service" },
+                new CommandSnippet { Category = category, Name = "compose logs -f", Command = compose + "logs -f --tail 200", Description = "Follow the logs of all services" },
+                new CommandSnippet { Category = category, Name = "compose exec service", Command = compose + "exec {{service}} sh", Description = "Shell in a service container" },
+            };
         }
 
         private static CommandSnippet ClearCommand()
@@ -279,6 +371,8 @@ namespace SuperPutty.Data
             Add(docker, "docker logs -f --tail 100 ", "Follow a container's log");
             Add(docker, "docker compose up -d", "Start the compose project in the background");
             Add(docker, "docker compose logs -f", "Follow the compose project's logs");
+
+            library.Commands.AddRange(ComposeCommands());
 
             return library;
         }

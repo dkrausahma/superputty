@@ -991,7 +991,9 @@ namespace SuperPutty
                 return false;
             }
 
-            CommandData data = execute ? new CommandData(command, new KeyEventArgs(Keys.Enter)) : new CommandData(command);
+            // line breaks of multi-line commands are typed as Enter
+            string text = CommandSnippet.ForTerminal(command);
+            CommandData data = execute ? new CommandData(text, new KeyEventArgs(Keys.Enter)) : new CommandData(text);
             data.SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
             if (execute)
             {
@@ -1022,7 +1024,7 @@ namespace SuperPutty
 
             foreach (ctlPuttyPanel panel in targets)
             {
-                new CommandData(command, new KeyEventArgs(Keys.Enter)).SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
+                new CommandData(CommandSnippet.ForTerminal(command), new KeyEventArgs(Keys.Enter)).SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
                 this.commandHistory.Add(CommandHistory.KeyFor(panel.Session), command.Trim());
             }
             RefreshCommandHistory();

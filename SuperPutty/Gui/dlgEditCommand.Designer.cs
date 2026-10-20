@@ -58,13 +58,16 @@ namespace SuperPutty.Gui
             this.textBoxCommand.Font = new System.Drawing.Font("Lucida Console", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBoxCommand.Location = new System.Drawing.Point(90, 12);
             this.textBoxCommand.Name = "textBoxCommand";
-            this.textBoxCommand.Size = new System.Drawing.Size(362, 18);
+            this.textBoxCommand.AcceptsReturn = true;
+            this.textBoxCommand.Multiline = true;
+            this.textBoxCommand.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.textBoxCommand.Size = new System.Drawing.Size(362, 48);
             this.textBoxCommand.TabIndex = 1;
             //
             // labelName
             //
             this.labelName.AutoSize = true;
-            this.labelName.Location = new System.Drawing.Point(12, 42);
+            this.labelName.Location = new System.Drawing.Point(12, 72);
             this.labelName.Name = "labelName";
             this.labelName.Size = new System.Drawing.Size(38, 13);
             this.labelName.TabIndex = 2;
@@ -74,7 +77,7 @@ namespace SuperPutty.Gui
             //
             this.textBoxName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxName.Location = new System.Drawing.Point(90, 39);
+            this.textBoxName.Location = new System.Drawing.Point(90, 69);
             this.textBoxName.Name = "textBoxName";
             this.textBoxName.PlaceholderText = "optional, shown instead of the command";
             this.textBoxName.Size = new System.Drawing.Size(362, 20);
@@ -83,7 +86,7 @@ namespace SuperPutty.Gui
             // labelDescription
             //
             this.labelDescription.AutoSize = true;
-            this.labelDescription.Location = new System.Drawing.Point(12, 68);
+            this.labelDescription.Location = new System.Drawing.Point(12, 98);
             this.labelDescription.Name = "labelDescription";
             this.labelDescription.Size = new System.Drawing.Size(63, 13);
             this.labelDescription.TabIndex = 4;
@@ -93,7 +96,7 @@ namespace SuperPutty.Gui
             //
             this.textBoxDescription.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxDescription.Location = new System.Drawing.Point(90, 65);
+            this.textBoxDescription.Location = new System.Drawing.Point(90, 95);
             this.textBoxDescription.Name = "textBoxDescription";
             this.textBoxDescription.PlaceholderText = "optional, shown as tooltip";
             this.textBoxDescription.Size = new System.Drawing.Size(362, 20);
@@ -102,7 +105,7 @@ namespace SuperPutty.Gui
             // labelCategory
             //
             this.labelCategory.AutoSize = true;
-            this.labelCategory.Location = new System.Drawing.Point(12, 94);
+            this.labelCategory.Location = new System.Drawing.Point(12, 124);
             this.labelCategory.Name = "labelCategory";
             this.labelCategory.Size = new System.Drawing.Size(52, 13);
             this.labelCategory.TabIndex = 6;
@@ -113,7 +116,7 @@ namespace SuperPutty.Gui
             this.comboBoxCategory.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.comboBoxCategory.FormattingEnabled = true;
-            this.comboBoxCategory.Location = new System.Drawing.Point(90, 91);
+            this.comboBoxCategory.Location = new System.Drawing.Point(90, 121);
             this.comboBoxCategory.Name = "comboBoxCategory";
             this.comboBoxCategory.Size = new System.Drawing.Size(362, 21);
             this.comboBoxCategory.TabIndex = 7;
@@ -121,7 +124,7 @@ namespace SuperPutty.Gui
             // labelScope
             //
             this.labelScope.AutoSize = true;
-            this.labelScope.Location = new System.Drawing.Point(12, 121);
+            this.labelScope.Location = new System.Drawing.Point(12, 151);
             this.labelScope.Name = "labelScope";
             this.labelScope.Size = new System.Drawing.Size(58, 13);
             this.labelScope.TabIndex = 10;
@@ -133,7 +136,7 @@ namespace SuperPutty.Gui
             | System.Windows.Forms.AnchorStyles.Right)));
             this.comboBoxScope.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxScope.FormattingEnabled = true;
-            this.comboBoxScope.Location = new System.Drawing.Point(90, 118);
+            this.comboBoxScope.Location = new System.Drawing.Point(90, 148);
             this.comboBoxScope.Name = "comboBoxScope";
             this.comboBoxScope.Size = new System.Drawing.Size(362, 21);
             this.comboBoxScope.TabIndex = 11;
@@ -141,7 +144,7 @@ namespace SuperPutty.Gui
             // buttonOK
             //
             this.buttonOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOK.Location = new System.Drawing.Point(296, 154);
+            this.buttonOK.Location = new System.Drawing.Point(296, 184);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(75, 23);
             this.buttonOK.TabIndex = 12;
@@ -153,7 +156,7 @@ namespace SuperPutty.Gui
             //
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(377, 154);
+            this.buttonCancel.Location = new System.Drawing.Point(377, 184);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
             this.buttonCancel.TabIndex = 13;
@@ -166,7 +169,7 @@ namespace SuperPutty.Gui
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(464, 189);
+            this.ClientSize = new System.Drawing.Size(464, 219);
             this.Controls.Add(this.comboBoxScope);
             this.Controls.Add(this.labelScope);
             this.Controls.Add(this.buttonCancel);
