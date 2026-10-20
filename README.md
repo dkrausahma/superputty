@@ -38,6 +38,9 @@ and Pageant integration) but adds the window management on top.
 - **Containers pane** — the docker containers on the active tab's host, grouped by compose project.
   Double-click opens a shell inside a container in a new tab; follow logs, inspect, start/stop/restart
   from the context menu. Uses plink with your PuTTY profile and Pageant keys.
+- **SSH tunnels on the tab** — tabs show how many tunnels their session opens (`web01 ↔2`), with `!`
+  when a local tunnel isn't listening or its port is taken (e.g. by another session); the tab tooltip
+  lists every tunnel and its state.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**

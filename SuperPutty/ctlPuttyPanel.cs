@@ -61,8 +61,10 @@ namespace SuperPutty
 
             InitializeComponent();
 
+            this.Tunnels = TunnelMonitor.ReadTunnels(session);
+            this.StartedUtc = DateTime.UtcNow;
+
             this.Text = session.SessionName;
-            this.TabText = session.SessionName;
             this.TextOverride = session.SessionName;
 
             CreatePanel();
@@ -78,8 +80,8 @@ namespace SuperPutty
             }
             set
             {
-                this.TabText = value != null ? value.Replace("&", "&&") : null;
                 base.Text = value;
+                ApplyTabText();
 
                 if (Log.Logger.IsEnabledFor(Level.Trace))
                 {
@@ -91,7 +93,37 @@ namespace SuperPutty
         protected override void OnTextChanged(EventArgs e)
         {
             base.OnTextChanged(e);
-            this.ToolTipText = this.Text;
+            ApplyTabText();
+        }
+
+        /// <summary>The session's SSH tunnels (PuTTY profile and -L/-R/-D arguments), read when the tab opens</summary>
+        public List<SshTunnel> Tunnels { get; private set; }
+
+        /// <summary>When the tab was opened; tunnels get a grace period to come up after login</summary>
+        public DateTime StartedUtc { get; private set; }
+
+        /// <summary>Appended to the tab text only (e.g. " ↔2"), so <see cref="Text"/> stays the plain title</summary>
+        private string tabTextSuffix = string.Empty;
+
+        /// <summary>Tunnel details appended to the tab tooltip</summary>
+        private string tunnelToolTip = string.Empty;
+
+        /// <summary>Show the tunnel marker and details on the tab</summary>
+        public void SetTunnelDisplay(string suffix, string toolTip)
+        {
+            if (suffix != this.tabTextSuffix || toolTip != this.tunnelToolTip)
+            {
+                this.tabTextSuffix = suffix ?? string.Empty;
+                this.tunnelToolTip = toolTip ?? string.Empty;
+                ApplyTabText();
+            }
+        }
+
+        private void ApplyTabText()
+        {
+            string text = base.Text ?? string.Empty;
+            this.TabText = text.Replace("&", "&&") + this.tabTextSuffix;
+            this.ToolTipText = this.tunnelToolTip.Length == 0 ? text : text + "\n\n" + this.tunnelToolTip;
         }
 
         private void CreatePanel()
