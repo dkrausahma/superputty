@@ -17,6 +17,12 @@ namespace SuperPutty.Gui
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
+            AcceptFirstClick(ref m);
+        }
+
+        /// <summary>Turn the "activate and discard the click" answer to WM_MOUSEACTIVATE into "activate"</summary>
+        internal static void AcceptFirstClick(ref Message m)
+        {
             if (m.Msg == (int)NativeMethods.WM.MOUSEACTIVATE && m.Result == (IntPtr)MA_ACTIVATEANDEAT)
             {
                 m.Result = (IntPtr)MA_ACTIVATE;
