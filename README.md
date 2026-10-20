@@ -35,6 +35,9 @@ and Pageant integration) but adds the window management on top.
 - **Commands pane** — a library of frequently used commands, grouped by category with a Favorites folder at the top, and filterable. One
   click types a command into the active terminal, a double click types and runs it. Starts with common
   Linux commands; add, edit and delete your own.
+- **Containers pane** — the docker containers on the active tab's host, grouped by compose project.
+  Double-click opens a shell inside a container in a new tab; follow logs, inspect, start/stop/restart
+  from the context menu. Uses plink with your PuTTY profile and Pageant keys.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**

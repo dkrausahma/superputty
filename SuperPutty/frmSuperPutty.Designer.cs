@@ -69,6 +69,7 @@ namespace SuperPutty
             this.sessionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.layoutsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.commandsPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.containersPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
             this.toolbarsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -136,6 +137,7 @@ namespace SuperPutty
             this.btnSessionsPane = new System.Windows.Forms.ToolStripButton();
             this.btnLayoutsPane = new System.Windows.Forms.ToolStripButton();
             this.btnCommandsPane = new System.Windows.Forms.ToolStripButton();
+            this.btnContainersPane = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons = new System.Windows.Forms.ToolStripSeparator();
             this.btnCopySession = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
@@ -302,6 +304,7 @@ namespace SuperPutty
             this.sessionDetailToolStripMenuItem,
             this.layoutsToolStripMenuItem,
             this.commandsPaneToolStripMenuItem,
+            this.containersPaneToolStripMenuItem,
             this.logViewerToolStripMenuItem,
             this.toolStripMenuItem8,
             this.toolbarsToolStripMenuItem,
@@ -336,6 +339,14 @@ namespace SuperPutty
             this.commandsPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.commandsPaneToolStripMenuItem.Text = "&Commands";
             this.commandsPaneToolStripMenuItem.Click += new System.EventHandler(this.commandsPaneToolStripMenuItem_Click);
+            // 
+            // containersPaneToolStripMenuItem
+            // 
+            this.containersPaneToolStripMenuItem.Image = global::SuperPutty.Properties.Resources.containers_pane;
+            this.containersPaneToolStripMenuItem.Name = "containersPaneToolStripMenuItem";
+            this.containersPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.containersPaneToolStripMenuItem.Text = "Co&ntainers";
+            this.containersPaneToolStripMenuItem.Click += new System.EventHandler(this.containersPaneToolStripMenuItem_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -690,6 +701,7 @@ namespace SuperPutty
             this.btnSessionsPane,
             this.btnLayoutsPane,
             this.btnCommandsPane,
+            this.btnContainersPane,
             this.toolStripSeparatorIcons,
             this.btnCopySession,
             this.toolStripSeparatorIcons2,
@@ -731,6 +743,16 @@ namespace SuperPutty
             this.btnCommandsPane.Text = "Commands";
             this.btnCommandsPane.ToolTipText = "Show or close the Commands pane";
             this.btnCommandsPane.Click += new System.EventHandler(this.btnCommandsPane_Click);
+            //
+            // btnContainersPane
+            //
+            this.btnContainersPane.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnContainersPane.Image = global::SuperPutty.Properties.Resources.containers_pane;
+            this.btnContainersPane.Name = "btnContainersPane";
+            this.btnContainersPane.Size = new System.Drawing.Size(23, 22);
+            this.btnContainersPane.Text = "Containers";
+            this.btnContainersPane.ToolTipText = "Show or close the Containers pane (docker on the active tab's host)";
+            this.btnContainersPane.Click += new System.EventHandler(this.btnContainersPane_Click);
             //
             // toolStripSeparatorIcons
             //
@@ -1127,6 +1149,8 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnSessionsPane;
         private System.Windows.Forms.ToolStripButton btnLayoutsPane;
         private System.Windows.Forms.ToolStripButton btnCommandsPane;
+        private System.Windows.Forms.ToolStripButton btnContainersPane;
+        private System.Windows.Forms.ToolStripMenuItem containersPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
         private System.Windows.Forms.ToolStripButton btnCopySession;

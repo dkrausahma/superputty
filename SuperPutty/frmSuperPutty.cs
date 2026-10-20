@@ -58,6 +58,7 @@ namespace SuperPutty
         private SingletonToolWindowHelper<Log4netLogViewer> logViewer;
         private SingletonToolWindowHelper<SessionDetail> sessionDetail;
         private SingletonToolWindowHelper<CommandsPane> commandsPane;
+        private SingletonToolWindowHelper<ContainersPane> containersPane;
 
         private TextBoxFocusHelper tbFocusHelperHost;
         private TextBoxFocusHelper tbFocusHelperUserName;
@@ -130,6 +131,7 @@ namespace SuperPutty
                                                                               });
             this.sessions.InstanceChanged += SessionsInstanceChanged;
             this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab));
+            this.containersPane = new SingletonToolWindowHelper<ContainersPane>("Containers", this.DockPanel, null, x => new ContainersPane(ActiveSession));
 
             // for toolbar
             this.tbFocusHelperHost = new TextBoxFocusHelper(this.tbTxtBoxHost.TextBox);
@@ -326,6 +328,10 @@ namespace SuperPutty
             FocusActiveDocument("ActiveDocumentChanged");
             RefreshCommandHistory();
             UpdateIconBar();
+            if (this.containersPane.Instance != null)
+            {
+                this.containersPane.Instance.ActiveSessionChanged();
+            }
         }
 
         public void FocusActiveDocument(string caller)
@@ -594,6 +600,20 @@ namespace SuperPutty
             UpdateIconBar();
         }
 
+        /// <summary>Containers icon: opens the Containers pane, or closes it when pressed</summary>
+        private void btnContainersPane_Click(object sender, EventArgs e)
+        {
+            if (IsOpen(this.containersPane))
+            {
+                this.containersPane.Instance.Close();
+            }
+            else
+            {
+                this.containersPaneToolStripMenuItem_Click(sender, e);
+            }
+            UpdateIconBar();
+        }
+
         private void btnLayoutsPane_Click(object sender, EventArgs e)
         {
             if (IsOpen(this.layouts))
@@ -613,6 +633,7 @@ namespace SuperPutty
             this.btnSessionsPane.Checked = IsOpen(this.sessions);
             this.btnLayoutsPane.Checked = IsOpen(this.layouts);
             this.btnCommandsPane.Checked = IsOpen(this.commandsPane);
+            this.btnContainersPane.Checked = IsOpen(this.containersPane);
             this.btnKioskToggle.Checked = this.isKioskMode;
 
             ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
@@ -722,6 +743,27 @@ namespace SuperPutty
         private void commandsPaneToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.commandsPane.ShowWindow(DockState.DockLeft);
+        }
+
+        /// <summary>Containers pane: below the Commands pane if that is docked, otherwise on the left</summary>
+        private void containersPaneToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (this.containersPane.Instance == null && this.commandsPane.IsVisibleAsToolWindow
+                && this.commandsPane.Instance.DockHandler.Pane.DockState != DockState.Float)
+            {
+                this.containersPane.ShowWindow(this.commandsPane.Instance.DockHandler.Pane, DockAlignment.Bottom, 0.5);
+            }
+            else
+            {
+                this.containersPane.ShowWindow(DockState.DockLeft);
+            }
+        }
+
+        /// <summary>The session of the active terminal tab, or null</summary>
+        private SessionData ActiveSession()
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            return panel == null ? null : panel.Session;
         }
 
         /// <summary>
@@ -918,6 +960,7 @@ namespace SuperPutty
             public bool LayoutWindow { get; set; }
             public bool SessionDetail { get; set; }
             public bool CommandsWindow { get; set; }
+            public bool ContainersWindow { get; set; }
 
             public FormBorderStyle FormBorderStyle { get; set; }
             public FormWindowState FormWindowState { get; set; }
@@ -938,6 +981,7 @@ namespace SuperPutty
                 this.LayoutWindow = this.MainForm.layouts.IsVisible;
                 this.SessionDetail = this.MainForm.sessionDetail.IsVisible;
                 this.CommandsWindow = this.MainForm.commandsPane.IsVisible;
+                this.ContainersWindow = this.MainForm.containersPane.IsVisible;
 
                 this.FormBorderStyle = this.MainForm.FormBorderStyle;
                 this.FormWindowState = this.MainForm.WindowState;
@@ -956,6 +1000,7 @@ namespace SuperPutty
                     this.MainForm.logViewer.Hide();
                     this.MainForm.sessionDetail.Hide();
                     this.MainForm.commandsPane.Hide();
+                    this.MainForm.containersPane.Hide();
 
                     // status bar
                     this.MainForm.statusStrip1.Hide();
@@ -995,6 +1040,7 @@ namespace SuperPutty
                     if (this.LogWindow) { this.MainForm.logViewer.Restore(); }
                     if (this.SessionDetail) { this.MainForm.sessionDetail.Restore(); }
                     if (this.CommandsWindow) { this.MainForm.commandsPane.Restore(); }
+                    if (this.ContainersWindow) { this.MainForm.containersPane.Restore(); }
 
                     // status bar, toolbars, menu bar and always-on-top as set in the View menu
                     this.MainForm.ApplySettingsToToolbars();
@@ -1165,6 +1211,10 @@ namespace SuperPutty
             else if (typeof(Log4netLogViewer).FullName == persistString)
             {
                 return this.logViewer.Instance ?? this.logViewer.Initialize();
+            }
+            else if (typeof(ContainersPane).FullName == persistString)
+            {
+                return this.containersPane.Instance ?? this.containersPane.Initialize();
             }
             else if (typeof(CommandsPane).FullName == persistString)
             {
