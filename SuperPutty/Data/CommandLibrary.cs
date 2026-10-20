@@ -48,10 +48,11 @@ namespace SuperPutty.Data
             return FavoritesCategory.Equals(category, StringComparison.OrdinalIgnoreCase);
         }
 
-        /// <summary>Copy a command into Favorites; false if an equal command is already there</summary>
+        /// <summary>Copy a command into the Favorites of its scope; false if an equal command is already there</summary>
         public bool AddToFavorites(CommandSnippet command, out CommandSnippet favorite)
         {
-            favorite = this.Commands.FirstOrDefault(c => IsFavorites(CategoryOf(c)) && c.Command == command.Command);
+            favorite = this.Commands.FirstOrDefault(c => IsFavorites(CategoryOf(c)) && c.Command == command.Command
+                && c.Scope == command.Scope && c.ScopeKey == command.ScopeKey);
             if (favorite != null)
             {
                 return false;
@@ -61,6 +62,89 @@ namespace SuperPutty.Data
             this.Commands.Insert(0, favorite);
             return true;
         }
+
+        #region Scopes
+
+        /// <summary>The folders a session lies in, nearest first: "Prod/DB/web01" → "Prod/DB", "Prod"</summary>
+        public static List<string> FolderChain(string sessionId)
+        {
+            List<string> folders = new List<string>();
+            string folder = SessionData.GetSessionParentId(sessionId);
+            while (!string.IsNullOrEmpty(folder))
+            {
+                folders.Add(folder);
+                folder = SessionData.GetSessionParentId(folder);
+            }
+            return folders;
+        }
+
+        /// <summary>True if the command applies to the session (global, one of its folders, or the session itself)</summary>
+        public static bool AppliesTo(CommandSnippet command, string sessionId)
+        {
+            switch (command.Scope)
+            {
+                case CommandScope.Session: return sessionId != null && command.ScopeKey == sessionId;
+                case CommandScope.Folder: return sessionId != null && FolderChain(sessionId).Contains(command.ScopeKey);
+                default: return true;
+            }
+        }
+
+        /// <summary>
+        /// True if a session- or folder-scoped command belongs to a session or folder that no longer exists, given
+        /// the IDs of all sessions
+        /// </summary>
+        public static bool IsOrphan(CommandSnippet command, ICollection<string> sessionIds)
+        {
+            switch (command.Scope)
+            {
+                case CommandScope.Session: return !sessionIds.Contains(command.ScopeKey);
+                case CommandScope.Folder: return !sessionIds.Any(id => FolderChain(id).Contains(command.ScopeKey));
+                default: return false;
+            }
+        }
+
+        /// <summary>Move commands of one scope target to another (session or folder renamed); true if any changed</summary>
+        public bool RenameScope(CommandScope scope, string oldKey, string newKey)
+        {
+            bool changed = false;
+            foreach (CommandSnippet command in this.Commands.Where(c => c.Scope == scope && c.ScopeKey == oldKey))
+            {
+                command.ScopeKey = newKey;
+                changed = true;
+            }
+            return changed;
+        }
+
+        /// <summary>
+        /// Follow a session's ID change: session commands move with it. Folder commands move only for a folder
+        /// rename at the same depth, once no session is left in the old folder (a session merely moving to another
+        /// folder leaves the folder commands where they are). True if anything changed.
+        /// </summary>
+        public bool SessionIdChanged(string oldId, string newId, ICollection<string> allSessionIds)
+        {
+            if (string.IsNullOrEmpty(oldId) || string.IsNullOrEmpty(newId) || oldId == newId)
+            {
+                return false;
+            }
+            bool changed = RenameScope(CommandScope.Session, oldId, newId);
+
+            List<string> oldFolders = FolderChain(oldId);
+            List<string> newFolders = FolderChain(newId);
+            if (oldFolders.Count == newFolders.Count)
+            {
+                for (int i = 0; i < oldFolders.Count; i++)
+                {
+                    string oldFolder = oldFolders[i];
+                    if (oldFolder != newFolders[i] && !allSessionIds.Any(id => FolderChain(id).Contains(oldFolder)))
+                    {
+                        changed |= RenameScope(CommandScope.Folder, oldFolder, newFolders[i]);
+                    }
+                }
+            }
+            return changed;
+        }
+
+        #endregion
 
         /// <summary>Bring a library loaded from an older file up to <see cref="CurrentVersion"/>; true if it changed</summary>
         public bool Upgrade()

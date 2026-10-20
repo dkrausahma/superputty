@@ -140,7 +140,7 @@ namespace SuperPutty
                                                                                   return new SessionDetail(x.InitializerResource as SingletonToolWindowHelper<SessionTreeview>);
                                                                               });
             this.sessions.InstanceChanged += SessionsInstanceChanged;
-            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab));
+            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab, ActiveSession));
             this.containersPane = new SingletonToolWindowHelper<ContainersPane>("Containers", this.DockPanel, null, x => new ContainersPane(ActiveSession));
 
             // for toolbar
@@ -348,6 +348,10 @@ namespace SuperPutty
             if (this.containersPane.Instance != null)
             {
                 this.containersPane.Instance.ActiveSessionChanged();
+            }
+            if (this.commandsPane.Instance != null)
+            {
+                this.commandsPane.Instance.ActiveSessionChanged();
             }
         }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using SuperPutty.Data;
 
@@ -11,12 +12,24 @@ namespace SuperPutty.Gui
         /// <summary>The edited command; a copy of the one passed in, applied by the caller on OK</summary>
         public CommandSnippet Command { get; private set; }
 
-        public dlgEditCommand(CommandSnippet command, IEnumerable<string> categories, bool isNew)
+        /// <param name="scopes">Where the command may apply (all sessions, folders and session of the active tab)</param>
+        public dlgEditCommand(CommandSnippet command, IEnumerable<string> categories, IList<CommandScopeOption> scopes, bool isNew)
         {
             InitializeComponent();
 
             this.Command = command.Clone();
             this.Text = isNew ? "Add Command" : "Edit Command";
+
+            // offer the command's current scope even if it isn't one of the active tab's
+            List<CommandScopeOption> options = new List<CommandScopeOption>(scopes);
+            CommandScopeOption current = options.FirstOrDefault(o => o.Matches(this.Command));
+            if (current == null)
+            {
+                current = CommandScopeOption.Of(this.Command);
+                options.Add(current);
+            }
+            this.comboBoxScope.Items.AddRange(options.ToArray());
+            this.comboBoxScope.SelectedItem = current;
 
             foreach (string category in categories)
             {
@@ -42,6 +55,9 @@ namespace SuperPutty.Gui
             this.Command.Name = NullIfEmpty(this.textBoxName.Text);
             this.Command.Description = NullIfEmpty(this.textBoxDescription.Text);
             this.Command.Category = NullIfEmpty(this.comboBoxCategory.Text) ?? CommandLibrary.DefaultCategory;
+            CommandScopeOption scope = (CommandScopeOption)this.comboBoxScope.SelectedItem;
+            this.Command.Scope = scope.Scope;
+            this.Command.ScopeKey = scope.Scope == CommandScope.Global ? null : scope.Key;
             this.DialogResult = DialogResult.OK;
             this.Close();
         }
