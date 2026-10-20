@@ -261,9 +261,6 @@ namespace SuperPutty
 
         private void frmSuperPutty_Load(object sender, EventArgs e)
         {
-            int savedOpacity = SuperPuTTY.Settings.TerminalOpacity;
-            if (savedOpacity < 100)
-                this.Opacity = savedOpacity / 100.0;
             this.BeginInvoke(new Action(this.LoadLayout));
         }
         
@@ -725,56 +722,6 @@ namespace SuperPutty
         }
 
 
-        private void terminalOpacityToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            int current = SuperPuTTY.Settings.TerminalOpacity;
-
-            Label label = new Label
-            {
-                Text = string.Format("Opacity: {0}%", current),
-                AutoSize = false,
-                Width = 200,
-                Height = 18,
-                TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
-                Location = new System.Drawing.Point(10, 6)
-            };
-
-            TrackBar slider = new TrackBar
-            {
-                Minimum = 10,
-                Maximum = 100,
-                Value = current,
-                TickFrequency = 10,
-                SmallChange = 5,
-                LargeChange = 10,
-                Width = 200,
-                Height = 45,
-                Location = new System.Drawing.Point(6, 24)
-            };
-
-            slider.ValueChanged += (s, args) =>
-            {
-                label.Text = string.Format("Opacity: {0}%", slider.Value);
-                SuperPuTTY.Settings.TerminalOpacity = slider.Value;
-                SuperPuTTY.Settings.Save();
-                ApplyTerminalOpacityToAll(slider.Value);
-            };
-
-            Panel panel = new Panel { Width = 220, Height = 72 };
-            panel.Controls.Add(label);
-            panel.Controls.Add(slider);
-
-            ToolStripDropDown popup = new ToolStripDropDown { AutoClose = true };
-            ToolStripControlHost host = new ToolStripControlHost(panel) { AutoSize = false, Size = panel.Size };
-            popup.Items.Add(host);
-            popup.Show(Cursor.Position);
-        }
-
-        private void ApplyTerminalOpacityToAll(int opacityPercent)
-        {
-            this.Opacity = Math.Max(10, Math.Min(100, opacityPercent)) / 100.0;
-        }
-
         private void btnKioskToggle_Click(object sender, EventArgs e)
         {
             ToggleKiosk();
@@ -1109,7 +1056,6 @@ namespace SuperPutty
 
             this.SaveLastWindowBounds();
             this.UpdateShortcutsFromSettings();
-            this.Opacity = SuperPuTTY.Settings.Opacity;
             this.DockPanel.ShowDocumentIcon = SuperPuTTY.Settings.ShowDocumentIcons;
         }
 

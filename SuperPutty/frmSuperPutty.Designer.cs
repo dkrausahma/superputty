@@ -78,8 +78,6 @@ namespace SuperPutty
             this.showStatusBarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showMenuBarToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.alwaysOnTopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStripMenuItemOpacitySep = new System.Windows.Forms.ToolStripSeparator();
-            this.terminalOpacityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripSeparator();
             this.kioskModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -304,8 +302,6 @@ namespace SuperPutty
             this.showStatusBarToolStripMenuItem,
             this.showMenuBarToolStripMenuItem,
             this.alwaysOnTopToolStripMenuItem,
-            this.toolStripMenuItemOpacitySep,
-            this.terminalOpacityToolStripMenuItem,
             this.toolStripMenuItem9,
             this.kioskModeToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
@@ -405,18 +401,6 @@ namespace SuperPutty
             this.alwaysOnTopToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.alwaysOnTopToolStripMenuItem.Text = "&Always On Top";
             this.alwaysOnTopToolStripMenuItem.Click += new System.EventHandler(this.toggleCheckedState);
-            //
-            // toolStripMenuItemOpacitySep
-            //
-            this.toolStripMenuItemOpacitySep.Name = "toolStripMenuItemOpacitySep";
-            this.toolStripMenuItemOpacitySep.Size = new System.Drawing.Size(150, 6);
-            //
-            // terminalOpacityToolStripMenuItem
-            //
-            this.terminalOpacityToolStripMenuItem.Name = "terminalOpacityToolStripMenuItem";
-            this.terminalOpacityToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
-            this.terminalOpacityToolStripMenuItem.Text = "Terminal &Opacity...";
-            this.terminalOpacityToolStripMenuItem.Click += new System.EventHandler(this.terminalOpacityToolStripMenuItem_Click);
             //
             // toolStripMenuItem9
             // 
@@ -1079,8 +1063,6 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem checkForUpdatesToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton toolStripButtonRunScript;
         private System.Windows.Forms.ToolStripMenuItem sessionDetailToolStripMenuItem;
-        private System.Windows.Forms.ToolStripSeparator toolStripMenuItemOpacitySep;
-        private System.Windows.Forms.ToolStripMenuItem terminalOpacityToolStripMenuItem;
         private SuperPutty.Gui.ClickThroughToolStrip tsKiosk;
         private System.Windows.Forms.ToolStripButton btnKioskToggle;
         private SuperPutty.Gui.ClickThroughToolStrip tsIcons;

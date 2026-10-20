@@ -101,9 +101,6 @@
     <Setting Name="AlwaysOnTop" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="Opacity" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
     <Setting Name="MultipleTabCloseConfirmation" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
@@ -184,9 +181,6 @@
     </Setting>
     <Setting Name="Action_RenameTab_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">None</Value>
-    </Setting>
-    <Setting Name="TerminalOpacity" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">100</Value>
     </Setting>
   </Settings>
 </SettingsFile>
