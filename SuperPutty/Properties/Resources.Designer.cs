@@ -243,6 +243,16 @@ namespace SuperPutty.Properties {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap transfer_files {
+            get {
+                object obj = ResourceManager.GetObject("transfer_files", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap upload_files {
             get {
                 object obj = ResourceManager.GetObject("upload_files", resourceCulture);

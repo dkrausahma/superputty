@@ -197,8 +197,9 @@ namespace SuperPutty
             // kiosk
             this.kioskViewState = new ViewState(this);
 
-            // command files of tabs opened with a remote command, left behind by an earlier run
+            // command files of tabs opened with a remote command and relay folders, left behind by an earlier run
             RemoteCommandTab.CleanUp();
+            FileTransferJob.CleanUp();
 
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
@@ -771,6 +772,78 @@ namespace SuperPutty
                         SuperPuTTY.ReportStatus("Upload to {0} failed: {1}", where, result.ErrorMsg);
                         MessageBox.Show(this, string.Format("Upload to {0} failed:\n\n{1}\n\nUploads need key-based login (e.g. Pageant) or a stored password, and write access to the folder.", where, result.ErrorMsg),
                             "Upload Files", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                });
+            });
+        }
+
+        /// <summary>
+        /// Transfer Files dialog: source preset with the active tab and its current directory, target with another
+        /// open tab (or the Downloads folder); the copy runs in the background, progress in the status bar
+        /// </summary>
+        private void transferFiles_Click(object sender, EventArgs e)
+        {
+            if (!SuperPuTTY.IsScpEnabled)
+            {
+                MessageBox.Show(this, "pscp.exe is not set or not found. Set its location in Tools > Options.", "Transfer Files", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // sessions of open tabs first (with their current directory), then all other SSH sessions
+            List<ctlPuttyPanel> tabs = VisualOrderTabSwitchStrategy.GetDocuments(this.DockPanel).OfType<ctlPuttyPanel>()
+                .Where(p => RemoteCommandTab.IsSupported(p.Session)).ToList();
+            List<SessionData> sessions = tabs.Select(p => p.Session).Distinct().ToList();
+            sessions.AddRange(SuperPuTTY.GetAllSessions()
+                .Where(s => RemoteCommandTab.IsSupported(s) && !sessions.Contains(s))
+                .OrderBy(s => s.SessionId));
+
+            ctlPuttyPanel active = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (active != null && !RemoteCommandTab.IsSupported(active.Session)) { active = null; }
+            ctlPuttyPanel other = tabs.FirstOrDefault(p => p != active && p.Session != (active == null ? null : active.Session));
+
+            TransferEndpoint source = active == null
+                ? new TransferEndpoint { Path = string.Empty }
+                : new TransferEndpoint { Session = active.Session, Path = (RemotePath.FromWindowTitle(active.AppPanel.GetWindowTitle()) ?? "~") + "/" };
+            TransferEndpoint target = other == null
+                ? new TransferEndpoint { Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") }
+                : new TransferEndpoint { Session = other.Session, Path = RemotePath.FromWindowTitle(other.AppPanel.GetWindowTitle()) ?? "~" };
+
+            using (dlgTransferFiles dialog = new dlgTransferFiles(sessions, source, target))
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                source = dialog.Source;
+                target = dialog.Target;
+            }
+
+            string what = string.Format("{0} → {1}", source, target);
+            SuperPuTTY.ReportStatus("Copying {0}…", what);
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                FileTransferResult result;
+                try
+                {
+                    result = FileTransferJob.Run(source, target, text => this.BeginInvoke((MethodInvoker)delegate { SuperPuTTY.ReportStatus("Copying: {0}", text); }));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Transfer failed", ex);
+                    result = new FileTransferResult();
+                    result.SetError(ex.Message, ex);
+                }
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    if (result.StatusCode == ResultStatusCode.Success)
+                    {
+                        SuperPuTTY.ReportStatus("Copied {0}", what);
+                    }
+                    else
+                    {
+                        SuperPuTTY.ReportStatus("Copy failed: {0}", result.ErrorMsg);
+                        MessageBox.Show(this, string.Format("Copying {0} failed:\n\n{1}\n\nTransfers need key-based login (e.g. Pageant) or a stored password, and access to the paths.", what, result.ErrorMsg),
+                            "Transfer Files", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     }
                 });
             });
