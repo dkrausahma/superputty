@@ -223,6 +223,16 @@ namespace SuperPutty.Properties {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap containers_pane {
+            get {
+                object obj = ResourceManager.GetObject("containers_pane", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap copy_session {
             get {
                 object obj = ResourceManager.GetObject("copy_session", resourceCulture);
