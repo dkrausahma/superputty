@@ -81,6 +81,7 @@ namespace SuperPutty
             this.terminalOpacityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem9 = new System.Windows.Forms.ToolStripSeparator();
             this.fullScreenToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.kioskModeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.puTTYConfigurationToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem11 = new System.Windows.Forms.ToolStripSeparator();
@@ -130,6 +131,7 @@ namespace SuperPutty
             this.sessionDetailToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsKiosk = new System.Windows.Forms.ToolStrip();
             this.btnKioskToggle = new System.Windows.Forms.ToolStripButton();
+            this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
             this.toolStripContainer1.ContentPanel.SuspendLayout();
             this.toolStripContainer1.TopToolStripPanel.SuspendLayout();
@@ -300,7 +302,8 @@ namespace SuperPutty
             this.toolStripMenuItemOpacitySep,
             this.terminalOpacityToolStripMenuItem,
             this.toolStripMenuItem9,
-            this.fullScreenToolStripMenuItem});
+            this.fullScreenToolStripMenuItem,
+            this.kioskModeToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "&View";
@@ -412,6 +415,14 @@ namespace SuperPutty
             this.fullScreenToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.fullScreenToolStripMenuItem.Text = "&Full Screen";
             this.fullScreenToolStripMenuItem.Click += new System.EventHandler(this.fullScreenToolStripMenuItem_Click);
+            // 
+            // kioskModeToolStripMenuItem
+            // 
+            this.kioskModeToolStripMenuItem.Image = global::SuperPutty.Properties.Resources.kiosk;
+            this.kioskModeToolStripMenuItem.Name = "kioskModeToolStripMenuItem";
+            this.kioskModeToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.kioskModeToolStripMenuItem.Text = "&Kiosk Mode";
+            this.kioskModeToolStripMenuItem.Click += new System.EventHandler(this.btnKioskToggle_Click);
             // 
             // toolsToolStripMenuItem
             // 
@@ -643,21 +654,33 @@ namespace SuperPutty
             //
             this.tsKiosk.Dock = System.Windows.Forms.DockStyle.Top;
             this.tsKiosk.GripStyle = System.Windows.Forms.ToolStripGripStyle.Hidden;
-            this.tsKiosk.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { this.btnKioskToggle });
+            this.tsKiosk.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { this.btnKioskExit });
             this.tsKiosk.Name = "tsKiosk";
             this.tsKiosk.Padding = new System.Windows.Forms.Padding(0);
             this.tsKiosk.Size = new System.Drawing.Size(1008, 24);
             this.tsKiosk.TabIndex = 7;
+            this.tsKiosk.Visible = false;
             //
             // btnKioskToggle
             //
             this.btnKioskToggle.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
-            this.btnKioskToggle.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.btnKioskToggle.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnKioskToggle.Image = global::SuperPutty.Properties.Resources.kiosk;
             this.btnKioskToggle.Name = "btnKioskToggle";
-            this.btnKioskToggle.Size = new System.Drawing.Size(76, 21);
+            this.btnKioskToggle.Size = new System.Drawing.Size(23, 22);
             this.btnKioskToggle.Text = "Kiosk Mode";
-            this.btnKioskToggle.ToolTipText = "Toggle kiosk mode: hide menus and panels, show only terminal tabs";
+            this.btnKioskToggle.ToolTipText = "Kiosk mode: hide menus and panels, show only terminal tabs";
             this.btnKioskToggle.Click += new System.EventHandler(this.btnKioskToggle_Click);
+            //
+            // btnKioskExit
+            //
+            this.btnKioskExit.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.btnKioskExit.Image = global::SuperPutty.Properties.Resources.kiosk_exit;
+            this.btnKioskExit.Name = "btnKioskExit";
+            this.btnKioskExit.Size = new System.Drawing.Size(80, 21);
+            this.btnKioskExit.Text = "Exit Kiosk";
+            this.btnKioskExit.ToolTipText = "Restore menus and panels";
+            this.btnKioskExit.Click += new System.EventHandler(this.btnKioskToggle_Click);
             //
             // tsCommands
             //
@@ -669,7 +692,8 @@ namespace SuperPutty
             this.tbBtnMaskText,
             this.toolStripButtonRunScript,
             this.toolStripSeparatorSendCommands,
-            this.tbBtnSelectDocs});
+            this.tbBtnSelectDocs,
+            this.btnKioskToggle});
             this.tsCommands.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
             this.tsCommands.Location = new System.Drawing.Point(0, 24);
             this.tsCommands.Name = "tsCommands";
@@ -993,6 +1017,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton tbBtnSelectDocs;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem9;
         private System.Windows.Forms.ToolStripMenuItem fullScreenToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem kioskModeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem diagnosticsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem logWindowLocationsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openSessionToolStripMenuItem;
@@ -1010,6 +1035,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem terminalOpacityToolStripMenuItem;
         private System.Windows.Forms.ToolStrip tsKiosk;
         private System.Windows.Forms.ToolStripButton btnKioskToggle;
+        private System.Windows.Forms.ToolStripButton btnKioskExit;
     }
 }
 

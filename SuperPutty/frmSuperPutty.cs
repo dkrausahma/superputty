@@ -713,16 +713,14 @@ namespace SuperPutty
                 }
 
                 isKioskMode = true;
-                this.btnKioskToggle.Text = "Exit Kiosk";
-                this.btnKioskToggle.ToolTipText = "Restore menus and panels";
+                this.tsKiosk.Visible = true;
             }
             else
             {
                 Log.InfoFormat("Exit Kiosk Mode");
                 kioskViewState.Restore();
                 isKioskMode = false;
-                this.btnKioskToggle.Text = "Kiosk Mode";
-                this.btnKioskToggle.ToolTipText = "Toggle kiosk mode: hide menus and panels, show only terminal tabs";
+                this.tsKiosk.Visible = false;
             }
         }
 

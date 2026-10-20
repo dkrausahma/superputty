@@ -193,6 +193,26 @@ namespace SuperPutty.Properties {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap kiosk {
+            get {
+                object obj = ResourceManager.GetObject("kiosk", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap kiosk_exit {
+            get {
+                object obj = ResourceManager.GetObject("kiosk_exit", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap lightning_go {
             get {
                 object obj = ResourceManager.GetObject("lightning_go", resourceCulture);
