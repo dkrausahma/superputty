@@ -77,14 +77,19 @@ namespace SuperPutty
         int commandMRUIndex = -1;
 
         private readonly TabSwitcher tabSwitcher;
-        private readonly ViewState fullscreenViewState;
         private readonly ViewState kioskViewState;
         private bool isKioskMode = false;
 
+        /// <summary>
+        /// The quick connection toolbar (Protocol, Host, Login, Password, Session) is hidden for now, together with
+        /// its View menu entry and shortcut. Set to true to bring it back; its code and settings are unchanged.
+        /// </summary>
+        private static readonly bool QuickConnectionBarEnabled = false;
+
         private Dictionary<Keys, SuperPuttyAction> shortcuts = new Dictionary<Keys, SuperPuttyAction>();
 
-        /// <summary>A collection containing send command history</summary>
-        private SortableBindingList<HistoryEntry> tsCommandHistory = new SortableBindingList<HistoryEntry>();
+        /// <summary>Send command history, per session</summary>
+        private readonly CommandHistory commandHistory;
 
         /// <summary>The main SuperPuTTY application form</summary>
         public frmSuperPutty()
@@ -97,10 +102,13 @@ namespace SuperPutty
 
             // DockPanelSuite 3.x needs an explicit theme; VS2005 matches the look of the 2.x library
             this.DockPanel.Theme = new VS2005Theme();
+            // tool windows don't auto-hide (slide in/out); their captions get no pin button
+            this.DockPanel.Theme.Extender.DockPaneCaptionFactory = new NoAutoHideCaptionFactory(this.DockPanel.Theme.Extender.DockPaneCaptionFactory);
 
             // force toolbar locations...designer likes to flip them around
-            this.tsConnect.Location = new System.Drawing.Point(0, 24);
+            this.tsIcons.Location = new System.Drawing.Point(0, 24);
             this.tsCommands.Location = new System.Drawing.Point(0, 49);
+            this.tsConnect.Location = new System.Drawing.Point(0, 74);
 
             if (this.DesignMode) return;
 
@@ -119,6 +127,7 @@ namespace SuperPutty
                                                                               x => {
                                                                                   return new SessionDetail(x.InitializerResource as SingletonToolWindowHelper<SessionTreeview>);
                                                                               });
+            this.sessions.InstanceChanged += SessionsInstanceChanged;
 
             // for toolbar
             this.tbFocusHelperHost = new TextBoxFocusHelper(this.tbTxtBoxHost.TextBox);
@@ -126,22 +135,13 @@ namespace SuperPutty
             this.tbFocusHelperPassword = new TextBoxFocusHelper(this.tbTxtBoxPassword.TextBox);
             this.sendCommandsDocumentSelector = new frmDocumentSelector(this.DockPanel) {Owner = this};
 
-            // Send Command toolbar history
-            PropertyDescriptor pd = TypeDescriptor.GetProperties(typeof(HistoryEntry))["TimeStamp"];
-            ((IBindingList)tsCommandHistory).ApplySort(pd, ListSortDirection.Descending);
+            // Send Command toolbar history: saved history, filled into the combo for the active session
+            this.commandHistory = SuperPuTTY.Settings.PersistCommandBarHistory
+                ? CommandHistory.DeserializeXML(SuperPuTTY.Settings.CommandBarHistory)
+                : new CommandHistory();
+            this.commandHistory.Purge(SuperPuTTY.Settings.SaveCommandHistoryDays, DateTime.UtcNow);
+            this.RefreshCommandHistory();
 
-            tsSendCommandCombo.ComboBox.DisplayMember = "Command";
-            tsSendCommandCombo.ComboBox.ValueMember = "Command";            
-            tsSendCommandCombo.ComboBox.DataSource = tsCommandHistory;
-
-            // load saved history
-            if(SuperPuTTY.Settings.PersistCommandBarHistory)
-                tsCommandHistory.DeserializeXML(SuperPuTTY.Settings.CommandBarHistory);
-
-            tsSendCommandCombo.SelectedIndex = -1;
-
-            tsCommandHistory.ListChanged += TsCommandHistory_ListChanged;
-           
             // Hook into status
             SuperPuTTY.StatusEvent += new Action<string>(delegate(String msg) { this.toolStripStatusLabelMessage.Text = msg; });
             SuperPuTTY.ReportStatus("Ready");
@@ -180,8 +180,7 @@ namespace SuperPutty
             // tab switching
             this.tabSwitcher = new TabSwitcher(this.DockPanel);
 
-            // full screen / kiosk
-            this.fullscreenViewState = new ViewState(this);
+            // kiosk
             this.kioskViewState = new ViewState(this);
 
             // Apply Settings
@@ -192,32 +191,26 @@ namespace SuperPutty
             this.DockPanel.ContentRemoved += DockPanel_ContentRemoved;
         }
 
-        private void TsCommandHistory_ListChanged(object sender, ListChangedEventArgs e)
+        /// <summary>Fill the send command combo with the history of the active session, keeping typed text</summary>
+        private void RefreshCommandHistory()
         {
-            DateTime daysAgo = DateTime.UtcNow.Subtract(TimeSpan.FromDays(SuperPuTTY.Settings.SaveCommandHistoryDays));
-            if (e.ListChangedType == ListChangedType.ItemAdded)
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            string sessionKey = panel == null ? null : CommandHistory.KeyFor(panel.Session);
+
+            string text = this.tsSendCommandCombo.Text;
+            this.tsSendCommandCombo.BeginUpdate();
+            try
             {
-                // purge duplicates from history
-                HistoryEntry he = tsCommandHistory[e.NewIndex];
-                for(int i = 0; i < tsCommandHistory.Count; i++)
-                {
-                    if(i != e.NewIndex 
-                        && tsCommandHistory[i].Command.Equals(he.Command))
-                    {
-                        tsCommandHistory.RemoveAt(i);
-                    }                    
-                }
-                
-                for(int i = 0; i < tsCommandHistory.Count; i++)
-                {
-                    // purge old entries from history
-                    if (tsCommandHistory[i].TimeStamp < daysAgo)
-                    {
-                        tsCommandHistory.RemoveAt(i);
-                    }
-                }           
+                this.tsSendCommandCombo.Items.Clear();
+                this.tsSendCommandCombo.Items.AddRange(this.commandHistory.GetCommands(sessionKey).ToArray());
             }
-        }       
+            finally
+            {
+                this.tsSendCommandCombo.EndUpdate();
+            }
+            this.tsSendCommandCombo.Text = text;
+            this.commandMRUIndex = -1;
+        }
 
         void DockPanel_ContentAdded(object sender, DockContentEventArgs e)
         {
@@ -226,6 +219,11 @@ namespace SuperPutty
             {
                 p.TextChanged += puttyPanel_TextChanged;
             }
+            else
+            {
+                e.Content.DockHandler.DockStateChanged += ToolWindow_DockStateChanged;
+            }
+            QueueIconBarUpdate();
         }
 
         void DockPanel_ContentRemoved(object sender, DockContentEventArgs e)
@@ -235,6 +233,16 @@ namespace SuperPutty
             {
                 p.TextChanged -= puttyPanel_TextChanged;
             }
+            else
+            {
+                e.Content.DockHandler.DockStateChanged -= ToolWindow_DockStateChanged;
+            }
+            QueueIconBarUpdate();
+        }
+
+        void ToolWindow_DockStateChanged(object sender, EventArgs e)
+        {
+            QueueIconBarUpdate();
         }
 
         void puttyPanel_TextChanged(object sender, EventArgs e)
@@ -281,7 +289,7 @@ namespace SuperPutty
 
             if(SuperPuTTY.Settings.PersistCommandBarHistory)
             {
-                SuperPuTTY.Settings.CommandBarHistory = tsCommandHistory.SerializeXML();
+                SuperPuTTY.Settings.CommandBarHistory = this.commandHistory.SerializeXML();
                 SuperPuTTY.Settings.Save();
             }
 
@@ -312,8 +320,9 @@ namespace SuperPutty
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void dockPanel1_ActiveDocumentChanged(object sender, EventArgs e)
-        {            
+        {
             FocusActiveDocument("ActiveDocumentChanged");
+            RefreshCommandHistory();
         }
 
         public void FocusActiveDocument(string caller)
@@ -514,6 +523,7 @@ namespace SuperPutty
             SuperPuTTY.Settings.ShowStatusBar = this.showStatusBarToolStripMenuItem.Checked;
             SuperPuTTY.Settings.ShowToolBarConnections = this.quickConnectionToolStripMenuItem.Checked;
             SuperPuTTY.Settings.ShowToolBarCommands = this.sendCommandsToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.ShowToolBarIcons = this.iconsToolStripMenuItem.Checked;
             SuperPuTTY.Settings.AlwaysOnTop = this.alwaysOnTopToolStripMenuItem.Checked;
             SuperPuTTY.Settings.ShowMenuBar = this.showMenuBarToolStripMenuItem.Checked;
 
@@ -528,11 +538,15 @@ namespace SuperPutty
             this.statusStrip1.Visible = SuperPuTTY.Settings.ShowStatusBar;
             this.showStatusBarToolStripMenuItem.Checked = SuperPuTTY.Settings.ShowStatusBar;
 
-            this.tsConnect.Visible = SuperPuTTY.Settings.ShowToolBarConnections;
+            this.tsConnect.Visible = QuickConnectionBarEnabled && SuperPuTTY.Settings.ShowToolBarConnections;
             this.quickConnectionToolStripMenuItem.Checked = SuperPuTTY.Settings.ShowToolBarConnections;
+            this.quickConnectionToolStripMenuItem.Visible = QuickConnectionBarEnabled;
 
             this.tsCommands.Visible = SuperPuTTY.Settings.ShowToolBarCommands;
             this.sendCommandsToolStripMenuItem.Checked = SuperPuTTY.Settings.ShowToolBarCommands;
+
+            this.tsIcons.Visible = SuperPuTTY.Settings.ShowToolBarIcons;
+            this.iconsToolStripMenuItem.Checked = SuperPuTTY.Settings.ShowToolBarIcons;
 
             this.TopMost = SuperPuTTY.Settings.AlwaysOnTop;
             this.alwaysOnTopToolStripMenuItem.Checked = SuperPuTTY.Settings.AlwaysOnTop;
@@ -541,7 +555,80 @@ namespace SuperPutty
             this.showMenuBarToolStripMenuItem.Checked = SuperPuTTY.Settings.ShowMenuBar;
         }
 
+        #region Icon bar
+
+        private static bool IsOpen<T>(SingletonToolWindowHelper<T> window) where T : ToolWindow
+        {
+            return window.Instance != null && !window.Instance.IsHidden;
+        }
+
+        /// <summary>Sessions icon: opens the Sessions pane (with Session Detail), or closes it when pressed</summary>
+        private void btnSessionsPane_Click(object sender, EventArgs e)
+        {
+            if (IsOpen(this.sessions))
+            {
+                this.sessions.Instance.Close();
+            }
+            else
+            {
+                this.sessionsToolStripMenuItem_Click(sender, e);
+            }
+            UpdateIconBar();
+        }
+
+        /// <summary>Layouts icon: opens the Layouts pane, or closes it when pressed</summary>
+        private void btnLayoutsPane_Click(object sender, EventArgs e)
+        {
+            if (IsOpen(this.layouts))
+            {
+                this.layouts.Instance.Close();
+            }
+            else
+            {
+                this.layoutsToolStripMenuItem_Click(sender, e);
+            }
+            UpdateIconBar();
+        }
+
+        /// <summary>Show each icon as pressed while its pane is open or its mode is on</summary>
+        private void UpdateIconBar()
+        {
+            this.btnSessionsPane.Checked = IsOpen(this.sessions);
+            this.btnLayoutsPane.Checked = IsOpen(this.layouts);
+            this.btnKioskToggle.Checked = this.isKioskMode;
+        }
+
+        /// <summary>Update the icon bar once the current docking operation has finished</summary>
+        private void QueueIconBarUpdate()
+        {
+            if (this.IsDisposed || this.Disposing)
+            {
+                return;
+            }
+            if (this.IsHandleCreated)
+            {
+                this.BeginInvoke((MethodInvoker)UpdateIconBar);
+            }
+            else
+            {
+                UpdateIconBar();
+            }
+        }
+
+        #endregion
+
+        /// <summary>Show the Sessions pane; when it opens, Session Detail opens below it by default</summary>
         private void sessionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            bool wasOpen = this.sessions.Instance != null && !this.sessions.Instance.IsHidden;
+            ShowSessionsPane();
+            if (!wasOpen)
+            {
+                ShowSessionDetail();
+            }
+        }
+
+        private void ShowSessionsPane()
         {
             if (this.layouts.IsVisibleAsToolWindow || this.sessionDetail.IsVisibleAsToolWindow)
             {
@@ -564,17 +651,12 @@ namespace SuperPutty
         {
             if (this.sessionDetail.IsVisibleAsToolWindow)
             {
-                this.layouts.ShowWindow(this.sessionDetail.Instance.Pane, this.sessionDetail.Instance);
+                // below Session Detail, which keeps its own pane under Sessions
+                this.layouts.ShowWindow(this.sessionDetail.Instance.Pane, DockAlignment.Bottom, 0.5);
             }
             else if (this.sessions.IsVisibleAsToolWindow)
             {
                 this.layouts.ShowWindow(sessions.Instance.DockHandler.Pane, DockAlignment.Bottom, 0.5);
-            }
-            else if (this.sessions.Instance != null &&
-                     this.sessions.Instance.DockHandler.Pane != null &&
-                     this.sessions.Instance.DockHandler.Pane.IsAutoHide)
-            {
-                this.layouts.ShowWindow(DockState.DockRightAutoHide);
             }
             else
             {
@@ -582,20 +664,64 @@ namespace SuperPutty
             }
         }
 
+        /// <summary>
+        /// Session Detail shows the session selected in the Sessions tree, so it opens the Sessions window if
+        /// needed and takes the lower half of the Sessions pane.
+        /// </summary>
         private void sessionDetailMenuItem_Click(object sender, EventArgs e)
         {
-            if (this.layouts.IsVisibleAsToolWindow)
+            ShowSessionDetail();
+        }
+
+        private void ShowSessionDetail()
+        {
+            if (this.sessions.Instance == null || this.sessions.Instance.IsHidden)
             {
-                this.sessionDetail.ShowWindow(this.layouts.Instance.Pane, this.layouts.Instance);
+                ShowSessionsPane();
             }
-            else if (this.sessions.IsVisibleAsToolWindow)
+
+            DockPane sessionsPane = this.sessions.Instance.DockHandler.Pane;
+            SessionDetail detail = this.sessionDetail.Instance ?? this.sessionDetail.Initialize();
+            if (sessionsPane.DockState == DockState.Float)
             {
-                this.sessionDetail.ShowWindow(sessions.Instance.DockHandler.Pane, DockAlignment.Bottom, 0.5);
+                // a floating pane can't be split; join it as a tab instead
+                if (detail.DockHandler.Pane != sessionsPane)
+                {
+                    detail.Show(sessionsPane, null);
+                }
             }
-            else
+            else if (!IsAloneBelow(detail, sessionsPane))
             {
-                this.sessionDetail.ShowWindow(DockState.DockRight);
+                detail.Show(sessionsPane, DockAlignment.Bottom, 0.5);
             }
+            detail.Activate();
+            SuperPuTTY.ReportStatus("Showing " + this.sessionDetail.Name);
+        }
+
+        /// <summary>True if the content has a pane of its own, docked directly below the given pane</summary>
+        private static bool IsAloneBelow(DockContent content, DockPane above)
+        {
+            DockPane pane = content.DockHandler.Pane;
+            return pane != null && pane != above && !content.IsHidden
+                && pane.DisplayingContents.Count == 1
+                && pane.NestedDockingStatus.PreviousPane == above
+                && pane.NestedDockingStatus.Alignment == DockAlignment.Bottom;
+        }
+
+        /// <summary>Session Detail is useless without the Sessions tree, so it closes with it (except during a layout switch)</summary>
+        private void SessionsInstanceChanged(SessionTreeview tree)
+        {
+            if (tree == null)
+            {
+                return;
+            }
+            tree.FormClosed += delegate
+            {
+                if (!SuperPuTTY.IsLayoutChanging && this.sessionDetail.Instance != null)
+                {
+                    this.sessionDetail.Instance.Close();
+                }
+            };
         }
 
 
@@ -649,27 +775,6 @@ namespace SuperPutty
             this.Opacity = Math.Max(10, Math.Min(100, opacityPercent)) / 100.0;
         }
 
-        private void fullScreenToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            ToggleFullScreen();
-        }
-
-        void ToggleFullScreen()
-        {
-            if (this.fullScreenToolStripMenuItem.Checked)
-            {
-                Log.InfoFormat("Restore from Fullscreen");
-                this.fullscreenViewState.Restore();
-            }
-            else
-            {
-                Log.InfoFormat("Go to Fullscreen");
-                this.fullscreenViewState.SaveState();
-                this.fullscreenViewState.Hide();
-            }
-            this.fullScreenToolStripMenuItem.Checked = !this.fullScreenToolStripMenuItem.Checked;
-        }
-
         private void btnKioskToggle_Click(object sender, EventArgs e)
         {
             ToggleKiosk();
@@ -680,38 +785,8 @@ namespace SuperPutty
             if (!isKioskMode)
             {
                 Log.InfoFormat("Enter Kiosk Mode");
-
-                // Exit fullscreen first if active, so we start from a clean state
-                if (this.fullScreenToolStripMenuItem.Checked)
-                {
-                    this.fullscreenViewState.Restore();
-                    this.fullScreenToolStripMenuItem.Checked = false;
-                }
-
                 kioskViewState.SaveState();
-                this.DockPanel.Visible = false;
-                try
-                {
-                    this.sessions.Hide();
-                    this.layouts.Hide();
-                    this.logViewer.Hide();
-                    this.sessionDetail.Hide();
-
-                    this.statusStrip1.Hide();
-                    this.tsCommands.Visible = false;
-                    this.tsConnect.Visible = false;
-                    this.menuStrip1.Hide();
-
-                    this.FormBorderStyle = FormBorderStyle.None;
-                    if (this.WindowState == FormWindowState.Maximized)
-                        this.WindowState = FormWindowState.Normal;
-                    this.WindowState = FormWindowState.Maximized;
-                }
-                finally
-                {
-                    this.DockPanel.Visible = true;
-                }
-
+                kioskViewState.Hide();
                 isKioskMode = true;
                 this.tsKiosk.Visible = true;
             }
@@ -722,22 +797,18 @@ namespace SuperPutty
                 isKioskMode = false;
                 this.tsKiosk.Visible = false;
             }
+            UpdateIconBar();
         }
 
+        /// <summary>Saves the window layout before kiosk mode hides everything but the terminal tabs, and restores it</summary>
         class ViewState
         {
             public ViewState(frmSuperPutty mainForm)
             {
                 this.MainForm = mainForm;
-                this.ConnectionBarLocation = this.MainForm.tsConnect.Location;
-                this.CommandBarLocation = this.MainForm.tsConnect.Location;
             }
 
             public frmSuperPutty MainForm { get; set; }
-            public bool StatusBar { get; set; }
-            public bool MenuBar { get; set; }
-            public bool ConnectionBar { get; set; }
-            public bool CommandBar { get; set; }
             public bool SessionsWindow { get; set; }
             public bool LogWindow { get; set; }
             public bool LayoutWindow { get; set; }
@@ -746,18 +817,16 @@ namespace SuperPutty
             public FormBorderStyle FormBorderStyle { get; set; }
             public FormWindowState FormWindowState { get; set; }
 
-            public Point ConnectionBarLocation { get; set; }
+            /// <summary>Toolbar positions; showing the toolbars again can otherwise reorder their rows</summary>
+            public Point IconBarLocation { get; set; }
             public Point CommandBarLocation { get; set; }
-
-            public bool IsFullScreen { get; set; }
+            public Point ConnectionBarLocation { get; set; }
 
             public void SaveState()
             {
-                this.StatusBar = this.MainForm.showStatusBarToolStripMenuItem.Checked;
-                this.MenuBar = this.MainForm.showMenuBarToolStripMenuItem.Checked;
-
-                this.ConnectionBar = this.MainForm.quickConnectionToolStripMenuItem.Checked;
-                this.CommandBar = this.MainForm.sendCommandsToolStripMenuItem.Checked;
+                this.IconBarLocation = this.MainForm.tsIcons.Location;
+                this.CommandBarLocation = this.MainForm.tsCommands.Location;
+                this.ConnectionBarLocation = this.MainForm.tsConnect.Location;
 
                 this.SessionsWindow = this.MainForm.sessions.IsVisible;
                 this.LogWindow = this.MainForm.logViewer.IsVisible;
@@ -785,6 +854,7 @@ namespace SuperPutty
                     this.MainForm.statusStrip1.Hide();
 
                     // toolbars
+                    this.MainForm.tsIcons.Visible = false;
                     this.MainForm.tsCommands.Visible = false;
                     this.MainForm.tsConnect.Visible = false;
 
@@ -798,9 +868,6 @@ namespace SuperPutty
                         this.MainForm.WindowState = FormWindowState.Normal;
                     }
                     this.MainForm.WindowState = FormWindowState.Maximized;
-                    this.MainForm.TopMost = true;
-
-                    this.IsFullScreen = true;
                 }
                 finally
                 {
@@ -821,28 +888,14 @@ namespace SuperPutty
                     if (this.LogWindow) { this.MainForm.logViewer.Restore(); }
                     if (this.SessionDetail) { this.MainForm.sessionDetail.Restore(); }
 
-                    // status bar
-                    if (this.StatusBar) { this.MainForm.statusStrip1.Show(); }
+                    // status bar, toolbars, menu bar and always-on-top as set in the View menu
+                    this.MainForm.ApplySettingsToToolbars();
+                    this.MainForm.tsIcons.Location = this.IconBarLocation;
+                    this.MainForm.tsCommands.Location = this.CommandBarLocation;
+                    this.MainForm.tsConnect.Location = this.ConnectionBarLocation;
 
-                    // toolbars
-                    if (this.CommandBar && this.ConnectionBar)
-                    {
-                        // both visible so set locations
-                        this.MainForm.tsConnect.Visible = true;
-                        this.MainForm.tsConnect.Location = this.ConnectionBarLocation;
-                        this.MainForm.tsCommands.Visible = true;
-                        this.MainForm.tsCommands.Location = this.CommandBarLocation;
-                    }
-                    else if (this.CommandBar) { this.MainForm.tsCommands.Visible = true; }
-                    else if (this.ConnectionBar) { this.MainForm.tsConnect.Visible = true; }
-
-                    // menubar
-                    if (this.MenuBar) { this.MainForm.menuStrip1.Show(); }
-
-                    this.MainForm.TopMost = false;
                     this.MainForm.WindowState = this.FormWindowState;
                     this.MainForm.FormBorderStyle = this.FormBorderStyle;
-                    this.IsFullScreen = false;
                 }
                 finally
                 {
@@ -932,11 +985,25 @@ namespace SuperPutty
                     // load new one
                     Log.DebugFormat("Loading layout: {0}", eventArgs.New.FilePath);
                     this.DockPanel.LoadFromXml(eventArgs.New.FilePath, RestoreLayoutFromPersistString);
+                    DockAutoHiddenWindows();
                     toolStripStatusLabelLayout.Text = eventArgs.New.Name;
                     SuperPuTTY.ReportStatus("Loaded layout: {0}", eventArgs.New.FilePath);
                 }
 
                 // after all is done, cause a repaint to 
+            }
+        }
+
+        /// <summary>Layouts saved by earlier versions may contain auto-hidden tool windows; dock them instead</summary>
+        void DockAutoHiddenWindows()
+        {
+            foreach (DockContent content in this.DockPanel.Contents.Cast<DockContent>().ToList())
+            {
+                if (DockHelper.IsDockStateAutoHide(content.DockState))
+                {
+                    Log.InfoFormat("Docking auto-hidden window from layout: {0}", content.Text);
+                    content.DockState = DockHelper.ToggleAutoHideState(content.DockState);
+                }
             }
         }
 
@@ -1199,11 +1266,6 @@ namespace SuperPutty
             }
             else if (e.KeyCode == Keys.Up)
             {
-                for(int i = 0; i < tsSendCommandCombo.Items.Count; i++)
-                {
-                    Console.WriteLine("{0} {1} MRUOld:{2}", i, ((HistoryEntry)tsSendCommandCombo.Items[i]).ToString(), commandMRUIndex);
-                }
-
                 if (tsSendCommandCombo.Items.Count > 0)
                 {
                     commandMRUIndex++;
@@ -1275,6 +1337,7 @@ namespace SuperPutty
         private int TrySendCommandsFromToolbar(CommandData command, bool saveHistory)
         {
             int sent = 0;
+            List<string> sessionKeys = new List<string>();
 
             if(this.DockPanel.Contents.Count > 0)
             {
@@ -1291,37 +1354,35 @@ namespace SuperPutty
 
                             command.SendToTerminal(handle);
 
-                            sent++;                 
+                            sent++;
+                            sessionKeys.Add(CommandHistory.KeyFor(panel.Session));
                         }
                     }
-                }                 
+                }
 
                 if (sent > 0)
                 {
-                    // success...clear text and save in mru                    
-                    if (command != null && !string.IsNullOrEmpty(command.Command) && saveHistory)
-                    {
-                        if (this.InvokeRequired)
+                    // success...clear text and save in the history of every session that got the command
+                    bool addToHistory = command != null && !string.IsNullOrEmpty(command.Command) && saveHistory;
+                    MethodInvoker update = delegate {
+                        if (addToHistory)
                         {
-                            this.BeginInvoke((MethodInvoker)delegate {
-                                tsCommandHistory.Insert(0, new HistoryEntry() { Command = command.Command });
-                            });
+                            foreach (string sessionKey in sessionKeys)
+                            {
+                                this.commandHistory.Add(sessionKey, command.Command);
+                            }
                         }
-                        else
-                        {                            
-                            tsCommandHistory.Insert(0, new HistoryEntry() { Command = command.Command });
-                        }                       
-                    }
+                        this.tsSendCommandCombo.Text = string.Empty;
+                        RefreshCommandHistory();
+                    };
 
                     if (this.InvokeRequired)
                     {
-                        this.BeginInvoke((MethodInvoker)delegate {
-                            this.tsSendCommandCombo.Text = string.Empty;
-                        });
+                        this.BeginInvoke(update);
                     }
                     else
                     {
-                        this.tsSendCommandCombo.Text = string.Empty;
+                        update();
                     }
                 }
             }
@@ -1497,8 +1558,8 @@ namespace SuperPutty
         {
             // remove old
             this.shortcuts.Clear();
-            this.fullScreenToolStripMenuItem.ShortcutKeys = Keys.None;
             this.optionsToolStripMenuItem.ShortcutKeys = Keys.None;
+            this.kioskModeToolStripMenuItem.ShortcutKeys = Keys.None;
 
             // reload new definitions
             foreach (KeyboardShortcut ks in SuperPuTTY.Settings.LoadShortcuts())
@@ -1516,11 +1577,11 @@ namespace SuperPutty
                     // sync menu items
                     switch (action)
                     {
-                        case SuperPuttyAction.FullScreen:
-                            this.fullScreenToolStripMenuItem.ShortcutKeys = keys;
-                            break;
                         case SuperPuttyAction.Options:
                             this.optionsToolStripMenuItem.ShortcutKeys = keys;
+                            break;
+                        case SuperPuttyAction.KioskMode:
+                            this.kioskModeToolStripMenuItem.ShortcutKeys = keys;
                             break;
                         case SuperPuttyAction.OpenSession:
                             this.openSessionToolStripMenuItem.ShortcutKeys = keys;
@@ -1556,8 +1617,8 @@ namespace SuperPutty
                 case SuperPuttyAction.PrevTab:
                     this.tabSwitcher.MoveToPrevDocument();
                     break;
-                case SuperPuttyAction.FullScreen:
-                    this.ToggleFullScreen();
+                case SuperPuttyAction.KioskMode:
+                    this.ToggleKiosk();
                     break;
                 case SuperPuttyAction.OpenSession:
                     KeyEventWindowActivator.ActivateForm(this);
@@ -1576,7 +1637,7 @@ namespace SuperPutty
                         SuperPuTTY.OpenPuttySession(activePanel.Session);
                     break;
                 case SuperPuttyAction.GotoCommandBar:
-                    if (!this.fullscreenViewState.IsFullScreen)
+                    if (!this.isKioskMode)
                     {
                         KeyEventWindowActivator.ActivateForm(this);
                         if (!this.tsCommands.Visible)
@@ -1588,7 +1649,7 @@ namespace SuperPutty
                     break;
                 case SuperPuttyAction.GotoConnectionBar:
                     // perhaps consider allowing this later...need to really have a better approach to the state saving/invoking the toggle.
-                    if (!this.fullscreenViewState.IsFullScreen)
+                    if (QuickConnectionBarEnabled && !this.isKioskMode)
                     {
                         KeyEventWindowActivator.ActivateForm(this);
                         if (!this.tsConnect.Visible)

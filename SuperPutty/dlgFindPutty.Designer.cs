@@ -594,7 +594,7 @@
             this.numericUpDown1.Size = new System.Drawing.Size(48, 22);
             this.numericUpDown1.TabIndex = 1;
             this.toolTip.SetToolTip(this.numericUpDown1, "The number of days to save history for. Entries older than the selected number of" +
-        " days will be automatically deleted.");
+        " days will be automatically deleted. 0 keeps entries without an age limit.");
             this.numericUpDown1.Value = new decimal(new int[] {
             7,
             0,

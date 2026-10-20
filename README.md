@@ -24,13 +24,15 @@ and Pageant integration) but adds the window management on top.
 - **Session tree** — sessions organised in folders, searchable, importable from PuTTY's registry, PuTTY
   Connection Manager or a SuperPuTTY XML export.
 - **Protocols** — SSH, Telnet, Rlogin, Raw, Serial (via PuTTY/KiTTY), Cygterm, Mintty and VNC.
-- **Command bar** — send a command or keystrokes to one, several or all open sessions at once, with history.
+- **Command bar** — send a command or keystrokes to one, several or all open sessions at once. It remembers
+  the last commands per session and login and shows those of the active tab.
 - **SPSL scripting** — small script language (`SENDLINE`, `SENDKEY`, `SLEEP`, `OPENSESSION`, …) to run on
   connect or from the script editor.
 - **File transfer** — PSCP-based file browser with drag-and-drop transfers; launch FileZilla or WinSCP for
   a session.
-- **Quick selector, keyboard shortcuts, global hot keys, tab switcher** and a **kiosk mode** (full screen,
-  chrome hidden).
+- **Icon bar** with toggle buttons (pressed while active, click again to undo): show/close the Sessions pane (with Session Detail below it), show/close the Layouts
+  pane, and toggle **kiosk mode** (F11; full screen, menus and panels hidden, only terminal tabs visible).
+- **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**
 - **Single-instance mode** — further launches (e.g. from `ssh://` links or the command line) open in the
   running instance.
 - **Portable mode** — keep the settings file next to the executable.

@@ -44,6 +44,9 @@
     <Setting Name="ShowToolBarCommands" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="ShowToolBarIcons" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
     <Setting Name="ExpandSessionsTreeOnStartup" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
@@ -74,7 +77,7 @@
     <Setting Name="SendCommandsToVisibleOnly" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="Action_FullScreen_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
+    <Setting Name="Action_KioskMode_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">F11</Value>
     </Setting>
     <Setting Name="Action_CloseTab_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
@@ -165,7 +168,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="PersistCommandBarHistory" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="AllowPlainTextPuttyPasswordArg" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
