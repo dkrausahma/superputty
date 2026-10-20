@@ -109,6 +109,8 @@ namespace SuperPutty
             this.DockPanel.Theme = new VS2005Theme();
             // tool windows don't auto-hide (slide in/out); their captions get no pin button
             this.DockPanel.Theme.Extender.DockPaneCaptionFactory = new NoAutoHideCaptionFactory(this.DockPanel.Theme.Extender.DockPaneCaptionFactory);
+            // tab tooltips also while PuTTY has the focus (the main window then counts as inactive)
+            this.DockPanel.Theme.Extender.DockPaneStripFactory = new ShowAlwaysTabToolTipFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory);
 
             // force toolbar locations...designer likes to flip them around
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
