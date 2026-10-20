@@ -836,7 +836,6 @@ namespace SuperPutty
         NextTab,
         PrevTab,
         Options,
-        FullScreen,
         OpenSession,
         SwitchSession,
         DuplicateSession,
@@ -846,7 +845,9 @@ namespace SuperPutty
         /// <summary>Open Script Editor Window</summary>
         OpenScriptEditor,
         /// <summary>Rename active tab</summary>
-        RenameTab
+        RenameTab,
+        /// <summary>Enter or leave kiosk mode</summary>
+        KioskMode
     } 
     #endregion
 

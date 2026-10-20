@@ -29,6 +29,9 @@ namespace SuperPutty.Data
         /// <summary>A history entry</summary>
         public string Command { get; set; }
 
+        /// <summary>The session the command was sent to, see <see cref="CommandHistory.KeyFor"/></summary>
+        public string SessionKey { get; set; }
+
         /// <summary>A timestamp when the entry was created</summary>
         public DateTime TimeStamp { get; set; }
 
