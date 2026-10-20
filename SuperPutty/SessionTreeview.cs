@@ -85,6 +85,7 @@ namespace SuperPutty
                 this.treeView1.ImageList = SuperPuTTY.Images;
             }
             this.ApplySettings();
+            HealthMonitor.Updated += HealthMonitor_Updated;
 
             // populate sessions in the treeview from the registry
             this.LoadSessions();
@@ -134,6 +135,7 @@ namespace SuperPutty
 
         protected override void OnClosed(EventArgs e)
         {
+            HealthMonitor.Updated -= HealthMonitor_Updated;
             SuperPuTTY.Sessions.ListChanged -= new ListChangedEventHandler(Sessions_ListChanged);
             SuperPuTTY.Settings.SettingsSaving -= new SettingsSavingEventHandler(Settings_SettingsSaving);
             base.OnClosed(e);
@@ -590,6 +592,82 @@ namespace SuperPutty
             }
         }
 
+        #region Health
+
+        private static Color HealthColor(HealthLevel level)
+        {
+            switch (level)
+            {
+                case HealthLevel.Critical: return Color.Firebrick;
+                case HealthLevel.Warning: return Color.DarkOrange;
+                default: return Color.Empty;
+            }
+        }
+
+        /// <summary>Colour a session node by its last health check and add the details to its tooltip</summary>
+        private void ApplyHealth(TreeNode node, SessionData session)
+        {
+            HostHealth health = HealthMonitor.Get(session.SessionId);
+            node.ForeColor = health == null ? Color.Empty : HealthColor(health.Level);
+            node.ToolTipText = health == null ? session.ToString() : session.ToString() + "\n\n" + health.Describe();
+        }
+
+        /// <summary>The worst health of the sessions below a node</summary>
+        private static HealthLevel WorstHealth(TreeNode node)
+        {
+            HealthLevel worst = HealthLevel.Unknown;
+            foreach (TreeNode child in node.Nodes)
+            {
+                SessionData session = child.Tag as SessionData;
+                HostHealth health = session == null ? null : HealthMonitor.Get(session.SessionId);
+                HealthLevel level = session == null ? WorstHealth(child) : (health == null ? HealthLevel.Unknown : health.Level);
+                if (level > worst)
+                {
+                    worst = level;
+                }
+            }
+            return worst;
+        }
+
+        private void HealthMonitor_Updated(string sessionId)
+        {
+            TreeNode node = FindSessionNode(sessionId);
+            if (node == null || !(node.Tag is SessionData))
+            {
+                return;
+            }
+            ApplyHealth(node, (SessionData)node.Tag);
+            // folders show the worst state of their sessions, so a problem is visible when collapsed
+            for (TreeNode folder = node.Parent; folder != null; folder = folder.Parent)
+            {
+                folder.ForeColor = HealthColor(WorstHealth(folder));
+            }
+        }
+
+        private void checkHealthToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SessionData session = this.treeView1.SelectedNode == null ? null : this.treeView1.SelectedNode.Tag as SessionData;
+            if (session != null)
+            {
+                HealthMonitor.Check(new[] { session }, true);
+                SuperPuTTY.ReportStatus("Checking health of {0}…", session.SessionName);
+            }
+        }
+
+        private void checkHealthFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode node = this.treeView1.SelectedNode;
+            if (node != null && !IsSessionNode(node))
+            {
+                List<SessionData> sessions = new List<SessionData>();
+                GetAllSessions(node, sessions);
+                HealthMonitor.Check(sessions, true);
+                SuperPuTTY.ReportStatus("Checking health of {0} session(s)…", sessions.Count);
+            }
+        }
+
+        #endregion
+
         private void connectAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
             TreeNode node = this.treeView1.SelectedNode;
@@ -652,6 +730,7 @@ namespace SuperPutty
                 addedNode.Tag = session;
                 addedNode.ContextMenuStrip = this.contextMenuStripAddTreeItem;
                 addedNode.ToolTipText = session.ToString();
+                ApplyHealth(addedNode, session);
 
                 // Override with custom icon if valid
                 if (IsValidImage(session.ImageKey))
