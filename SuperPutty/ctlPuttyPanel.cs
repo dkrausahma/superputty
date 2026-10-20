@@ -437,6 +437,29 @@ namespace SuperPutty
             });
         }
 
+        /// <summary>PuTTY's "Copy All to Clipboard" system menu command (IDM_COPYALL)</summary>
+        private const uint PuttyCopyAllCommand = 0x0170;
+
+        /// <summary>True if the embedded program is PuTTY/KiTTY, which understands PuTTY's system menu commands</summary>
+        public bool SupportsPuttyCommands
+        {
+            get { return m_Session.Proto != ConnectionProtocol.Mintty && m_Session.Proto != ConnectionProtocol.VNC; }
+        }
+
+        /// <summary>
+        /// Let PuTTY copy the terminal screen and scrollback to the clipboard as plain text. Blocks until PuTTY has
+        /// done it, so call it off the UI thread. Returns false if the session can't do this.
+        /// </summary>
+        public bool CopyAllToClipboard()
+        {
+            if (!SupportsPuttyCommands || !m_AppPanel.ExternalProcessCaptured)
+            {
+                return false;
+            }
+            NativeMethods.SendMessage(m_AppPanel.AppWindowHandle, (uint)NativeMethods.WM.SYSCOMMAND, PuttyCopyAllCommand, 0L);
+            return true;
+        }
+
         public bool AcceptCommands
         {
             get { return this.acceptCommandsToolStripMenuItem.Checked;  }
