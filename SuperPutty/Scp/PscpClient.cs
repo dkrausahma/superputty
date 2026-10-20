@@ -175,7 +175,7 @@ namespace SuperPutty.Scp
             }
 
             sb.AppendFormat("-P {0} ", session.Port);
-            sb.AppendFormat("{0}@{1}:\"{2}\"", session.Username, session.Host, path);
+            sb.AppendFormat("{0}:\"{1}\"", UserAtHost(session), path);
 
             return sb.ToString();
         }
@@ -228,6 +228,12 @@ namespace SuperPutty.Scp
             }
         }
 
+        /// <summary>"user@host", or just the host when the session has no user (the PuTTY profile or a prompt supplies it)</summary>
+        public static string UserAtHost(SessionData session)
+        {
+            return string.IsNullOrEmpty(session.Username) ? session.Host : session.Username + "@" + session.Host;
+        }
+
         private static string ToArgs(SessionData session, string password, List<BrowserFileInfo> source, BrowserFileInfo target)
         {
             StringBuilder sb = new StringBuilder();
@@ -250,7 +256,7 @@ namespace SuperPutty.Scp
                 {
                     sb.AppendFormat("\"{0}\" ", file.Path);
                 }
-                sb.AppendFormat(" {0}@{1}:\"{2}\"", session.Username, session.Host, target.Path);
+                sb.AppendFormat(" {0}:\"{1}\"", UserAtHost(session), target.Path);
             }
             else
             {
@@ -258,7 +264,7 @@ namespace SuperPutty.Scp
                 {
                     Log.WarnFormat("Not possible to transfer multiple remote files locally at one time.  Transferring first file only!");
                 }
-                sb.AppendFormat(" {0}@{1}:\"{2}\" ", session.Username, session.Host, source[0].Path);
+                sb.AppendFormat(" {0}:\"{1}\" ", UserAtHost(session), source[0].Path);
                 sb.AppendFormat("\"{0}\"", target.Path);
             }
 

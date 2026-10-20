@@ -140,6 +140,8 @@ namespace SuperPutty
             this.btnContainersPane = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons = new System.Windows.Forms.ToolStripSeparator();
             this.btnCopySession = new System.Windows.Forms.ToolStripButton();
+            this.btnUploadFiles = new System.Windows.Forms.ToolStripButton();
+            this.openFileDialogUpload = new System.Windows.Forms.OpenFileDialog();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
             this.menuStrip1.SuspendLayout();
@@ -704,6 +706,7 @@ namespace SuperPutty
             this.btnContainersPane,
             this.toolStripSeparatorIcons,
             this.btnCopySession,
+            this.btnUploadFiles,
             this.toolStripSeparatorIcons2,
             this.btnKioskToggle});
             this.tsIcons.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
@@ -713,6 +716,10 @@ namespace SuperPutty
             this.tsIcons.Stretch = true;
             this.tsIcons.TabIndex = 8;
             this.tsIcons.Text = "Icons";
+            this.tsIcons.AllowDrop = true;
+            this.tsIcons.DragEnter += new System.Windows.Forms.DragEventHandler(this.tsIcons_DragOver);
+            this.tsIcons.DragOver += new System.Windows.Forms.DragEventHandler(this.tsIcons_DragOver);
+            this.tsIcons.DragDrop += new System.Windows.Forms.DragEventHandler(this.tsIcons_DragDrop);
             //
             // btnSessionsPane
             //
@@ -768,6 +775,21 @@ namespace SuperPutty
             this.btnCopySession.Text = "Copy Session to Clipboard";
             this.btnCopySession.ToolTipText = "Copy the active terminal's screen and scrollback to the clipboard";
             this.btnCopySession.Click += new System.EventHandler(this.copySession_Click);
+            //
+            // btnUploadFiles
+            //
+            this.btnUploadFiles.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnUploadFiles.Image = global::SuperPutty.Properties.Resources.upload_files;
+            this.btnUploadFiles.Name = "btnUploadFiles";
+            this.btnUploadFiles.Size = new System.Drawing.Size(23, 22);
+            this.btnUploadFiles.Text = "Upload Files";
+            this.btnUploadFiles.ToolTipText = "Upload files to the active terminal's host (click, or drop files here or on a tab)";
+            this.btnUploadFiles.Click += new System.EventHandler(this.btnUploadFiles_Click);
+            //
+            // openFileDialogUpload
+            //
+            this.openFileDialogUpload.Multiselect = true;
+            this.openFileDialogUpload.Title = "Upload Files";
             //
             // toolStripSeparatorIcons2
             //
@@ -1154,6 +1176,8 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
         private System.Windows.Forms.ToolStripButton btnCopySession;
+        private System.Windows.Forms.ToolStripButton btnUploadFiles;
+        private System.Windows.Forms.OpenFileDialog openFileDialogUpload;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;
         private System.Windows.Forms.ToolStripMenuItem copySessionToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItemCopySessionSep;

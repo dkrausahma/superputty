@@ -41,6 +41,8 @@ and Pageant integration) but adds the window management on top.
 - **SSH tunnels on the tab** — tabs show how many tunnels their session opens (`web01 ↔2`), with `!`
   when a local tunnel isn't listening or its port is taken (e.g. by another session); the tab tooltip
   lists every tunnel and its state.
+- **Upload files** — drag files or folders from Explorer onto a terminal tab (or the upload icon) to copy
+  them to that host, by default into the shell's current directory.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**
