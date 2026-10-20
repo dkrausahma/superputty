@@ -139,6 +139,19 @@ namespace SuperPutty
         /// <summary>Tunnel details appended to the tab tooltip</summary>
         private string tunnelToolTip = string.Empty;
 
+        /// <summary>True while a background tab has a title change the user hasn't looked at yet</summary>
+        public bool HasActivity { get; private set; }
+
+        /// <summary>Mark the tab ("● " before its title) or clear the mark</summary>
+        public void SetActivity(bool activity)
+        {
+            if (activity != this.HasActivity)
+            {
+                this.HasActivity = activity;
+                ApplyTabText();
+            }
+        }
+
         /// <summary>Show the tunnel marker and details on the tab</summary>
         public void SetTunnelDisplay(string suffix, string toolTip)
         {
@@ -153,7 +166,7 @@ namespace SuperPutty
         private void ApplyTabText()
         {
             string text = base.Text ?? string.Empty;
-            this.TabText = text.Replace("&", "&&") + this.tabTextSuffix;
+            this.TabText = (this.HasActivity ? "● " : string.Empty) + text.Replace("&", "&&") + this.tabTextSuffix;
             this.ToolTipText = this.tunnelToolTip.Length == 0 ? text : text + "\n\n" + this.tunnelToolTip;
         }
 

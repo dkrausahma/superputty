@@ -53,6 +53,15 @@ and Pageant integration) but adds the window management on top.
   minutes; any session or folder on demand.
 - **Copy last command** — copies just the last command and its output; with **session logs** switched on,
   every tab's output is also written to a file you can open as clean text.
+- **Background tab activity** — a background tab whose title changes gets a `●` marker (and a Windows
+  notification when SuperPuTTY isn't active), e.g. when a long build finishes. Most shells only change the
+  title at the prompt; to see when a command finishes, let bash show the running command in the title:
+  ```bash
+  # ~/.bashrc on the server (interactive shells): running command in the window title
+  trap 'printf "\033]0;%s: %s\007" "${HOSTNAME%%.*}" "$BASH_COMMAND"' DEBUG
+  ```
+- **Tunnel overview and folder commands** — Tools → SSH Tunnels lists the tunnels of all open tabs; the
+  Commands pane can run a command in all open tabs below a folder of the session tree.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**

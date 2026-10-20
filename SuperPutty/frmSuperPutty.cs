@@ -143,7 +143,7 @@ namespace SuperPutty
                                                                                   return new SessionDetail(x.InitializerResource as SingletonToolWindowHelper<SessionTreeview>);
                                                                               });
             this.sessions.InstanceChanged += SessionsInstanceChanged;
-            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab, ActiveSession));
+            this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab, ActiveSession, RunInFolder));
             this.containersPane = new SingletonToolWindowHelper<ContainersPane>("Containers", this.DockPanel, null, x => new ContainersPane(ActiveSession));
 
             // for toolbar
@@ -213,6 +213,7 @@ namespace SuperPutty
             this.healthTimer.Start();
             this.healthChecksToolStripMenuItem.Checked = SuperPuTTY.Settings.AutoHealthCheck;
             this.sessionLoggingToolStripMenuItem.Checked = SuperPuTTY.Settings.SessionLogging;
+            this.notifyActivityToolStripMenuItem.Checked = SuperPuTTY.Settings.NotifyBackgroundActivity;
 
             // Apply Settings
             this.ApplySettings();
@@ -278,12 +279,47 @@ namespace SuperPutty
             QueueIconBarUpdate();
         }
 
+        /// <summary>Tabs opened less than this ago don't report activity (their first titles arrive while connecting)</summary>
+        private static readonly TimeSpan ActivityGrace = TimeSpan.FromSeconds(15);
+
         void puttyPanel_TextChanged(object sender, EventArgs e)
         {
             ctlPuttyPanel p = (ctlPuttyPanel)sender;
             if (p == this.DockPanel.ActiveDocument)
             {
                 UpdateWindowText(p.Text);
+            }
+            else if (SuperPuTTY.Settings.NotifyBackgroundActivity && !p.HasActivity && DateTime.UtcNow - p.StartedUtc > ActivityGrace)
+            {
+                // a background tab's title changed, e.g. a long command finished and the prompt set the title again
+                p.SetActivity(true);
+                if (Form.ActiveForm == null)
+                {
+                    ShowNotification(p.Text, "Activity in a background tab (the command may have finished).");
+                }
+            }
+        }
+
+        /// <summary>A Windows notification from the tray icon, shown even when the icon is normally hidden</summary>
+        private void ShowNotification(string title, string text)
+        {
+            bool wasVisible = this.notifyicon.Visible;
+            this.notifyicon.Visible = true;
+            this.notifyicon.ShowBalloonTip(5000, title, text, ToolTipIcon.Info);
+            if (!wasVisible)
+            {
+                EventHandler hide = null;
+                hide = delegate
+                {
+                    this.notifyicon.BalloonTipClosed -= hide;
+                    this.notifyicon.BalloonTipClicked -= hide;
+                    if (this.WindowState != FormWindowState.Minimized || !SuperPuTTY.Settings.MinimizeToTray)
+                    {
+                        this.notifyicon.Visible = false;
+                    }
+                };
+                this.notifyicon.BalloonTipClosed += hide;
+                this.notifyicon.BalloonTipClicked += hide;
             }
         }
 
@@ -353,6 +389,11 @@ namespace SuperPutty
         {
             FocusActiveDocument("ActiveDocumentChanged");
             RefreshCommandHistory();
+            ctlPuttyPanel activated = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (activated != null)
+            {
+                activated.SetActivity(false);
+            }
             UpdateIconBar();
             if (this.containersPane.Instance != null)
             {
@@ -1046,14 +1087,28 @@ namespace SuperPutty
         /// </summary>
         private int RunInAllSessions(string command)
         {
-            List<ctlPuttyPanel> targets = GetCommandTargets();
+            return RunInSessions(command, GetCommandTargets(), "Run in All Terminals");
+        }
+
+        /// <summary>Run a command in the open tabs (that accept commands) of sessions below a folder of the session tree</summary>
+        private int RunInFolder(string command, string folder)
+        {
+            List<ctlPuttyPanel> targets = GetCommandTargets()
+                .Where(p => CommandLibrary.FolderChain(p.Session.ScopeSessionId).Contains(folder)).ToList();
+            return RunInSessions(command, targets, "Run in Terminals of " + folder);
+        }
+
+        /// <summary>Run a command in the given tabs after a confirmation, recording it in each session's history</summary>
+        private int RunInSessions(string command, List<ctlPuttyPanel> targets, string title)
+        {
             if (targets.Count == 0)
             {
-                SuperPuTTY.ReportStatus("No terminal tab accepts commands");
+                SuperPuTTY.ReportStatus("{0}: no open terminal tab accepts commands", title);
                 return 0;
             }
-            if (MessageBox.Show(this, string.Format("Run this command in {0} terminal(s)?\n\n{1}", targets.Count, command.Trim()),
-                "Run in All Terminals", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            if (MessageBox.Show(this, string.Format("Run this command in {0} terminal(s)?\n\n{1}\n\n{2}", targets.Count, command.Trim(),
+                    string.Join(", ", targets.Select(t => t.Text))),
+                title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
             {
                 return 0;
             }
@@ -1734,17 +1789,27 @@ namespace SuperPutty
             this.tsSendCommandCombo.ComboBox.Refresh();
         }
 
+        /// <summary>The state of one tunnel of an open tab (tab markers and the tunnel overview)</summary>
+        private class TunnelEntry
+        {
+            public ctlPuttyPanel Panel { get; set; }
+            public SshTunnel Tunnel { get; set; }
+            public TunnelState State { get; set; }
+            /// <summary>Who holds the port for a conflict, otherwise null</summary>
+            public string Holder { get; set; }
+        }
+
         /// <summary>
-        /// Show on each tab with SSH tunnels how many it has and whether their local ports are held by its PuTTY
-        /// (or by another SuperPuTTY tab of the same profile); details in the tab tooltip
+        /// The state of every tunnel of the open tabs: is its local port held by the tab's PuTTY (or by another tab
+        /// of the same host)? Null if the listener table can't be read.
         /// </summary>
-        private void UpdateTunnelDisplays()
+        private List<TunnelEntry> CollectTunnelStates()
         {
             List<ctlPuttyPanel> panels = this.DockPanel.Contents.OfType<ctlPuttyPanel>().ToList();
-            List<ctlPuttyPanel> withTunnels = panels.Where(p => p.Tunnels != null && p.Tunnels.Count > 0).ToList();
-            if (withTunnels.Count == 0)
+            List<TunnelEntry> entries = new List<TunnelEntry>();
+            if (!panels.Any(p => p.Tunnels != null && p.Tunnels.Count > 0))
             {
-                return;
+                return entries;
             }
 
             Dictionary<int, HashSet<int>> listeners;
@@ -1756,7 +1821,7 @@ namespace SuperPutty
             {
                 Log.Warn("Could not read the TCP listener table, tunnel markers disabled", ex);
                 this.tunnelTimer.Stop();
-                return;
+                return null;
             }
 
             // PuTTY process -> tab, to name the tab that holds a port
@@ -1770,26 +1835,69 @@ namespace SuperPutty
                 }
             }
 
-            foreach (ctlPuttyPanel panel in withTunnels)
+            foreach (ctlPuttyPanel panel in panels.Where(p => p.Tunnels != null && p.Tunnels.Count > 0))
             {
                 int processId = panel.AppPanel.ProcessId;
                 List<int> sameHost = tabsByProcess
                     .Where(t => t.Key != processId && TunnelMonitor.SameTarget(t.Value.Session, panel.Session))
                     .Select(t => t.Key).ToList();
                 bool inStartup = DateTime.UtcNow - panel.StartedUtc < TunnelMonitor.StartupGrace;
-                List<TunnelState> states = panel.Tunnels
-                    .Select(t => TunnelMonitor.StateOf(t, processId, listeners, sameHost, inStartup))
-                    .ToList();
-
-                Dictionary<int, string> holders = new Dictionary<int, string>();
-                for (int i = 0; i < states.Count; i++)
+                foreach (SshTunnel tunnel in panel.Tunnels)
                 {
-                    if (states[i] == TunnelState.Conflict)
+                    TunnelState state = TunnelMonitor.StateOf(tunnel, processId, listeners, sameHost, inStartup);
+                    entries.Add(new TunnelEntry
                     {
-                        holders[panel.Tunnels[i].ListenPort] = DescribeProcesses(listeners[panel.Tunnels[i].ListenPort], tabsByProcess);
-                    }
+                        Panel = panel,
+                        Tunnel = tunnel,
+                        State = state,
+                        Holder = state == TunnelState.Conflict ? DescribeProcesses(listeners[tunnel.ListenPort], tabsByProcess) : null
+                    });
                 }
-                panel.SetTunnelDisplay(TunnelMonitor.TabSuffix(states), TunnelMonitor.ToolTip(panel.Tunnels, states, holders));
+            }
+            return entries;
+        }
+
+        /// <summary>
+        /// Show on each tab with SSH tunnels how many it has and whether their local ports are held by its PuTTY
+        /// (or by another SuperPuTTY tab of the same host); details in the tab tooltip
+        /// </summary>
+        private void UpdateTunnelDisplays()
+        {
+            List<TunnelEntry> entries = CollectTunnelStates();
+            if (entries == null)
+            {
+                return;
+            }
+            foreach (IGrouping<ctlPuttyPanel, TunnelEntry> tab in entries.GroupBy(e => e.Panel))
+            {
+                List<TunnelState> states = tab.Select(e => e.State).ToList();
+                Dictionary<int, string> holders = tab.Where(e => e.Holder != null)
+                    .GroupBy(e => e.Tunnel.ListenPort).ToDictionary(g => g.Key, g => g.First().Holder);
+                tab.Key.SetTunnelDisplay(TunnelMonitor.TabSuffix(states), TunnelMonitor.ToolTip(tab.Select(e => e.Tunnel).ToList(), states, holders));
+            }
+        }
+
+        /// <summary>Tools → SSH Tunnels: all tunnels of the open tabs; double-click switches to the tab</summary>
+        private void tunnelsOverview_Click(object sender, EventArgs e)
+        {
+            List<TunnelEntry> entries = CollectTunnelStates() ?? new List<TunnelEntry>();
+            List<string[]> rows = entries.Select(entry => new[]
+            {
+                entry.Panel.Text,
+                entry.Tunnel.Describe(),
+                entry.State == TunnelState.Up ? "up"
+                    : entry.State == TunnelState.Down ? "NOT listening"
+                    : entry.State == TunnelState.Conflict ? "port in use by " + entry.Holder
+                    : entry.State == TunnelState.NotCheckable ? "on the server (not checked)" : "connecting…",
+                entry.Tunnel.Origin
+            }).ToList();
+
+            using (dlgTunnels dialog = new dlgTunnels(rows))
+            {
+                if (dialog.ShowDialog(this) == DialogResult.OK && dialog.SelectedIndex >= 0)
+                {
+                    entries[dialog.SelectedIndex].Panel.Activate();
+                }
             }
         }
 
@@ -1803,6 +1911,20 @@ namespace SuperPutty
             HealthMonitor.Check(this.DockPanel.Contents.OfType<ctlPuttyPanel>()
                 .Select(p => SuperPuTTY.GetSessionById(p.Session.ScopeSessionId))
                 .Where(s => s != null).Distinct().ToList(), false);
+        }
+
+        private void notifyActivityToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.notifyActivityToolStripMenuItem.Checked = !this.notifyActivityToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.NotifyBackgroundActivity = this.notifyActivityToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.Save();
+            if (!SuperPuTTY.Settings.NotifyBackgroundActivity)
+            {
+                foreach (ctlPuttyPanel panel in this.DockPanel.Contents.OfType<ctlPuttyPanel>())
+                {
+                    panel.SetActivity(false);
+                }
+            }
         }
 
         private void sessionLoggingToolStripMenuItem_Click(object sender, EventArgs e)
