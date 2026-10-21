@@ -54,6 +54,8 @@ and Pageant integration) but adds the window management on top.
   them to that host, by default into the shell's current directory.
 - **Transfer files** — copy files and folders between this PC and any session, or directly from one
   host to another (relayed through this PC, so the hosts need no keys for each other).
+- **Live input** — the keyboard button in the command bar types what you type in one tab into all tabs that
+  accept commands (ClusterSSH style); production tabs ask first.
 - **Reconnect** — a dropped connection marks the tab (×) and shows a Reconnect bar above the terminal;
   optionally reconnects automatically (Options → GUI, off by default).
 - **Pageant indicator** — the status bar shows whether Pageant runs and how many keys it holds

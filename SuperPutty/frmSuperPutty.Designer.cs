@@ -112,6 +112,7 @@ namespace SuperPutty
             this.tsSendCommandCombo = new System.Windows.Forms.ToolStripComboBox();
             this.tbBtnSendCommand = new System.Windows.Forms.ToolStripButton();
             this.tbBtnMaskText = new System.Windows.Forms.ToolStripButton();
+            this.tbBtnLiveInput = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonRunScript = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorSendCommands = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripSeparatorCommandOptions = new System.Windows.Forms.ToolStripSeparator();
@@ -937,6 +938,7 @@ namespace SuperPutty
             this.tbBtnSendCommand,
             this.toolStripSeparatorCommandOptions,
             this.tbBtnMaskText,
+            this.tbBtnLiveInput,
             this.toolStripButtonRunScript,
             this.toolStripSeparatorSendCommands,
             this.tbBtnSelectDocs});
@@ -982,6 +984,18 @@ namespace SuperPutty
             this.tbBtnMaskText.Text = "Mask Text";
             this.tbBtnMaskText.ToolTipText = "Mask text when typing";
             this.tbBtnMaskText.Click += new System.EventHandler(this.tbBtnMaskText_Click);
+            // 
+            // tbBtnLiveInput
+            // 
+            this.tbBtnLiveInput.CheckOnClick = true;
+            this.tbBtnLiveInput.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tbBtnLiveInput.Image = global::SuperPutty.Properties.Resources.keyboard;
+            this.tbBtnLiveInput.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbBtnLiveInput.Name = "tbBtnLiveInput";
+            this.tbBtnLiveInput.Size = new System.Drawing.Size(23, 22);
+            this.tbBtnLiveInput.Text = "Live Input";
+            this.tbBtnLiveInput.ToolTipText = "Live input: what you type in a tab that accepts commands is typed in all of them";
+            this.tbBtnLiveInput.CheckedChanged += new System.EventHandler(this.tbBtnLiveInput_CheckedChanged);
             // 
             // toolStripButtonRunScript
             // 
@@ -1269,6 +1283,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem exitSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton toolStripButtonClearFields;
         private System.Windows.Forms.ToolStripButton tbBtnMaskText;
+        private System.Windows.Forms.ToolStripButton tbBtnLiveInput;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorSendCommands;
         private System.Windows.Forms.ToolStripButton tbBtnSelectDocs;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem9;
