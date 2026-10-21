@@ -167,11 +167,10 @@ namespace SuperPutty.Scp
 
             //only send the password if AllowPlainTextPuttyPasswordArg is checked
             if (!String.IsNullOrEmpty(password) && !SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg)
-                Log.Warn("SuperPuTTY is set to NOT allow the use of the -pw <password> argument, this can be overriden in Tools -> Options -> GUI");
-            //fix: use the parameter "password"
+                Log.Warn("SuperPuTTY is set to NOT allow passing stored passwords, this can be overriden in Tools -> Options -> GUI");
             if (!string.IsNullOrEmpty(password) && SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg)
             {
-                sb.AppendFormat("-pw {0} ", password);
+                sb.Append(PasswordArgument(password)).Append(' ');
             }
 
             sb.AppendFormat("-P {0} ", session.Port);
@@ -228,6 +227,12 @@ namespace SuperPutty.Scp
             }
         }
 
+        /// <summary>The password option: "-pwfile" with a short-lived file; the log variant ("XXXXX") shows no file</summary>
+        private static string PasswordArgument(string password)
+        {
+            return password == "XXXXX" ? "-pwfile <password file>" : PasswordFile.Argument(password);
+        }
+
         /// <summary>"user@host", or just the host when the session has no user (the PuTTY profile or a prompt supplies it)</summary>
         public static string UserAtHost(SessionData session)
         {
@@ -245,7 +250,7 @@ namespace SuperPutty.Scp
             }
             if (!String.IsNullOrEmpty(password))
             {
-                sb.Append("-pw ").Append(password).Append(" ");
+                sb.Append(PasswordArgument(password)).Append(' ');
             }
             sb.AppendFormat("-P {0} ", session.Port);
 

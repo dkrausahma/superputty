@@ -205,6 +205,7 @@ namespace SuperPutty
             // command files of tabs opened with a remote command and relay folders, left behind by an earlier run
             RemoteCommandTab.CleanUp();
             FileTransferJob.CleanUp();
+            PasswordFile.CleanUp();
 
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
