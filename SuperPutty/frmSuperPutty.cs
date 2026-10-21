@@ -121,9 +121,11 @@ namespace SuperPutty
                 (content, files) => UploadFiles((ctlPuttyPanel)content, files));
 
             // force toolbar locations...designer likes to flip them around
+            // row 1: menu; row 2: icon bar with the command bar right after it; row 3: quick connection bar (hidden)
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
-            this.tsCommands.Location = new System.Drawing.Point(0, 49);
-            this.tsConnect.Location = new System.Drawing.Point(0, 74);
+            this.toolStripContainer1.TopToolStripPanel.Join(this.tsCommands,
+                new System.Drawing.Point(this.tsIcons.Location.X + this.tsIcons.PreferredSize.Width, this.tsIcons.Location.Y));
+            this.tsConnect.Location = new System.Drawing.Point(0, 49);
 
             if (this.DesignMode) return;
 

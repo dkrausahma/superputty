@@ -112,6 +112,7 @@ namespace SuperPutty
             this.tbBtnMaskText = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonRunScript = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorSendCommands = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripSeparatorCommandOptions = new System.Windows.Forms.ToolStripSeparator();
             this.tbBtnSelectDocs = new System.Windows.Forms.ToolStripButton();
             this.tsConnect = new SuperPutty.Gui.ClickThroughToolStrip();
             this.toolStripLabel1 = new System.Windows.Forms.ToolStripLabel();
@@ -763,7 +764,7 @@ namespace SuperPutty
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
             this.tsIcons.Name = "tsIcons";
             this.tsIcons.Size = new System.Drawing.Size(1008, 25);
-            this.tsIcons.Stretch = true;
+            this.tsIcons.Stretch = false;
             this.tsIcons.TabIndex = 8;
             this.tsIcons.Text = "Icons";
             this.tsIcons.AllowDrop = true;
@@ -914,15 +915,16 @@ namespace SuperPutty
             this.tbTextSendCommands,
             this.tsSendCommandCombo,
             this.tbBtnSendCommand,
+            this.toolStripSeparatorCommandOptions,
             this.tbBtnMaskText,
             this.toolStripButtonRunScript,
             this.toolStripSeparatorSendCommands,
             this.tbBtnSelectDocs});
             this.tsCommands.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
-            this.tsCommands.Location = new System.Drawing.Point(0, 49);
+            this.tsCommands.Location = new System.Drawing.Point(260, 24);
             this.tsCommands.Name = "tsCommands";
             this.tsCommands.Size = new System.Drawing.Size(1008, 25);
-            this.tsCommands.Stretch = true;
+            this.tsCommands.Stretch = false;
             this.tsCommands.TabIndex = 6;
             // 
             // tbTextSendCommands
@@ -971,6 +973,11 @@ namespace SuperPutty
             this.toolStripButtonRunScript.Text = "toolStripButtonScript";
             this.toolStripButtonRunScript.ToolTipText = "Run Script";
             this.toolStripButtonRunScript.Click += new System.EventHandler(this.toolStripButtonRunScript_Click);
+            //
+            // toolStripSeparatorCommandOptions
+            //
+            this.toolStripSeparatorCommandOptions.Name = "toolStripSeparatorCommandOptions";
+            this.toolStripSeparatorCommandOptions.Size = new System.Drawing.Size(6, 25);
             // 
             // toolStripSeparatorSendCommands
             // 
@@ -1004,7 +1011,7 @@ namespace SuperPutty
             this.tbBtnConnect,
             this.toolStripButtonClearFields});
             this.tsConnect.LayoutStyle = System.Windows.Forms.ToolStripLayoutStyle.HorizontalStackWithOverflow;
-            this.tsConnect.Location = new System.Drawing.Point(0, 74);
+            this.tsConnect.Location = new System.Drawing.Point(0, 49);
             this.tsConnect.Name = "tsConnect";
             this.tsConnect.Size = new System.Drawing.Size(1008, 25);
             this.tsConnect.Stretch = true;
@@ -1215,6 +1222,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripComboBox tbComboSession;
         private System.Windows.Forms.ToolStripButton tbBtnConnect;
         private SuperPutty.Gui.ClickThroughToolStrip tsCommands;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparatorCommandOptions;
         private System.Windows.Forms.ToolStripLabel tbTextSendCommands;
         private System.Windows.Forms.ToolStripButton tbBtnSendCommand;
         private System.Windows.Forms.ToolStripComboBox tsSendCommandCombo;
