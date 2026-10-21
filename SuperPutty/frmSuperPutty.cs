@@ -1892,6 +1892,79 @@ namespace SuperPutty
             this.tsSendCommandCombo.ComboBox.Refresh();
         }
 
+        #region Live input
+
+        /// <summary>Live input on: keys typed in a target tab are typed in all target tabs (read by the keyboard hook)</summary>
+        private bool liveInput;
+
+        private void tbBtnLiveInput_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!this.tbBtnLiveInput.Checked)
+            {
+                this.liveInput = false;
+                this.tbBtnLiveInput.BackColor = System.Drawing.Color.Empty;
+                SuperPuTTY.ReportStatus("Live input off");
+                return;
+            }
+            List<ctlPuttyPanel> targets = GetCommandTargets();
+            if (targets.Count < 2)
+            {
+                this.tbBtnLiveInput.Checked = false;
+                MessageBox.Show(this, "Live input needs at least two open terminal tabs that accept commands " +
+                    "(tab menu → Accept Commands, or the selector next to this button).", "Live Input", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            List<ctlPuttyPanel> prod = targets.Where(t => t.Environment == EnvironmentKind.Prod).ToList();
+            if (prod.Count > 0 && MessageBox.Show(this,
+                string.Format("WARNING: {0} of the {1} terminals are PRODUCTION systems:\n{2}\n\nEvery key you type goes to all of them. Turn on live input?",
+                    prod.Count, targets.Count, string.Join(", ", prod.Select(t => t.Text))),
+                "Live Input", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            {
+                this.tbBtnLiveInput.Checked = false;
+                return;
+            }
+            this.liveInput = true;
+            this.tbBtnLiveInput.BackColor = System.Drawing.Color.FromArgb(255, 200, 120);
+            SuperPuTTY.ReportStatus("Live input on: keys typed in {0} go to all of them", string.Join(", ", targets.Select(t => t.Text)));
+        }
+
+        /// <summary>Repeats a key typed into a target tab's PuTTY in the other target tabs (called from the keyboard hook)</summary>
+        private void MirrorKey(Keys key, IntPtr hookData)
+        {
+            try
+            {
+                ctlPuttyPanel active = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+                if (active == null || !LiveInput.HasFocus(active.AppPanel.AppWindowHandle))
+                {
+                    return;
+                }
+                List<ctlPuttyPanel> targets = GetCommandTargets();
+                if (!targets.Contains(active))
+                {
+                    return;
+                }
+                uint scanCode = (uint)Marshal.ReadInt32(hookData, 4);
+                bool extended = (Marshal.ReadInt32(hookData, 8) & 0x01) != 0;
+                IntPtr layoutWindow = active.AppPanel.AppWindowHandle;
+                Keystroke? keystroke = LiveInput.Translate(key, scanCode, extended, this.isShiftDown, this.isControlDown, this.isAltDown,
+                    (k, scan, shift, altGr) => LiveInput.ToChars(k, scan, shift, altGr, layoutWindow));
+                if (keystroke == null)
+                {
+                    return;
+                }
+                foreach (ctlPuttyPanel target in targets.Where(t => t != active))
+                {
+                    LiveInput.Send(target.AppPanel.AppWindowHandle, keystroke.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Live input failed", ex);
+            }
+        }
+
+        #endregion
+
         /// <summary>The state of one tunnel of an open tab (tab markers and the tunnel overview)</summary>
         private class TunnelEntry
         {
@@ -2277,7 +2350,10 @@ namespace SuperPutty
                     }
                 }
 
-
+                if (isKeyDown && this.liveInput)
+                {
+                    MirrorKey((Keys)vkCode, lParam);
+                }
             }
 
             return NativeMethods.CallNextHookEx(kbHookID, nCode, wParam, lParam);

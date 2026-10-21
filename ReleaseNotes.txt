@@ -10,6 +10,7 @@
  - Per-session command history, Copy Session / Copy Last Command, session log files with clean text copies
  - Session icons by environment (prod/qual/dev) and role
  - Stored passwords encrypted (DPAPI) and passed via -pwfile instead of the command line
+ - Live input: type into several terminals at once
  - Reconnect bar on dropped tabs, optional automatic reconnect
  - Pageant indicator in the status bar (running, number of loaded keys)
  - All settings in SuperPuTTY.settings (moved from user.config once), File > Back up / Restore Settings
