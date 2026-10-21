@@ -33,13 +33,14 @@ namespace SuperPutty
             InitializeComponent();
             this.Text = String.Format("About {0}", AssemblyTitle);
             this.labelProductName.Text = AssemblyProduct;
-            this.labelVersion.Text = String.Format("Version {0}", AssemblyVersion);
-            this.labelCopyright.Text = AssemblyCopyright;
-            this.linkLabelCompany.Text = AssemblyCompany;
-            this.linkLabelCompany2.Text = "https://github.com/jimradford/superputty";
-            //this.textBoxDescription.Text = AssemblyDescription;
+            this.labelVersion.Text = String.Format("Version {0} - {1} edition", AssemblyVersion, Edition);
+            this.labelCopyright.Text = "Copyright © 2026 " + Edition;
 
-            textBoxSupportText.AppendText("SuperPuTTY Version: " + SuperPuTTY.Version + System.Environment.NewLine);
+            // credits: the original project and PuTTY, each linked
+            SetLink(this.linkLabelCompany, "Based on SuperPuTTY by Jim Radford and contributors", SuperPuttyUrl);
+            SetLink(this.linkLabelCompany2, "Uses PuTTY by Simon Tatham", PuttyUrl);
+
+            textBoxSupportText.AppendText("SuperPuTTY Version: " + SuperPuTTY.Version + " (" + Edition + " edition)" + System.Environment.NewLine);
             Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
             foreach(var a in asms)
             {                
@@ -47,6 +48,20 @@ namespace SuperPutty
             }
 
 
+        }
+
+        /// <summary>Developer of this edition (the .NET 10 port and its new features)</summary>
+        public const string Edition = "Kraus-Ahma IT Consulting";
+
+        private const string SuperPuttyUrl = "https://github.com/jimradford/superputty";
+        private const string PuttyUrl = "https://www.chiark.greenend.org.uk/~sgtatham/putty/";
+
+        /// <summary>Show a text on a link label that opens the given URL when clicked</summary>
+        private static void SetLink(LinkLabel label, string text, string url)
+        {
+            label.Text = text;
+            label.Links.Clear();
+            label.Links.Add(0, text.Length, url);
         }
 
         #region Assembly Attribute Accessors
@@ -130,8 +145,8 @@ namespace SuperPutty
 
         private void linkLabelCompany2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            LinkLabel link = (LinkLabel)sender;
-            Process.Start(new ProcessStartInfo(link.Text) { UseShellExecute = true });
+            string url = e.Link.LinkData as string ?? ((LinkLabel)sender).Text;
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         }
     }
 }
