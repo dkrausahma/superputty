@@ -32,6 +32,9 @@ and Pageant integration) but adds the window management on top.
   a session.
 - **Icon bar** with toggle buttons (pressed while active, click again to undo): show/close the Sessions pane (with Session Detail below it), show/close the Layouts
   pane, and toggle **kiosk mode** (F11; full screen, menus and panels hidden, only terminal tabs visible).
+- **Production at a glance** — terminal tabs carry a coloured bar for their environment (prod red with a
+  warning badge, qual amber, dev green); running a command in several terminals warns when production
+  systems are among them.
 - **Session icons by environment and role** — 44 icons: the shape shows the role (server, web, database,
   docker, GPU, app, storage, security, mail, monitoring, jump host), the colour the environment (prod red,
   qual amber, dev green, or neutral blue). Pick them in the session's settings.
