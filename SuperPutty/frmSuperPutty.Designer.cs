@@ -144,6 +144,10 @@ namespace SuperPutty
             this.btnUploadFiles = new System.Windows.Forms.ToolStripButton();
             this.btnTransferFiles = new System.Windows.Forms.ToolStripButton();
             this.transferFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyLastCommandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.openSessionLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.openLogFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.sessionLoggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileDialogUpload = new System.Windows.Forms.OpenFileDialog();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
@@ -318,6 +322,7 @@ namespace SuperPutty
             this.showMenuBarToolStripMenuItem,
             this.alwaysOnTopToolStripMenuItem,
             this.healthChecksToolStripMenuItem,
+            this.sessionLoggingToolStripMenuItem,
             this.toolStripMenuItem9,
             this.kioskModeToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
@@ -361,6 +366,14 @@ namespace SuperPutty
             this.healthChecksToolStripMenuItem.Text = "&Health Checks for Open Tabs";
             this.healthChecksToolStripMenuItem.ToolTipText = "Check load, disk, memory, failed units and containers of open tabs' hosts every 5 minutes (via plink)";
             this.healthChecksToolStripMenuItem.Click += new System.EventHandler(this.healthChecksToolStripMenuItem_Click);
+            // 
+            // sessionLoggingToolStripMenuItem
+            // 
+            this.sessionLoggingToolStripMenuItem.Name = "sessionLoggingToolStripMenuItem";
+            this.sessionLoggingToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.sessionLoggingToolStripMenuItem.Text = "Log Sessions to &Files";
+            this.sessionLoggingToolStripMenuItem.ToolTipText = "PuTTY writes each new tab's output to a log file in the settings folder's logs folder";
+            this.sessionLoggingToolStripMenuItem.Click += new System.EventHandler(this.sessionLoggingToolStripMenuItem_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -459,6 +472,9 @@ namespace SuperPutty
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.copySessionToolStripMenuItem,
+            this.copyLastCommandToolStripMenuItem,
+            this.openSessionLogToolStripMenuItem,
+            this.openLogFolderToolStripMenuItem,
             this.transferFilesToolStripMenuItem,
             this.toolStripMenuItemCopySessionSep,
             this.puTTYConfigurationToolStripMenuItem,
@@ -817,6 +833,29 @@ namespace SuperPutty
             this.transferFilesToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
             this.transferFilesToolStripMenuItem.Text = "&Transfer Files…";
             this.transferFilesToolStripMenuItem.Click += new System.EventHandler(this.transferFiles_Click);
+            //
+            // copyLastCommandToolStripMenuItem
+            //
+            this.copyLastCommandToolStripMenuItem.Name = "copyLastCommandToolStripMenuItem";
+            this.copyLastCommandToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.copyLastCommandToolStripMenuItem.Text = "Copy &Last Command";
+            this.copyLastCommandToolStripMenuItem.ToolTipText = "Copy only the last command and its output (e.g. to paste into a chat)";
+            this.copyLastCommandToolStripMenuItem.Click += new System.EventHandler(this.copyLastCommand_Click);
+            //
+            // openSessionLogToolStripMenuItem
+            //
+            this.openSessionLogToolStripMenuItem.Name = "openSessionLogToolStripMenuItem";
+            this.openSessionLogToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.openSessionLogToolStripMenuItem.Text = "Open Session &Log";
+            this.openSessionLogToolStripMenuItem.ToolTipText = "Open the active tab's session log without terminal control codes";
+            this.openSessionLogToolStripMenuItem.Click += new System.EventHandler(this.openSessionLog_Click);
+            //
+            // openLogFolderToolStripMenuItem
+            //
+            this.openLogFolderToolStripMenuItem.Name = "openLogFolderToolStripMenuItem";
+            this.openLogFolderToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.openLogFolderToolStripMenuItem.Text = "Open Log &Folder";
+            this.openLogFolderToolStripMenuItem.Click += new System.EventHandler(this.openLogFolder_Click);
             //
             // openFileDialogUpload
             //
@@ -1212,6 +1251,10 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnUploadFiles;
         private System.Windows.Forms.ToolStripButton btnTransferFiles;
         private System.Windows.Forms.ToolStripMenuItem transferFilesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem copyLastCommandToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem openSessionLogToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem openLogFolderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem sessionLoggingToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog openFileDialogUpload;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;
         private System.Windows.Forms.ToolStripMenuItem copySessionToolStripMenuItem;

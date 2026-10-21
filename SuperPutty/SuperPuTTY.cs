@@ -859,7 +859,9 @@ namespace SuperPutty
         /// <summary>Enter or leave kiosk mode</summary>
         KioskMode,
         /// <summary>Copy the active terminal's screen and scrollback to the clipboard</summary>
-        CopySessionToClipboard
+        CopySessionToClipboard,
+        /// <summary>Copy only the last command and its output to the clipboard</summary>
+        CopyLastCommand
     } 
     #endregion
 

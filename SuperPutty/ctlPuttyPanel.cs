@@ -57,7 +57,8 @@ namespace SuperPutty
         {
             m_Session = session;
             m_ApplicationExit = callback;
-            m_puttyStartInfo = new PuttyStartInfo(session);
+            this.LogFile = SessionLog.NewLogFile(session);
+            m_puttyStartInfo = new PuttyStartInfo(session, this.LogFile);
 
             InitializeComponent();
 
@@ -96,6 +97,9 @@ namespace SuperPutty
             base.OnTextChanged(e);
             ApplyTabText();
         }
+
+        /// <summary>PuTTY's session log of this tab (when session logging is on), otherwise null</summary>
+        public string LogFile { get; private set; }
 
         /// <summary>Files or folders dropped from Explorer on the terminal area: (tab, paths)</summary>
         public event Action<ctlPuttyPanel, string[]> FilesDropped;
