@@ -91,7 +91,7 @@ namespace SuperPutty.Utils
         /// Return first existing file path or the first if none found
         /// </summary>
         /// <returns></returns>
-        string GetAppSettingsFilePath()
+        public string GetAppSettingsFilePath()
         {
             string[] paths = GetAppSettingsPaths();
             string fileName = GetAppSettingsFileName();

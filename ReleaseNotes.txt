@@ -10,6 +10,7 @@
  - Per-session command history, Copy Session / Copy Last Command, session log files with clean text copies
  - Session icons by environment (prod/qual/dev) and role
  - Stored passwords encrypted (DPAPI) and passed via -pwfile instead of the command line
+ - All settings in SuperPuTTY.settings (moved from user.config once), File > Back up / Restore Settings
  - Background tab activity marker and notification
 1.4.0.9
  - Fixes several bugs and feature updates since 1.4.0.8 See https://github.com/jimradford/superputty/compare/1.4.0.8...master for all 79 commits
