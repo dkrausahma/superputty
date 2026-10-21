@@ -54,6 +54,8 @@ namespace SuperPutty
             this.fromPuTTYSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromPuTTYCMExportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.backUpSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.restoreSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
             this.openSessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.switchSessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -186,6 +188,8 @@ namespace SuperPutty
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.importSettingsToolStripMenuItem,
             this.toolStripMenuItem1,
+            this.backUpSettingsToolStripMenuItem,
+            this.restoreSettingsToolStripMenuItem,
             this.toolStripMenuItem7,
             this.openSessionToolStripMenuItem,
             this.switchSessionToolStripMenuItem,
@@ -238,6 +242,22 @@ namespace SuperPutty
             this.toolStripMenuItem1.Size = new System.Drawing.Size(203, 22);
             this.toolStripMenuItem1.Text = "&Export Sessions";
             this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            // 
+            // backUpSettingsToolStripMenuItem
+            // 
+            this.backUpSettingsToolStripMenuItem.Name = "backUpSettingsToolStripMenuItem";
+            this.backUpSettingsToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.backUpSettingsToolStripMenuItem.Text = "&Back up Settings...";
+            this.backUpSettingsToolStripMenuItem.ToolTipText = "Save settings, sessions, commands and layouts in one zip file";
+            this.backUpSettingsToolStripMenuItem.Click += new System.EventHandler(this.backUpSettingsToolStripMenuItem_Click);
+            // 
+            // restoreSettingsToolStripMenuItem
+            // 
+            this.restoreSettingsToolStripMenuItem.Name = "restoreSettingsToolStripMenuItem";
+            this.restoreSettingsToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.restoreSettingsToolStripMenuItem.Text = "&Restore Settings...";
+            this.restoreSettingsToolStripMenuItem.ToolTipText = "Restore a backup zip file (applied on the next start)";
+            this.restoreSettingsToolStripMenuItem.Click += new System.EventHandler(this.restoreSettingsToolStripMenuItem_Click);
             // 
             // toolStripMenuItem7
             // 
@@ -1191,6 +1211,8 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem documentationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem backUpSettingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem restoreSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem2;

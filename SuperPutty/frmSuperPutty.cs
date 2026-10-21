@@ -472,6 +472,79 @@ namespace SuperPutty
             }
         }
 
+        private void backUpSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog
+            {
+                Filter = "Zip files|*.zip|All files|*.*",
+                FileName = string.Format("SuperPuTTY-backup-{0:yyyyMMdd-HHmm}.zip", DateTime.Now),
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (saveDialog.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+            try
+            {
+                // write the current state first, so the backup holds what is shown
+                SuperPuTTY.Settings.Save();
+                SuperPuTTY.SaveSessions();
+                int count = SettingsBackup.Create(saveDialog.FileName, SuperPuTTY.Settings.SettingsFilePath, SuperPuTTY.Settings.SettingsFolder, SuperPuTTY.Version);
+                SuperPuTTY.ReportStatus("Backed up {0} files to {1}", count, saveDialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Backup failed", ex);
+                MessageBox.Show(this, "The backup could not be written:\n" + ex.Message, "Back up Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void restoreSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openDialog = new OpenFileDialog
+            {
+                Filter = "Zip files|*.zip|All files|*.*",
+                CheckFileExists = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (openDialog.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+            try
+            {
+                string description = SettingsBackup.Describe(openDialog.FileName);
+                if (description == null)
+                {
+                    MessageBox.Show(this, "This file is not a SuperPuTTY settings backup.", "Restore Settings", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (MessageBox.Show(this,
+                    (description.Length > 0 ? description + "\n\n" : string.Empty) +
+                    "Settings, sessions, commands and layouts are replaced by the backup the next time SuperPuTTY starts. " +
+                    "A backup of the current state is saved first.\n\nRestore this backup?",
+                    "Restore Settings", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+                {
+                    return;
+                }
+                string safety = Path.Combine(SuperPuTTY.Settings.SettingsFolder, "backups", string.Format("before-restore-{0:yyyyMMdd-HHmmss}.zip", DateTime.Now));
+                SuperPuTTY.Settings.Save();
+                SettingsBackup.Create(safety, SuperPuTTY.Settings.SettingsFilePath, SuperPuTTY.Settings.SettingsFolder, SuperPuTTY.Version);
+                SettingsBackup.StageRestore(openDialog.FileName, SettingsBackup.PendingFolder, SuperPuTTY.Settings.SettingsFolder);
+                if (MessageBox.Show(this,
+                    "The backup is restored when SuperPuTTY starts again. The previous state was saved to\n" + safety + "\n\nClose SuperPuTTY now?",
+                    "Restore Settings", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                {
+                    Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Restore failed", ex);
+                MessageBox.Show(this, "The backup could not be restored:\n" + ex.Message, "Restore Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void fromFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
             OpenFileDialog openDialog = new OpenFileDialog

@@ -74,6 +74,8 @@ and Pageant integration) but adds the window management on top.
 - **Single-instance mode** — further launches (e.g. from `ssh://` links or the command line) open in the
   running instance.
 - **Portable mode** — keep the settings file next to the executable.
+- **Backup and restore** — File → Back up Settings puts settings, sessions, commands and layouts into one zip;
+  Restore Settings brings them back on the next start (after saving the current state).
 - **Protected passwords** — stored session passwords are encrypted for your Windows user and passed to PuTTY
   through a short-lived file, never on the command line (key-based login with Pageant stays the better choice).
 
