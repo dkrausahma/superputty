@@ -99,6 +99,7 @@ namespace SuperPutty
 
         /// <summary>Checks the SSH tunnels of the open tabs and updates their tab markers</summary>
         private readonly System.Windows.Forms.Timer tunnelTimer = new System.Windows.Forms.Timer { Interval = 5000 };
+        private PageantIndicator pageantIndicator;
 
         /// <summary>The main SuperPuTTY application form</summary>
         public frmSuperPutty()
@@ -209,6 +210,10 @@ namespace SuperPutty
             RemoteCommandTab.CleanUp();
             FileTransferJob.CleanUp();
             PasswordFile.CleanUp();
+
+            // Pageant state and key count in the status bar, before the version
+            this.pageantIndicator = new PageantIndicator(this.statusStrip1, this.statusStrip1.Items.IndexOf(this.toolStripStatusLabelVersion));
+            this.FormClosed += delegate { this.pageantIndicator.Dispose(); };
 
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
