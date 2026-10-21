@@ -78,6 +78,20 @@ namespace SuperPutty.Data
             return folders;
         }
 
+        /// <summary>
+        /// Every place a command can apply to: all sessions, then every folder of the session tree, then every
+        /// session (folders and sessions sorted alphabetically)
+        /// </summary>
+        public static List<CommandScopeOption> ScopeOptions(IEnumerable<string> sessionIds)
+        {
+            List<string> ids = sessionIds.Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            List<CommandScopeOption> options = new List<CommandScopeOption> { CommandScopeOption.Global() };
+            options.AddRange(ids.SelectMany(FolderChain).Distinct()
+                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase).Select(CommandScopeOption.Folder));
+            options.AddRange(ids.OrderBy(id => id, StringComparer.OrdinalIgnoreCase).Select(CommandScopeOption.Session));
+            return options;
+        }
+
         /// <summary>True if the command applies to the session (global, one of its folders, or the session itself)</summary>
         public static bool AppliesTo(CommandSnippet command, string sessionId)
         {

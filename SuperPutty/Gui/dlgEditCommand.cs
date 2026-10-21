@@ -31,6 +31,19 @@ namespace SuperPutty.Gui
             this.comboBoxScope.Items.AddRange(options.ToArray());
             this.comboBoxScope.SelectedItem = current;
 
+            // long session names: a wider, resizable dialog and a list as wide as its longest entry
+            this.FormBorderStyle = FormBorderStyle.Sizable;
+            this.Width += 200;
+            this.MinimumSize = this.Size;
+            this.MaximumSize = new System.Drawing.Size(4000, this.Height);
+            this.comboBoxScope.MaxDropDownItems = 20;
+            int width = this.comboBoxScope.Width;
+            foreach (CommandScopeOption option in options)
+            {
+                width = Math.Max(width, TextRenderer.MeasureText(option.Text, this.comboBoxScope.Font).Width + SystemInformation.VerticalScrollBarWidth + 8);
+            }
+            this.comboBoxScope.DropDownWidth = Math.Min(width, Screen.FromControl(this).WorkingArea.Width - 40);
+
             foreach (string category in categories)
             {
                 this.comboBoxCategory.Items.Add(category);
