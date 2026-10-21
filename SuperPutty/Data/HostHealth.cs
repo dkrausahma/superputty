@@ -30,7 +30,9 @@ namespace SuperPutty.Data
             "echo cpus=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo); " +
             "(df -P -x tmpfs -x devtmpfs -x overlay -x squashfs -x iso9660 -x udf 2>/dev/null || df -P) | awk 'NR>1{print \"disk=\"$6\"=\"$5}'; " +
             "free -m 2>/dev/null | awk '/^Mem:/{if($2>0) print \"mem=\"int(($2-$7)*100/$2)}'; " +
-            "echo failed=$(systemctl --failed --no-legend 2>/dev/null | wc -l); " +
+            // one line per failed unit name; counting output lines instead gave false alarms on systemd versions
+            // that print a footer or blank line even with --no-legend
+            "systemctl list-units --state=failed --no-legend --plain 2>/dev/null | awk '$1 ~ /\\./ {print \"failedunit=\"$1}'; " +
             "echo unhealthy=$(docker ps -q --filter health=unhealthy 2>/dev/null | wc -l)";
 
         public double? Load { get; set; }
@@ -38,7 +40,10 @@ namespace SuperPutty.Data
         /// <summary>Used percentage per mount point</summary>
         public Dictionary<string, int> Disks { get; } = new Dictionary<string, int>();
         public int? MemoryPercent { get; set; }
-        public int FailedUnits { get; set; }
+        /// <summary>Names of the failed systemd units, e.g. "nvidia-fabricmanager.service"</summary>
+        public List<string> FailedUnitNames { get; } = new List<string>();
+
+        public int FailedUnits { get { return this.FailedUnitNames.Count; } }
         public int UnhealthyContainers { get; set; }
 
         /// <summary>Why the check failed; null on success</summary>
@@ -77,8 +82,8 @@ namespace SuperPutty.Data
                     case "mem":
                         if (int.TryParse(value, out number)) { health.MemoryPercent = number; }
                         break;
-                    case "failed":
-                        if (int.TryParse(value, out number)) { health.FailedUnits = number; }
+                    case "failedunit":
+                        if (value.Length > 0 && !health.FailedUnitNames.Contains(value)) { health.FailedUnitNames.Add(value); }
                         break;
                     case "unhealthy":
                         if (int.TryParse(value, out number)) { health.UnhealthyContainers = number; }
@@ -127,7 +132,7 @@ namespace SuperPutty.Data
             }
             if (this.FailedUnits > 0)
             {
-                problems.Add(Problem(HealthLevel.Warning, "{0} failed systemd unit(s)", this.FailedUnits));
+                problems.Add(Problem(HealthLevel.Warning, "{0} failed systemd unit(s): {1}", this.FailedUnits, string.Join(", ", this.FailedUnitNames)));
             }
             return problems.OrderByDescending(p => p.Key).ToList();
         }
