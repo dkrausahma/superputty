@@ -54,6 +54,8 @@ and Pageant integration) but adds the window management on top.
   them to that host, by default into the shell's current directory.
 - **Transfer files** — copy files and folders between this PC and any session, or directly from one
   host to another (relayed through this PC, so the hosts need no keys for each other).
+- **Explain in Claude** — Tools → Explain in Claude shows the last command and its output for review and
+  editing, then streams Claude's explanation (opt-in; API key from `ANTHROPIC_API_KEY` or stored encrypted).
 - **Live input** — the keyboard button in the command bar types what you type in one tab into all tabs that
   accept commands (ClusterSSH style); production tabs ask first.
 - **Reconnect** — a dropped connection marks the tab (×) and shows a Reconnect bar above the terminal;
@@ -127,7 +129,8 @@ and builds on the work of others:
   https://github.com/jimradford/superputty
 - **PuTTY** — Simon Tatham and the PuTTY team, MIT — https://www.chiark.greenend.org.uk/~sgtatham/putty/
   (PuTTY itself is not included; SuperPuTTY embeds your installed PuTTY/KiTTY.)
-- **DockPanel Suite** (MIT), **Apache log4net** (Apache 2.0), **FamFamFam Silk icons** (CC BY).
+- **DockPanel Suite** (MIT), **Apache log4net** (Apache 2.0), **Anthropic C# SDK** and
+  Microsoft.Extensions.AI.Abstractions (MIT), **FamFamFam Silk icons** (CC BY).
 
 See `License.txt` and Help → About in the application.
 

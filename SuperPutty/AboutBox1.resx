@@ -282,6 +282,11 @@ Apache log4net - logging
 Copyright (c) The Apache Software Foundation, Apache License 2.0
 https://logging.apache.org/log4net/
 
+Anthropic C# SDK - Explain in Claude
+Copyright (c) Anthropic, PBC, MIT license
+https://github.com/anthropics/anthropic-sdk-csharp
+(with Microsoft.Extensions.AI.Abstractions, Copyright (c) .NET Foundation, MIT license)
+
 Icons courtesy of FamFamFam (Silk icon set by Mark James), Creative Commons Attribution 2.5/3.0
 http://www.famfamfam.com/
 
