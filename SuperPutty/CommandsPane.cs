@@ -279,6 +279,8 @@ namespace SuperPutty
             this.editToolStripMenuItem.Enabled = hasCommand;
             this.addToFavoritesToolStripMenuItem.Enabled = hasCommand && !CommandLibrary.IsFavorites(CommandLibrary.CategoryOf(SelectedCommand));
             this.deleteToolStripMenuItem.Enabled = hasCommand;
+            this.moveUpToolStripMenuItem.Enabled = hasCommand;
+            this.moveDownToolStripMenuItem.Enabled = hasCommand;
         }
 
         private void textBoxFilter_TextChanged(object sender, EventArgs e)
@@ -356,13 +358,60 @@ namespace SuperPutty
                 EditSelected();
                 e.Handled = true;
             }
+            else if (e.Control && (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down))
+            {
+                MoveSelected(e.KeyCode == Keys.Up ? -1 : 1);
+                e.Handled = true;
+            }
         }
 
         private void Send(CommandSnippet command, bool execute)
         {
-            if (this.sendToTerminal == null || !this.sendToTerminal(command.Command, execute))
+            string text = Resolve(command);
+            if (text == null)
+            {
+                return;
+            }
+            if (this.sendToTerminal == null || !this.sendToTerminal(text, execute))
             {
                 SuperPuTTY.ReportStatus("No terminal tab is active to send the command to");
+            }
+        }
+
+        /// <summary>
+        /// The command text with its placeholders filled in: asks for the values (preset with the values last
+        /// used in the active session, or the defaults) and remembers them. Null if cancelled.
+        /// </summary>
+        private string Resolve(CommandSnippet command)
+        {
+            List<CommandPlaceholder> placeholders = CommandPlaceholders.Parse(command.Command);
+            if (placeholders.Count == 0)
+            {
+                return command.Command;
+            }
+
+            Dictionary<string, string> initial = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (CommandPlaceholder placeholder in placeholders)
+            {
+                string value = Library.GetValue(this.shownSessionId, placeholder.Name);
+                if (value != null)
+                {
+                    initial[placeholder.Name] = value;
+                }
+            }
+            SessionData session = this.shownSessionId == null ? null : SuperPuTTY.GetSessionById(this.shownSessionId);
+            using (dlgPlaceholderValues dialog = new dlgPlaceholderValues(command.Command, placeholders, initial, session == null ? null : session.SessionName))
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    return null;
+                }
+                foreach (KeyValuePair<string, string> value in dialog.Values)
+                {
+                    Library.SetValue(this.shownSessionId, value.Key, value.Value);
+                }
+                SaveLibrary();
+                return dialog.Result;
             }
         }
 
@@ -378,17 +427,20 @@ namespace SuperPutty
 
         private void runInNewTabToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (SelectedCommand != null && this.runInNewTab != null)
+            string text = SelectedCommand == null || this.runInNewTab == null ? null : Resolve(SelectedCommand);
+            if (text != null)
             {
-                this.runInNewTab(SelectedCommand.Command);
+                this.runInNewTab(text);
             }
         }
 
         private void runInAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (SelectedCommand != null && this.runInAllTerminals != null)
+            // the values are asked once (preset from the active session) and used for every terminal
+            string text = SelectedCommand == null || this.runInAllTerminals == null ? null : Resolve(SelectedCommand);
+            if (text != null)
             {
-                this.runInAllTerminals(SelectedCommand.Command);
+                this.runInAllTerminals(text);
             }
         }
 
@@ -453,6 +505,66 @@ namespace SuperPutty
                     SaveLibrary();
                     RefreshTree(dialog.Command);
                 }
+            }
+        }
+
+        private void moveUpToolStripMenuItem_Click(object sender, EventArgs e) { MoveSelected(-1); }
+        private void moveDownToolStripMenuItem_Click(object sender, EventArgs e) { MoveSelected(1); }
+
+        private void MoveSelected(int direction)
+        {
+            CommandSnippet command = SelectedCommand;
+            if (command != null && Library.Move(command, direction))
+            {
+                SaveLibrary();
+                RefreshTree(command);
+            }
+        }
+
+        /// <summary>Export the commands of the selected section (all commands if nothing is selected) to a file</summary>
+        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            GroupTag group = SelectedGroup;
+            List<CommandSnippet> commands = group == null
+                ? Library.Commands.ToList()
+                : Library.Commands.Where(group.Section.Includes).ToList();
+            using (SaveFileDialog dialog = new SaveFileDialog { Filter = "Command lists (*.xml)|*.xml|All files (*.*)|*.*", FileName = "Commands-export.xml", Title = "Export Commands" })
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                CommandLibrary export = new CommandLibrary { Version = CommandLibrary.CurrentVersion };
+                export.Commands.AddRange(commands.Select(c => c.Clone()));
+                try
+                {
+                    export.Save(dialog.FileName);
+                    SuperPuTTY.ReportStatus("Exported {0} command(s) to {1}", commands.Count, dialog.FileName);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    MessageBox.Show(this, "Could not export the commands:\n" + ex.Message, "Export Commands", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
+        /// <summary>Import commands from a file; entries that exist already are skipped</summary>
+        private void importToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog dialog = new OpenFileDialog { Filter = "Command lists (*.xml)|*.xml|All files (*.*)|*.*", Title = "Import Commands" })
+            {
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                {
+                    return;
+                }
+                CommandLibrary imported = CommandLibrary.Load(dialog.FileName);
+                int added = Library.Merge(imported);
+                if (added > 0)
+                {
+                    SaveLibrary();
+                }
+                RefreshTree();
+                SuperPuTTY.ReportStatus("Imported {0} of {1} command(s) from {2}", added, imported.Commands.Count, dialog.FileName);
             }
         }
 

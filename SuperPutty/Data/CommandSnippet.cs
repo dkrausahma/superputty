@@ -85,11 +85,26 @@ namespace SuperPutty.Data
         [XmlAttribute]
         public string ScopeKey { get; set; }
 
-        /// <summary>The text shown in the Commands pane: the name if set, otherwise the command</summary>
+        /// <summary>The text shown in the Commands pane: the name if set, otherwise the command (first line of multi-line commands)</summary>
         [XmlIgnore]
         public string DisplayText
         {
-            get { return string.IsNullOrEmpty(this.Name) ? this.Command : this.Name; }
+            get
+            {
+                if (!string.IsNullOrEmpty(this.Name))
+                {
+                    return this.Name;
+                }
+                string command = this.Command ?? string.Empty;
+                int newline = command.IndexOfAny(new[] { '\r', '\n' });
+                return newline < 0 ? command : command.Substring(0, newline) + " …";
+            }
+        }
+
+        /// <summary>The command as typed into a terminal: line breaks become Enter (carriage return)</summary>
+        public static string ForTerminal(string command)
+        {
+            return (command ?? string.Empty).Replace("\r\n", "\n").Replace('\n', '\r');
         }
 
         /// <summary>True if the filter text occurs (case-insensitive) in the command, name, description or category</summary>
