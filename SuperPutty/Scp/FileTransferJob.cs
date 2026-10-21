@@ -160,6 +160,48 @@ namespace SuperPutty.Scp
             return (complete, cancelAll, status) => progress(string.Format("{0}: {1} {2}%", host, status.Filename, status.PercentComplete));
         }
 
+        /// <summary>
+        /// The two tabs to preset in the Transfer Files dialog: the active tab and its neighbour of another
+        /// session (the right one if there is one, otherwise the left), ordered by position - the left one is the
+        /// source, the right one the target. Without such a neighbour, only the source is set (target null).
+        /// </summary>
+        /// <param name="tabs">Open tabs from left to right</param>
+        public static void PreselectPair<T>(IList<T> tabs, T active, Func<T, T, bool> sameSession, out T source, out T target) where T : class
+        {
+            source = null;
+            target = null;
+            int activeIndex = active == null ? -1 : tabs.IndexOf(active);
+            if (activeIndex < 0)
+            {
+                if (tabs.Count == 0)
+                {
+                    return;
+                }
+                activeIndex = 0;
+            }
+            T current = tabs[activeIndex];
+
+            int other = -1;
+            for (int i = activeIndex + 1; i < tabs.Count && other < 0; i++)
+            {
+                if (!sameSession(tabs[i], current)) { other = i; }
+            }
+            for (int i = activeIndex - 1; i >= 0 && other < 0; i--)
+            {
+                if (!sameSession(tabs[i], current)) { other = i; }
+            }
+
+            if (other < 0)
+            {
+                source = current;
+            }
+            else
+            {
+                source = tabs[Math.Min(activeIndex, other)];
+                target = tabs[Math.Max(activeIndex, other)];
+            }
+        }
+
         /// <summary>Existing local files and folders as pscp sources</summary>
         public static List<BrowserFileInfo> LocalItems(IEnumerable<string> paths)
         {

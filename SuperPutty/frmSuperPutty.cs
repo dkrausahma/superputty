@@ -853,13 +853,14 @@ namespace SuperPutty
                 .Where(s => RemoteCommandTab.IsSupported(s) && !sessions.Contains(s))
                 .OrderBy(s => s.SessionId));
 
-            ctlPuttyPanel active = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            if (active != null && !RemoteCommandTab.IsSupported(active.Session)) { active = null; }
-            ctlPuttyPanel other = tabs.FirstOrDefault(p => p != active && p.Session != (active == null ? null : active.Session));
+            // preset: the active tab and its neighbour, the left one as source and the right one as target
+            ctlPuttyPanel fromTab, toTab;
+            FileTransferJob.PreselectPair(tabs, this.DockPanel.ActiveDocument as ctlPuttyPanel, (a, b) => a.Session == b.Session, out fromTab, out toTab);
 
-            TransferEndpoint source = active == null
+            TransferEndpoint source = fromTab == null
                 ? new TransferEndpoint { Path = string.Empty }
-                : new TransferEndpoint { Session = active.Session, Path = (RemotePath.FromWindowTitle(active.AppPanel.GetWindowTitle()) ?? "~") + "/" };
+                : new TransferEndpoint { Session = fromTab.Session, Path = (RemotePath.FromWindowTitle(fromTab.AppPanel.GetWindowTitle()) ?? "~") + "/" };
+            ctlPuttyPanel other = toTab;
             TransferEndpoint target = other == null
                 ? new TransferEndpoint { Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") }
                 : new TransferEndpoint { Session = other.Session, Path = RemotePath.FromWindowTitle(other.AppPanel.GetWindowTitle()) ?? "~" };
