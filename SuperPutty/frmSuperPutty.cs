@@ -808,7 +808,15 @@ namespace SuperPutty
                 ? new TransferEndpoint { Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") }
                 : new TransferEndpoint { Session = other.Session, Path = RemotePath.FromWindowTitle(other.AppPanel.GetWindowTitle()) ?? "~" };
 
-            using (dlgTransferFiles dialog = new dlgTransferFiles(sessions, source, target))
+            // a session's current directory, from its open tab's window title
+            Func<SessionData, string> remoteDirectory = session =>
+            {
+                ctlPuttyPanel tab = tabs.FirstOrDefault(p => p.Session == session);
+                return (tab == null ? null : RemotePath.FromWindowTitle(tab.AppPanel.GetWindowTitle())) ?? "~";
+            };
+            string downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+            using (dlgTransferFiles dialog = new dlgTransferFiles(sessions, source, target, remoteDirectory, downloads))
             {
                 if (dialog.ShowDialog(this) != DialogResult.OK)
                 {
