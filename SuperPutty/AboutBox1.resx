@@ -262,23 +262,42 @@
 </value>
   </data>
   <data name="richTextBox1.Text" xml:space="preserve">
-    <value>Many contributors of code: 
-https://github.com/jimradford/superputty/graphs/contributors 
+    <value>This edition: Kraus-Ahma IT Consulting
+.NET 10 port and new features (2026), released under the MIT license like the original.
 
-PuTTY is a SSH Terminal application written by Simon Tatham 
-http://www.chiark.greenend.org.uk/~sgtatham/putty/
+SuperPuTTY - the project this edition is based on
+Copyright (c) 2009 - 2018 Jim Radford and contributors, MIT license
+https://github.com/jimradford/superputty
+Contributors: https://github.com/jimradford/superputty/graphs/contributors
 
-Icons courtesy of FamFamFam  
+PuTTY - the SSH client SuperPuTTY embeds (putty.exe, pscp.exe, plink.exe are not part of this program)
+Copyright (c) 1997 - 2026 Simon Tatham and the PuTTY team, MIT license
+https://www.chiark.greenend.org.uk/~sgtatham/putty/
+
+DockPanel Suite - Visual Studio like docking of tabs and windows
+Copyright (c) 2007 Weifen Luo and contributors, MIT license
+https://github.com/dockpanelsuite/dockpanelsuite
+
+Apache log4net - logging
+Copyright (c) The Apache Software Foundation, Apache License 2.0
+https://logging.apache.org/log4net/
+
+Icons courtesy of FamFamFam (Silk icon set by Mark James), Creative Commons Attribution 2.5/3.0
 http://www.famfamfam.com/
-
-DockPanel Suite is the control we use for Visual Studio like docking of tabs and windows
-http://sourceforge.net/projects/dockpanelsuite/
 
 Inspired by PuTTY Connection Manager
 http://puttycm.free.fr/</value>
   </data>
+  <data name="textBox1.Text" xml:space="preserve">
+    <value>SuperPuTTY is a tabbed window manager for the PuTTY SSH client: terminal sessions and file transfers over SSH in one window with dockable tabs, layouts and a session tree.
+
+This edition is developed and maintained by Kraus-Ahma IT Consulting. It ports SuperPuTTY to .NET 10 and adds, among others: an icon bar and kiosk mode, per-session command history, a Commands pane with per-session commands and placeholders, a Containers pane for docker, tabs running remote commands, SSH tunnel markers, drag &amp; drop uploads and host-to-host file transfers, health badges, session logs and copy-to-clipboard helpers.
+
+It is based on the work of others - see the Acknowledgements and License tabs. Thanks to Jim Radford and the SuperPuTTY contributors, and to Simon Tatham and the PuTTY team.</value>
+  </data>
   <data name="textBox2.Text" xml:space="preserve">
-    <value>Copyright (c) 2009 - 2018 Jim Radford
+    <value>Copyright (c) 2026 Kraus-Ahma IT Consulting (.NET 10 port and new features)
+Copyright (c) 2009 - 2018 Jim Radford
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

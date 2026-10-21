@@ -103,10 +103,17 @@ dotnet build SuperPuttyInstaller -c Release
 Architecture, configuration, the full command reference and known pitfalls are in
 [development.md](development.md).
 
-### License
-MIT
+### License and credits
+MIT. This edition (the .NET 10 port and the new features) is developed by **Kraus-Ahma IT Consulting**
+and builds on the work of others:
 
-For additional License information please read the License.txt included with the download
+- **SuperPuTTY** — Copyright (c) 2009–2018 Jim Radford and contributors, MIT —
+  https://github.com/jimradford/superputty
+- **PuTTY** — Simon Tatham and the PuTTY team, MIT — https://www.chiark.greenend.org.uk/~sgtatham/putty/
+  (PuTTY itself is not included; SuperPuTTY embeds your installed PuTTY/KiTTY.)
+- **DockPanel Suite** (MIT), **Apache log4net** (Apache 2.0), **FamFamFam Silk icons** (CC BY).
+
+See `License.txt` and Help → About in the application.
 
 ### Upstream project
 
