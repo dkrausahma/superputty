@@ -42,6 +42,61 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void PresetsLeftTabAsSourceAndRightTabAsTarget()
+        {
+            string[] tabs = { "web", "db" };
+            string source, target;
+
+            FileTransferJob.PreselectPair(tabs, "web", (a, b) => a == b, out source, out target);
+            ClassicAssert.AreEqual("web", source);
+            ClassicAssert.AreEqual("db", target);
+
+            FileTransferJob.PreselectPair(tabs, "db", (a, b) => a == b, out source, out target);
+            ClassicAssert.AreEqual("web", source, "the left tab is the source even when the right one is active");
+            ClassicAssert.AreEqual("db", target);
+        }
+
+        [Test]
+        public void PresetsTheActiveTabsNeighbour()
+        {
+            string[] tabs = { "a", "b", "c", "d" };
+            string source, target;
+
+            FileTransferJob.PreselectPair(tabs, "b", (x, y) => x == y, out source, out target);
+            ClassicAssert.AreEqual("b", source);
+            ClassicAssert.AreEqual("c", target, "right neighbour preferred");
+
+            FileTransferJob.PreselectPair(tabs, "d", (x, y) => x == y, out source, out target);
+            ClassicAssert.AreEqual("c", source, "last tab: left neighbour, still left = source");
+            ClassicAssert.AreEqual("d", target);
+        }
+
+        [Test]
+        public void PresetsSkipTabsOfTheSameSession()
+        {
+            string[] tabs = { "web#1", "web#2", "db" };
+            string source, target;
+
+            FileTransferJob.PreselectPair(tabs, "web#1", (x, y) => x.Split('#')[0] == y.Split('#')[0], out source, out target);
+            ClassicAssert.AreEqual("web#1", source);
+            ClassicAssert.AreEqual("db", target);
+        }
+
+        [Test]
+        public void PresetsWithOneOrNoTab()
+        {
+            string source, target;
+
+            FileTransferJob.PreselectPair(new[] { "web" }, "web", (x, y) => x == y, out source, out target);
+            ClassicAssert.AreEqual("web", source);
+            ClassicAssert.IsNull(target);
+
+            FileTransferJob.PreselectPair(new string[0], null, (x, y) => x == y, out source, out target);
+            ClassicAssert.IsNull(source);
+            ClassicAssert.IsNull(target);
+        }
+
+        [Test]
         public void LocalItemsKeepsExistingFilesAndFolders()
         {
             string folder = Path.Combine(Path.GetTempPath(), "SuperPuTTY.FileTransferJobTests." + Guid.NewGuid().ToString("N"));
