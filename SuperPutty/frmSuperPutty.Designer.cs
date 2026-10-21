@@ -150,6 +150,7 @@ namespace SuperPutty
             this.btnTransferFiles = new System.Windows.Forms.ToolStripButton();
             this.transferFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copyLastCommandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.explainInClaudeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openSessionLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openLogFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sessionLoggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -524,6 +525,7 @@ namespace SuperPutty
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.copySessionToolStripMenuItem,
             this.copyLastCommandToolStripMenuItem,
+            this.explainInClaudeToolStripMenuItem,
             this.openSessionLogToolStripMenuItem,
             this.openLogFolderToolStripMenuItem,
             this.transferFilesToolStripMenuItem,
@@ -893,6 +895,14 @@ namespace SuperPutty
             this.copyLastCommandToolStripMenuItem.Text = "Copy &Last Command";
             this.copyLastCommandToolStripMenuItem.ToolTipText = "Copy only the last command and its output (e.g. to paste into a chat)";
             this.copyLastCommandToolStripMenuItem.Click += new System.EventHandler(this.copyLastCommand_Click);
+            // 
+            // explainInClaudeToolStripMenuItem
+            // 
+            this.explainInClaudeToolStripMenuItem.Name = "explainInClaudeToolStripMenuItem";
+            this.explainInClaudeToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.explainInClaudeToolStripMenuItem.Text = "E&xplain in Claude...";
+            this.explainInClaudeToolStripMenuItem.ToolTipText = "Show the last command and its output for review, then ask Claude to explain it";
+            this.explainInClaudeToolStripMenuItem.Click += new System.EventHandler(this.explainInClaude_Click);
             //
             // openSessionLogToolStripMenuItem
             //
@@ -1328,6 +1338,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnTransferFiles;
         private System.Windows.Forms.ToolStripMenuItem transferFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyLastCommandToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem explainInClaudeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openSessionLogToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openLogFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sessionLoggingToolStripMenuItem;

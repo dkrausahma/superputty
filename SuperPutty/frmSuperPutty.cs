@@ -798,6 +798,7 @@ namespace SuperPutty
             this.btnCopySession.Enabled = canCopy;
             this.copySessionToolStripMenuItem.Enabled = canCopy;
             this.copyLastCommandToolStripMenuItem.Enabled = canCopy;
+            this.explainInClaudeToolStripMenuItem.Enabled = canCopy;
             this.openSessionLogToolStripMenuItem.Enabled = panel != null && panel.LogFile != null;
             this.btnUploadFiles.Enabled = panel != null && CanUpload(panel.Session);
         }
@@ -1010,6 +1011,74 @@ namespace SuperPutty
         private void copyLastCommand_Click(object sender, EventArgs e)
         {
             CopyActiveSessionToClipboard(true);
+        }
+
+        /// <summary>
+        /// Explain in Claude: takes the last command and its output of the active tab (the whole screen if no prompt
+        /// is recognised) and opens the preview dialog; nothing is sent before the user presses Send there. PuTTY
+        /// can only hand out its text through the clipboard, so the previous clipboard text is put back afterwards.
+        /// </summary>
+        private void explainInClaude_Click(object sender, EventArgs e)
+        {
+            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
+            if (panel == null || !panel.SupportsPuttyCommands)
+            {
+                SuperPuTTY.ReportStatus("Explain in Claude: no PuTTY terminal tab is active");
+                return;
+            }
+            string previousClipboard = null;
+            try
+            {
+                previousClipboard = Clipboard.ContainsText() ? Clipboard.GetText() : null;
+            }
+            catch (System.Runtime.InteropServices.ExternalException ex)
+            {
+                Log.Warn("Could not read the clipboard", ex);
+            }
+
+            string tabName = panel.Text;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                bool copied = false;
+                try
+                {
+                    copied = panel.CopyAllToClipboard();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Error copying session text", ex);
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    string text = null;
+                    try
+                    {
+                        if (copied && Clipboard.ContainsText())
+                        {
+                            text = Clipboard.GetText();
+                            text = TerminalText.LastCommand(text) ?? text;
+                        }
+                        if (previousClipboard != null)
+                        {
+                            Clipboard.SetText(previousClipboard);
+                        }
+                    }
+                    catch (System.Runtime.InteropServices.ExternalException ex)
+                    {
+                        Log.Warn("Clipboard access failed", ex);
+                    }
+                    if (text == null)
+                    {
+                        SuperPuTTY.ReportStatus("Explain in Claude: could not read the text of {0}", tabName);
+                        return;
+                    }
+                    using (dlgExplainInClaude dialog = new dlgExplainInClaude(tabName, text))
+                    {
+                        dialog.ShowDialog(this);
+                    }
+                });
+            });
         }
 
         /// <summary>
