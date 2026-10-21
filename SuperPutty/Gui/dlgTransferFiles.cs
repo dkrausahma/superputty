@@ -23,16 +23,30 @@ namespace SuperPutty.Gui
         public TransferEndpoint Source { get; private set; }
         public TransferEndpoint Target { get; private set; }
 
+        /// <summary>Path preset when a session is picked: its tab's current directory, or "~"</summary>
+        private readonly Func<SessionData, string> remoteDirectory;
+
+        /// <summary>Path preset when "This PC" is picked as target</summary>
+        private readonly string localTargetFolder;
+
         /// <param name="sessions">Sessions to offer, open tabs first</param>
-        public dlgTransferFiles(IList<SessionData> sessions, TransferEndpoint source, TransferEndpoint target)
+        /// <param name="remoteDirectory">Current directory of a session (its open tab), or "~"</param>
+        public dlgTransferFiles(IList<SessionData> sessions, TransferEndpoint source, TransferEndpoint target,
+            Func<SessionData, string> remoteDirectory, string localTargetFolder)
         {
             InitializeComponent();
+            this.remoteDirectory = remoteDirectory;
+            this.localTargetFolder = localTargetFolder;
 
             Fill(this.comboBoxSource, sessions, source);
             Fill(this.comboBoxTarget, sessions, target);
             this.textBoxSource.Text = source.Path;
             this.textBoxTarget.Text = target.Path;
             UpdateBrowseButtons();
+
+            // only now: picking another endpoint resets its path
+            this.comboBoxSource.SelectedIndexChanged += comboBoxSource_SelectedIndexChanged;
+            this.comboBoxTarget.SelectedIndexChanged += comboBoxTarget_SelectedIndexChanged;
         }
 
         private static void Fill(ComboBox combo, IList<SessionData> sessions, TransferEndpoint selected)
@@ -43,17 +57,34 @@ namespace SuperPutty.Gui
                 combo.Items.Add(new EndpointItem { Session = session, Text = session.SessionId });
             }
             combo.SelectedIndex = selected.IsLocal ? 0 : Math.Max(0, sessions.IndexOf(selected.Session) + 1);
+
+            // the list opens as wide as the longest session name
+            int width = combo.Width;
+            foreach (object item in combo.Items)
+            {
+                width = Math.Max(width, TextRenderer.MeasureText(item.ToString(), combo.Font).Width + SystemInformation.VerticalScrollBarWidth + 8);
+            }
+            combo.DropDownWidth = Math.Min(width, Screen.FromControl(combo).WorkingArea.Width - 40);
+        }
+
+        private void comboBoxSource_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SessionData session = SessionOf(this.comboBoxSource);
+            this.textBoxSource.Text = session == null ? string.Empty : this.remoteDirectory(session) + "/";
+            UpdateBrowseButtons();
+        }
+
+        private void comboBoxTarget_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SessionData session = SessionOf(this.comboBoxTarget);
+            this.textBoxTarget.Text = session == null ? this.localTargetFolder : this.remoteDirectory(session);
+            UpdateBrowseButtons();
         }
 
         private static SessionData SessionOf(ComboBox combo)
         {
             EndpointItem item = combo.SelectedItem as EndpointItem;
             return item == null ? null : item.Session;
-        }
-
-        private void comboBox_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            UpdateBrowseButtons();
         }
 
         private void UpdateBrowseButtons()
