@@ -148,6 +148,8 @@ namespace SuperPutty
             this.openSessionLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openLogFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sessionLoggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.notifyActivityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.tunnelsOverviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileDialogUpload = new System.Windows.Forms.OpenFileDialog();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
@@ -323,6 +325,7 @@ namespace SuperPutty
             this.alwaysOnTopToolStripMenuItem,
             this.healthChecksToolStripMenuItem,
             this.sessionLoggingToolStripMenuItem,
+            this.notifyActivityToolStripMenuItem,
             this.toolStripMenuItem9,
             this.kioskModeToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
@@ -374,6 +377,22 @@ namespace SuperPutty
             this.sessionLoggingToolStripMenuItem.Text = "Log Sessions to &Files";
             this.sessionLoggingToolStripMenuItem.ToolTipText = "PuTTY writes each new tab's output to a log file in the settings folder's logs folder";
             this.sessionLoggingToolStripMenuItem.Click += new System.EventHandler(this.sessionLoggingToolStripMenuItem_Click);
+            // 
+            // notifyActivityToolStripMenuItem
+            // 
+            this.notifyActivityToolStripMenuItem.Name = "notifyActivityToolStripMenuItem";
+            this.notifyActivityToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.notifyActivityToolStripMenuItem.Text = "Mark &Background Tab Activity";
+            this.notifyActivityToolStripMenuItem.ToolTipText = "Mark background tabs whose title changes (e.g. a command finished) and notify when SuperPuTTY is not active";
+            this.notifyActivityToolStripMenuItem.Click += new System.EventHandler(this.notifyActivityToolStripMenuItem_Click);
+            //
+            // tunnelsOverviewToolStripMenuItem
+            //
+            this.tunnelsOverviewToolStripMenuItem.Name = "tunnelsOverviewToolStripMenuItem";
+            this.tunnelsOverviewToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.tunnelsOverviewToolStripMenuItem.Text = "SSH T&unnels…";
+            this.tunnelsOverviewToolStripMenuItem.ToolTipText = "All SSH tunnels of the open tabs";
+            this.tunnelsOverviewToolStripMenuItem.Click += new System.EventHandler(this.tunnelsOverview_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -476,6 +495,7 @@ namespace SuperPutty
             this.openSessionLogToolStripMenuItem,
             this.openLogFolderToolStripMenuItem,
             this.transferFilesToolStripMenuItem,
+            this.tunnelsOverviewToolStripMenuItem,
             this.toolStripMenuItemCopySessionSep,
             this.puTTYConfigurationToolStripMenuItem,
             this.toolStripMenuItem11,
@@ -1255,6 +1275,8 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem openSessionLogToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openLogFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sessionLoggingToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem notifyActivityToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem tunnelsOverviewToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog openFileDialogUpload;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;
         private System.Windows.Forms.ToolStripMenuItem copySessionToolStripMenuItem;

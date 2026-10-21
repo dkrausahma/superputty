@@ -26,6 +26,7 @@ namespace SuperPutty
             this.typeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runInAllToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runInFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runInNewTabToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripSeparator();
             this.addToFavoritesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -113,6 +114,7 @@ namespace SuperPutty
             this.runToolStripMenuItem,
             this.runInNewTabToolStripMenuItem,
             this.runInAllToolStripMenuItem,
+            this.runInFolderToolStripMenuItem,
             this.toolStripMenuItem1,
             this.addToFavoritesToolStripMenuItem,
             this.addToolStripMenuItem,
@@ -158,6 +160,13 @@ namespace SuperPutty
             this.runInAllToolStripMenuItem.Text = "Run in &All Terminals…";
             this.runInAllToolStripMenuItem.ToolTipText = "Run in every terminal tab that accepts commands (asks first)";
             this.runInAllToolStripMenuItem.Click += new System.EventHandler(this.runInAllToolStripMenuItem_Click);
+            //
+            // runInFolderToolStripMenuItem
+            //
+            this.runInFolderToolStripMenuItem.Name = "runInFolderToolStripMenuItem";
+            this.runInFolderToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.runInFolderToolStripMenuItem.Text = "Run in Terminals of &Folder";
+            this.runInFolderToolStripMenuItem.ToolTipText = "Run in the open tabs below a folder of the active tab's session (asks first)";
             //
             // toolStripMenuItem1
             //
@@ -261,6 +270,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem typeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runInAllToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runInFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runInNewTabToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem addToFavoritesToolStripMenuItem;

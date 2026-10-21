@@ -34,6 +34,9 @@ namespace SuperPutty
         /// <summary>Returns the session of the active terminal tab, or null</summary>
         private readonly Func<SessionData> activeSession;
 
+        /// <summary>Runs a command in the open tabs below a session-tree folder: (command, folder) => number of terminals</summary>
+        private readonly Func<string, string, int> runInFolder;
+
         private readonly Timer singleClickTimer = new Timer();
         private CommandSnippet pendingSingleClick;
 
@@ -61,15 +64,18 @@ namespace SuperPutty
         private static CommandLibrary Library { get { return CommandStore.Library; } }
 
         /// <summary>For the layout restore and the designer; commands can't be sent without a sender</summary>
-        public CommandsPane() : this(null, null, null, null) { }
+        public CommandsPane() : this(null, null, null, null, null) { }
 
-        public CommandsPane(Func<string, bool, bool> sendToTerminal, Func<string, int> runInAllTerminals, Func<string, bool> runInNewTab, Func<SessionData> activeSession)
+        public CommandsPane(Func<string, bool, bool> sendToTerminal, Func<string, int> runInAllTerminals, Func<string, bool> runInNewTab,
+            Func<SessionData> activeSession, Func<string, string, int> runInFolder)
         {
             InitializeComponent();
             this.sendToTerminal = sendToTerminal;
             this.runInAllTerminals = runInAllTerminals;
             this.runInNewTab = runInNewTab;
             this.activeSession = activeSession;
+            this.runInFolder = runInFolder;
+            this.contextMenuStrip.Opening += delegate { FillRunInFolderMenu(); };
 
             this.singleClickTimer.Interval = SystemInformation.DoubleClickTime;
             this.singleClickTimer.Tick += singleClickTimer_Tick;
@@ -432,6 +438,26 @@ namespace SuperPutty
             {
                 this.runInNewTab(text);
             }
+        }
+
+        /// <summary>One submenu entry per folder of the active tab's session</summary>
+        private void FillRunInFolderMenu()
+        {
+            this.runInFolderToolStripMenuItem.DropDownItems.Clear();
+            List<string> folders = this.shownSessionId == null ? new List<string>() : CommandLibrary.FolderChain(this.shownSessionId);
+            foreach (string folder in folders)
+            {
+                string target = folder;
+                this.runInFolderToolStripMenuItem.DropDownItems.Add(target, null, delegate
+                {
+                    string text = SelectedCommand == null ? null : Resolve(SelectedCommand);
+                    if (text != null)
+                    {
+                        this.runInFolder(text, target);
+                    }
+                });
+            }
+            this.runInFolderToolStripMenuItem.Enabled = SelectedCommand != null && this.runInFolder != null && folders.Count > 0;
         }
 
         private void runInAllToolStripMenuItem_Click(object sender, EventArgs e)
