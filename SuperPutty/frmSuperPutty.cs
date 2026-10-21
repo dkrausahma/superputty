@@ -2543,7 +2543,9 @@ namespace SuperPutty
             Log.Info("Checking for application update");
             try {
                 httpRequest httpUpdateRequest = new httpRequest();
-                httpUpdateRequest.MakeRequest("https://api.github.com/repos/jimradford/superputty/releases/latest", delegate (bool success, string content)
+                // a manual check (menu) reports every outcome; the automatic one at start-up only logs failures
+                bool manual = sender == this.checkForUpdatesToolStripMenuItem;
+                httpUpdateRequest.MakeRequest(UpdateCheck.ReleasesUrl, delegate (bool success, string content)
                 {
                     if (success)
                     {
@@ -2552,10 +2554,7 @@ namespace SuperPutty
                         GitRelease latest = (GitRelease)js.ReadObject(ms);
                         ms.Close();
 
-                        Version latest_version = new Version(latest.version.Trim());
-                        Version SuperPuTTY_version = new Version(SuperPuTTY.Version);
-
-                        if (latest_version.CompareTo(SuperPuTTY_version) > 0)
+                        if (UpdateCheck.IsNewer(latest.version, SuperPuTTY.Version))
                         {
                             Log.Info("New Application version found! " + latest.version);
 
@@ -2571,7 +2570,7 @@ namespace SuperPutty
                         }
                         else
                         {
-                            if (sender.ToString().Equals(checkForUpdatesToolStripMenuItem.Text))
+                            if (manual)
                             {
                                 MessageBox.Show("You are running the latest version of SuperPutty", "SuperPuTTY Update Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
@@ -2579,8 +2578,11 @@ namespace SuperPutty
                     }
                     else
                     {
-                        MessageBox.Show("There was an error while checking for updates. Please try again later.", "Error during update check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        Log.Warn("An Error occurred trying to check for program updates: " + content);                        
+                        Log.Warn("An Error occurred trying to check for program updates: " + content);
+                        if (manual)
+                        {
+                            MessageBox.Show("There was an error while checking for updates. Please try again later.", "Error during update check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
                     }
                 });
             }
