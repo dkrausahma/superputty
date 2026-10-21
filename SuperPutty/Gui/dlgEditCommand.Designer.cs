@@ -36,6 +36,8 @@ namespace SuperPutty.Gui
             this.textBoxDescription = new System.Windows.Forms.TextBox();
             this.labelCategory = new System.Windows.Forms.Label();
             this.comboBoxCategory = new System.Windows.Forms.ComboBox();
+            this.labelScope = new System.Windows.Forms.Label();
+            this.comboBoxScope = new System.Windows.Forms.ComboBox();
             this.buttonOK = new System.Windows.Forms.Button();
             this.buttonCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
@@ -116,13 +118,33 @@ namespace SuperPutty.Gui
             this.comboBoxCategory.Size = new System.Drawing.Size(362, 21);
             this.comboBoxCategory.TabIndex = 7;
             //
+            // labelScope
+            //
+            this.labelScope.AutoSize = true;
+            this.labelScope.Location = new System.Drawing.Point(12, 121);
+            this.labelScope.Name = "labelScope";
+            this.labelScope.Size = new System.Drawing.Size(58, 13);
+            this.labelScope.TabIndex = 10;
+            this.labelScope.Text = "A&pplies to:";
+            //
+            // comboBoxScope
+            //
+            this.comboBoxScope.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.comboBoxScope.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxScope.FormattingEnabled = true;
+            this.comboBoxScope.Location = new System.Drawing.Point(90, 118);
+            this.comboBoxScope.Name = "comboBoxScope";
+            this.comboBoxScope.Size = new System.Drawing.Size(362, 21);
+            this.comboBoxScope.TabIndex = 11;
+            //
             // buttonOK
             //
             this.buttonOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOK.Location = new System.Drawing.Point(296, 127);
+            this.buttonOK.Location = new System.Drawing.Point(296, 154);
             this.buttonOK.Name = "buttonOK";
             this.buttonOK.Size = new System.Drawing.Size(75, 23);
-            this.buttonOK.TabIndex = 8;
+            this.buttonOK.TabIndex = 12;
             this.buttonOK.Text = "OK";
             this.buttonOK.UseVisualStyleBackColor = true;
             this.buttonOK.Click += new System.EventHandler(this.buttonOK_Click);
@@ -131,10 +153,10 @@ namespace SuperPutty.Gui
             //
             this.buttonCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.buttonCancel.Location = new System.Drawing.Point(377, 127);
+            this.buttonCancel.Location = new System.Drawing.Point(377, 154);
             this.buttonCancel.Name = "buttonCancel";
             this.buttonCancel.Size = new System.Drawing.Size(75, 23);
-            this.buttonCancel.TabIndex = 9;
+            this.buttonCancel.TabIndex = 13;
             this.buttonCancel.Text = "Cancel";
             this.buttonCancel.UseVisualStyleBackColor = true;
             //
@@ -144,7 +166,9 @@ namespace SuperPutty.Gui
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.buttonCancel;
-            this.ClientSize = new System.Drawing.Size(464, 162);
+            this.ClientSize = new System.Drawing.Size(464, 189);
+            this.Controls.Add(this.comboBoxScope);
+            this.Controls.Add(this.labelScope);
             this.Controls.Add(this.buttonCancel);
             this.Controls.Add(this.buttonOK);
             this.Controls.Add(this.comboBoxCategory);
@@ -177,6 +201,8 @@ namespace SuperPutty.Gui
         private System.Windows.Forms.TextBox textBoxDescription;
         private System.Windows.Forms.Label labelCategory;
         private System.Windows.Forms.ComboBox comboBoxCategory;
+        private System.Windows.Forms.Label labelScope;
+        private System.Windows.Forms.ComboBox comboBoxScope;
         private System.Windows.Forms.Button buttonOK;
         private System.Windows.Forms.Button buttonCancel;
     }

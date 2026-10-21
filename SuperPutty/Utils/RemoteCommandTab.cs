@@ -41,6 +41,7 @@ namespace SuperPutty.Utils
         public static SessionData CreateCommandSession(SessionData session, string commandFile, string title)
         {
             SessionData copy = (SessionData)session.Clone();
+            copy.CommandTabOf = session.ScopeSessionId;
             copy.SessionId = session.SessionId + " > " + title;
             copy.SessionName = title;
             copy.SPSLFileName = null;

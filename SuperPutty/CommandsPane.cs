@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -12,6 +14,9 @@ namespace SuperPutty
     /// Tool window with reusable commands, grouped by category. A single click types the command into the active
     /// terminal, a double click types and runs it. The single click waits for the double-click time so a double
     /// click doesn't type the command twice. Right-click selects without typing (for editing).
+    /// Commands apply to all sessions, to a folder of the session tree or to one session; the pane shows the
+    /// commands for the active tab in sections ("This session", its folders, "All sessions"), flat when only
+    /// global commands exist. Commands of sessions or folders that no longer exist are listed as "Not assigned".
     /// </summary>
     public partial class CommandsPane : ToolWindow
     {
@@ -26,85 +31,186 @@ namespace SuperPutty
         /// <summary>Runs a command in a new tab on the active terminal's host: command => opened</summary>
         private readonly Func<string, bool> runInNewTab;
 
+        /// <summary>Returns the session of the active terminal tab, or null</summary>
+        private readonly Func<SessionData> activeSession;
+
         private readonly Timer singleClickTimer = new Timer();
         private CommandSnippet pendingSingleClick;
 
-        private CommandLibrary library;
+        /// <summary>The session whose commands are shown (ScopeSessionId of the active tab), or null</summary>
+        private string shownSessionId;
+
+        /// <summary>A group of commands in the tree: a scope (session, folder, all) or the unassigned ones</summary>
+        private class Section
+        {
+            public string Title { get; set; }
+            /// <summary>Scope for commands added here; null for "Not assigned"</summary>
+            public CommandScopeOption Scope { get; set; }
+            public Func<CommandSnippet, bool> Includes { get; set; }
+            /// <summary>Show the Favorites category even when empty (only for "All sessions")</summary>
+            public bool ShowEmptyFavorites { get; set; }
+        }
+
+        /// <summary>Tag of section and category nodes</summary>
+        private class GroupTag
+        {
+            public Section Section { get; set; }
+            public string Category { get; set; }
+        }
+
+        private static CommandLibrary Library { get { return CommandStore.Library; } }
 
         /// <summary>For the layout restore and the designer; commands can't be sent without a sender</summary>
-        public CommandsPane() : this(null, null, null) { }
+        public CommandsPane() : this(null, null, null, null) { }
 
-        public CommandsPane(Func<string, bool, bool> sendToTerminal, Func<string, int> runInAllTerminals, Func<string, bool> runInNewTab)
+        public CommandsPane(Func<string, bool, bool> sendToTerminal, Func<string, int> runInAllTerminals, Func<string, bool> runInNewTab, Func<SessionData> activeSession)
         {
             InitializeComponent();
             this.sendToTerminal = sendToTerminal;
             this.runInAllTerminals = runInAllTerminals;
             this.runInNewTab = runInNewTab;
+            this.activeSession = activeSession;
 
             this.singleClickTimer.Interval = SystemInformation.DoubleClickTime;
             this.singleClickTimer.Tick += singleClickTimer_Tick;
 
-            this.library = CommandLibrary.Load(LibraryPath);
-            if (this.library.Upgrade() || !File.Exists(LibraryPath))
-            {
-                SaveLibrary();
-            }
+            CommandStore.Changed += CommandStore_Changed;
+            this.shownSessionId = ActiveSessionId();
             RefreshTree();
         }
 
-        private static string LibraryPath
+        /// <summary>Called by the main form when the active tab changes</summary>
+        public void ActiveSessionChanged()
         {
-            get { return Path.Combine(SuperPuTTY.Settings.SettingsFolder, CommandLibrary.FileName); }
+            string sessionId = ActiveSessionId();
+            if (sessionId != this.shownSessionId)
+            {
+                this.shownSessionId = sessionId;
+                RefreshTree();
+            }
+        }
+
+        private string ActiveSessionId()
+        {
+            SessionData session = this.activeSession == null ? null : this.activeSession();
+            return session == null ? null : session.ScopeSessionId;
+        }
+
+        private void CommandStore_Changed(object sender, EventArgs e)
+        {
+            if (this.IsDisposed)
+            {
+                return;
+            }
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke((MethodInvoker)delegate { RefreshTree(); });
+            }
+            else
+            {
+                RefreshTree();
+            }
         }
 
         private void SaveLibrary()
         {
             try
             {
-                this.library.Save(LibraryPath);
+                CommandStore.Save();
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
-                Log.Error("Could not save commands to " + LibraryPath, ex);
+                Log.Error("Could not save commands to " + CommandStore.LibraryPath, ex);
                 MessageBox.Show(this, "Could not save the commands:\n" + ex.Message, "Commands", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
         #region Tree
 
+        /// <summary>Where a command may apply: all sessions, every folder, every session of the session tree</summary>
+        private static List<CommandScopeOption> ScopeOptions()
+        {
+            return CommandLibrary.ScopeOptions(SuperPuTTY.GetAllSessions().Select(s => s.SessionId));
+        }
+
+        /// <summary>The sections for the active tab, most specific first</summary>
+        private List<Section> Sections()
+        {
+            List<Section> sections = new List<Section>();
+            string sessionId = this.shownSessionId;
+            if (sessionId != null)
+            {
+                SessionData session = SuperPuTTY.GetSessionById(sessionId);
+                sections.Add(new Section
+                {
+                    Title = "This session: " + (session == null ? sessionId : session.SessionName),
+                    Scope = CommandScopeOption.Session(sessionId),
+                    Includes = c => c.Scope == CommandScope.Session && c.ScopeKey == sessionId
+                });
+                foreach (string folder in CommandLibrary.FolderChain(sessionId))
+                {
+                    string key = folder;
+                    sections.Add(new Section
+                    {
+                        Title = "Folder: " + key,
+                        Scope = CommandScopeOption.Folder(key),
+                        Includes = c => c.Scope == CommandScope.Folder && c.ScopeKey == key
+                    });
+                }
+            }
+            sections.Add(new Section
+            {
+                Title = "All sessions",
+                Scope = CommandScopeOption.Global(),
+                Includes = c => c.Scope == CommandScope.Global,
+                ShowEmptyFavorites = true
+            });
+
+            List<string> sessionIds = SuperPuTTY.GetAllSessions().Select(s => s.SessionId).ToList();
+            sections.Add(new Section
+            {
+                Title = "Not assigned (session or folder no longer exists)",
+                Includes = c => CommandLibrary.IsOrphan(c, sessionIds)
+            });
+            return sections;
+        }
+
         /// <summary>Rebuild the tree from the library and the filter, keeping the selection where possible</summary>
         private void RefreshTree(CommandSnippet select = null)
         {
             select = select ?? SelectedCommand;
             string filter = this.textBoxFilter.Text;
+            bool filtering = !string.IsNullOrWhiteSpace(filter);
+
+            // matching commands per section; sections without matches are left out (except "All sessions")
+            List<KeyValuePair<Section, List<CommandSnippet>>> shown = new List<KeyValuePair<Section, List<CommandSnippet>>>();
+            foreach (Section section in Sections())
+            {
+                List<CommandSnippet> commands = Library.Commands.Where(c => section.Includes(c) && c.Matches(filter)).ToList();
+                if (commands.Count > 0 || (section.ShowEmptyFavorites && !filtering))
+                {
+                    shown.Add(new KeyValuePair<Section, List<CommandSnippet>>(section, commands));
+                }
+            }
+            // only global commands: no section level, as before
+            bool flat = shown.Count == 1 && shown[0].Key.ShowEmptyFavorites;
 
             this.treeViewCommands.BeginUpdate();
             try
             {
                 this.treeViewCommands.Nodes.Clear();
-                foreach (string category in this.library.Categories())
+                foreach (KeyValuePair<Section, List<CommandSnippet>> entry in shown)
                 {
-                    // Favorites stays visible even when empty, unless a filter is active
-                    TreeNode categoryNode = CommandLibrary.IsFavorites(category) && string.IsNullOrWhiteSpace(filter)
-                        ? this.treeViewCommands.Nodes.Add(category) : null;
-                    foreach (CommandSnippet command in this.library.Commands.Where(c => CommandLibrary.CategoryOf(c).Equals(category, StringComparison.OrdinalIgnoreCase)))
+                    TreeNodeCollection parent = this.treeViewCommands.Nodes;
+                    if (!flat)
                     {
-                        if (!command.Matches(filter))
-                        {
-                            continue;
-                        }
-                        if (categoryNode == null)
-                        {
-                            categoryNode = this.treeViewCommands.Nodes.Add(category);
-                        }
-                        TreeNode node = categoryNode.Nodes.Add(command.DisplayText);
-                        node.Tag = command;
-                        node.ToolTipText = string.IsNullOrEmpty(command.Description) ? command.Command : command.Command + "\n" + command.Description;
-                        if (command == select)
-                        {
-                            this.treeViewCommands.SelectedNode = node;
-                        }
+                        TreeNode sectionNode = this.treeViewCommands.Nodes.Add(entry.Key.Title);
+                        sectionNode.Tag = new GroupTag { Section = entry.Key };
+                        sectionNode.NodeFont = new Font(this.treeViewCommands.Font, FontStyle.Bold);
+                        sectionNode.Text = entry.Key.Title; // re-set so the bold text isn't clipped
+                        parent = sectionNode.Nodes;
                     }
+                    AddCategories(parent, entry.Key, entry.Value, entry.Key.ShowEmptyFavorites && !filtering, select);
                 }
                 this.treeViewCommands.ExpandAll();
             }
@@ -113,6 +219,47 @@ namespace SuperPutty
                 this.treeViewCommands.EndUpdate();
             }
             UpdateButtons();
+        }
+
+        private void AddCategories(TreeNodeCollection parent, Section section, List<CommandSnippet> commands, bool showEmptyFavorites, CommandSnippet select)
+        {
+            List<string> categories = new List<string>();
+            if (showEmptyFavorites || commands.Any(c => CommandLibrary.IsFavorites(CommandLibrary.CategoryOf(c))))
+            {
+                categories.Add(CommandLibrary.FavoritesCategory);
+            }
+            categories.AddRange(commands.Select(c => CommandLibrary.CategoryOf(c))
+                .Where(c => !CommandLibrary.IsFavorites(c)).Distinct(StringComparer.OrdinalIgnoreCase));
+
+            foreach (string category in categories)
+            {
+                TreeNode categoryNode = parent.Add(category);
+                categoryNode.Tag = new GroupTag { Section = section, Category = category };
+                foreach (CommandSnippet command in commands.Where(c => CommandLibrary.CategoryOf(c).Equals(category, StringComparison.OrdinalIgnoreCase)))
+                {
+                    TreeNode node = categoryNode.Nodes.Add(command.DisplayText);
+                    node.Tag = command;
+                    node.ToolTipText = string.IsNullOrEmpty(command.Description) ? command.Command : command.Command + "\n" + command.Description;
+                    if (command == select)
+                    {
+                        this.treeViewCommands.SelectedNode = node;
+                    }
+                }
+            }
+        }
+
+        /// <summary>The section/category of the selected node (for a command: of its category node)</summary>
+        private GroupTag SelectedGroup
+        {
+            get
+            {
+                TreeNode node = this.treeViewCommands.SelectedNode;
+                while (node != null && !(node.Tag is GroupTag))
+                {
+                    node = node.Parent;
+                }
+                return node == null ? null : (GroupTag)node.Tag;
+            }
         }
 
         private CommandSnippet SelectedCommand
@@ -251,16 +398,20 @@ namespace SuperPutty
 
         private void add_Click(object sender, EventArgs e)
         {
-            // pre-select the category of the current selection
-            string category = this.treeViewCommands.SelectedNode == null ? null
-                : SelectedCommand != null ? CommandLibrary.CategoryOf(SelectedCommand) : this.treeViewCommands.SelectedNode.Text;
-            using (dlgEditCommand dialog = new dlgEditCommand(new CommandSnippet { Category = category }, this.library.Categories(), true))
+            // pre-select the scope and category of the current selection
+            GroupTag group = SelectedGroup;
+            CommandSnippet command = new CommandSnippet { Category = group == null ? null : group.Category };
+            CommandScopeOption scope = group == null || group.Section.Scope == null ? CommandScopeOption.Global() : group.Section.Scope;
+            command.Scope = scope.Scope;
+            command.ScopeKey = scope.Key;
+
+            using (dlgEditCommand dialog = new dlgEditCommand(command, Library.Categories(), ScopeOptions(), true))
             {
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
-                    this.library.Commands.Add(dialog.Command);
-                    SaveLibrary();
+                    Library.Commands.Add(dialog.Command);
                     this.textBoxFilter.Text = string.Empty;
+                    SaveLibrary();
                     RefreshTree(dialog.Command);
                 }
             }
@@ -274,7 +425,7 @@ namespace SuperPutty
                 return;
             }
             CommandSnippet favorite;
-            if (this.library.AddToFavorites(command, out favorite))
+            if (Library.AddToFavorites(command, out favorite))
             {
                 SaveLibrary();
             }
@@ -293,12 +444,12 @@ namespace SuperPutty
             {
                 return;
             }
-            using (dlgEditCommand dialog = new dlgEditCommand(command, this.library.Categories(), false))
+            using (dlgEditCommand dialog = new dlgEditCommand(command, Library.Categories(), ScopeOptions(), false))
             {
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
-                    int index = this.library.Commands.IndexOf(command);
-                    this.library.Commands[index] = dialog.Command;
+                    int index = Library.Commands.IndexOf(command);
+                    Library.Commands[index] = dialog.Command;
                     SaveLibrary();
                     RefreshTree(dialog.Command);
                 }
@@ -320,7 +471,7 @@ namespace SuperPutty
             if (MessageBox.Show(this, "Delete the command\n\n" + command.Command, "Delete Command",
                 MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) == DialogResult.OK)
             {
-                this.library.Commands.Remove(command);
+                Library.Commands.Remove(command);
                 SaveLibrary();
                 RefreshTree();
             }
@@ -332,6 +483,7 @@ namespace SuperPutty
         {
             if (disposing)
             {
+                CommandStore.Changed -= CommandStore_Changed;
                 this.singleClickTimer.Dispose();
                 if (this.components != null)
                 {

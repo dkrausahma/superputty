@@ -34,7 +34,8 @@ and Pageant integration) but adds the window management on top.
   pane, and toggle **kiosk mode** (F11; full screen, menus and panels hidden, only terminal tabs visible).
 - **Commands pane** — a library of frequently used commands, grouped by category with a Favorites folder at the top, and filterable. One
   click types a command into the active terminal, a double click types and runs it. Starts with common
-  Linux commands; add, edit and delete your own.
+  Linux commands; add, edit and delete your own — for all sessions, a folder of the session tree or a
+  single session (the pane shows what applies to the active tab).
 - **Containers pane** — the docker containers on the active tab's host, grouped by compose project.
   Double-click opens a shell inside a container in a new tab; follow logs, inspect, start/stop/restart
   from the context menu. Uses plink with your PuTTY profile and Pageant keys.

@@ -14,6 +14,50 @@ namespace SuperPutty.Data
         Session
     }
 
+    /// <summary>A choice for where a command applies, as offered in the edit dialog</summary>
+    public class CommandScopeOption
+    {
+        public CommandScope Scope { get; set; }
+        public string Key { get; set; }
+        public string Text { get; set; }
+
+        public bool Matches(CommandSnippet command)
+        {
+            return command.Scope == this.Scope && (this.Scope == CommandScope.Global || command.ScopeKey == this.Key);
+        }
+
+        public override string ToString()
+        {
+            return this.Text;
+        }
+
+        public static CommandScopeOption Global()
+        {
+            return new CommandScopeOption { Scope = CommandScope.Global, Text = "All sessions" };
+        }
+
+        public static CommandScopeOption Folder(string folder)
+        {
+            return new CommandScopeOption { Scope = CommandScope.Folder, Key = folder, Text = "Folder " + folder };
+        }
+
+        public static CommandScopeOption Session(string sessionId)
+        {
+            return new CommandScopeOption { Scope = CommandScope.Session, Key = sessionId, Text = "Session " + sessionId };
+        }
+
+        /// <summary>The option for a command's current scope</summary>
+        public static CommandScopeOption Of(CommandSnippet command)
+        {
+            switch (command.Scope)
+            {
+                case CommandScope.Folder: return Folder(command.ScopeKey);
+                case CommandScope.Session: return Session(command.ScopeKey);
+                default: return Global();
+            }
+        }
+    }
+
     /// <summary>A reusable command shown in the Commands pane</summary>
     public class CommandSnippet
     {

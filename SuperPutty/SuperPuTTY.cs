@@ -404,6 +404,7 @@ namespace SuperPutty
                 Log.InfoFormat("Added Session, id={0}", session.SessionId);
                 sessionsMap.Add(session.SessionId, session);
                 sessionsList.Add(session);
+                session.OnPropertyChanged += SessionPropertyChanged;
                 success = true;
             }
             else
@@ -411,6 +412,15 @@ namespace SuperPutty
                 Log.InfoFormat("Failed to Add Session, id={0}.  Session already exists", session.SessionId);
             }
             return success;
+        }
+
+        /// <summary>Session-specific commands follow a session when its ID changes</summary>
+        private static void SessionPropertyChanged(SessionData session, string attributeName)
+        {
+            if (attributeName == "SessionId" && sessionsList.Contains(session))
+            {
+                CommandStore.SessionIdChanged(session.OldSessionId, session.SessionId);
+            }
         }
 
         /// <summary>Get a list of all sessions from the in-application database</summary>
