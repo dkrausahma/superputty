@@ -179,7 +179,6 @@ namespace SuperPutty
             this.checkEnableKeyboardShortcuts.Checked = SuperPuTTY.Settings.EnableKeyboadShortcuts;
             this.btnFont.Font = SuperPuTTY.Settings.SessionsTreeFont;
             this.btnFont.Text = ToShortString(SuperPuTTY.Settings.SessionsTreeFont);
-            this.numericUpDownOpacity.Value = (decimal) SuperPuTTY.Settings.Opacity * 100;
             this.checkQuickSelectorCaseSensitiveSearch.Checked = SuperPuTTY.Settings.QuickSelectorCaseSensitiveSearch;
             this.checkShowDocumentIcons.Checked = SuperPuTTY.Settings.ShowDocumentIcons;
             this.checkRestrictFloatingWindows.Checked = SuperPuTTY.Settings.DockingRestrictFloatingWindows;
@@ -348,7 +347,6 @@ namespace SuperPutty
                 SuperPuTTY.Settings.SessionsTreeShowLines = this.checkSessionsTreeShowLines.Checked;
                 SuperPuTTY.Settings.SessionsTreeFont = this.btnFont.Font;
                 SuperPuTTY.Settings.WindowActivator = (string) this.comboBoxActivatorType.SelectedItem;
-                SuperPuTTY.Settings.Opacity = (double) this.numericUpDownOpacity.Value / 100.0;
                 SuperPuTTY.Settings.SessionsSearchMode = (string) this.comboSearchMode.SelectedItem;
                 SuperPuTTY.Settings.QuickSelectorCaseSensitiveSearch = this.checkQuickSelectorCaseSensitiveSearch.Checked;
                 SuperPuTTY.Settings.ShowDocumentIcons = this.checkShowDocumentIcons.Checked;

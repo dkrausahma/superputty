@@ -272,13 +272,13 @@ namespace SuperPutty
         public static void LoadLayoutInNewInstance(LayoutData layout)
         {
             ReportStatus("Starting new instance with layout, {0}", layout.Name);
-            Process.Start(Assembly.GetExecutingAssembly().Location, "-layout \"" + layout.Name + "\"");
+            Process.Start(new ProcessStartInfo(Application.ExecutablePath, "-layout \"" + layout.Name + "\"") { UseShellExecute = true });
         }
 
         public static void LoadSessionInNewInstance(string sessionId)
         {
             ReportStatus("Starting session in new instance, {0}", sessionId);
-            Process.Start(Assembly.GetExecutingAssembly().Location, "-session \"" + sessionId + "\"");
+            Process.Start(new ProcessStartInfo(Application.ExecutablePath, "-session \"" + sessionId + "\"") { UseShellExecute = true });
         }
 
         public static void SetLayoutAsDefault(string layoutName)
@@ -404,6 +404,7 @@ namespace SuperPutty
                 Log.InfoFormat("Added Session, id={0}", session.SessionId);
                 sessionsMap.Add(session.SessionId, session);
                 sessionsList.Add(session);
+                session.OnPropertyChanged += SessionPropertyChanged;
                 success = true;
             }
             else
@@ -411,6 +412,15 @@ namespace SuperPutty
                 Log.InfoFormat("Failed to Add Session, id={0}.  Session already exists", session.SessionId);
             }
             return success;
+        }
+
+        /// <summary>Session-specific commands follow a session when its ID changes</summary>
+        private static void SessionPropertyChanged(SessionData session, string attributeName)
+        {
+            if (attributeName == "SessionId" && sessionsList.Contains(session))
+            {
+                CommandStore.SessionIdChanged(session.OldSessionId, session.SessionId);
+            }
         }
 
         /// <summary>Get a list of all sessions from the in-application database</summary>
@@ -471,7 +481,7 @@ namespace SuperPutty
 
                         if (panel.InvokeRequired)
                         {
-                            panel.BeginInvoke((MethodInvoker)delegate {
+                            panel.BeginInvoke((System.Windows.Forms.MethodInvoker)delegate {
                                 panel.Close();
                             });
                         }
@@ -836,7 +846,6 @@ namespace SuperPutty
         NextTab,
         PrevTab,
         Options,
-        FullScreen,
         OpenSession,
         SwitchSession,
         DuplicateSession,
@@ -846,7 +855,13 @@ namespace SuperPutty
         /// <summary>Open Script Editor Window</summary>
         OpenScriptEditor,
         /// <summary>Rename active tab</summary>
-        RenameTab
+        RenameTab,
+        /// <summary>Enter or leave kiosk mode</summary>
+        KioskMode,
+        /// <summary>Copy the active terminal's screen and scrollback to the clipboard</summary>
+        CopySessionToClipboard,
+        /// <summary>Copy only the last command and its output to the clipboard</summary>
+        CopyLastCommand
     } 
     #endregion
 

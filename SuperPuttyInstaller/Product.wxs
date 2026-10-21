@@ -1,149 +1,185 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
-     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
-     xmlns:netfx="http://schemas.microsoft.com/wix/NetFxExtension">
-  <Product Id="*" Name="SuperPuTTY" Language="1033" Version="1.4.0.8" Manufacturer="Jim Radford" UpgradeCode="42567f59-2f27-4e5b-a900-9141dc2dd929">    
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util" xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <!-- Version comes from SuperPutty.dll (AssemblyFileVersion) -->
+  <Package Name="SuperPuTTY" Language="1033" Version="!(bind.FileVersion.ProductDll)" Manufacturer="Jim Radford" UpgradeCode="42567f59-2f27-4e5b-a900-9141dc2dd929" InstallerVersion="500">
 
-    <Icon Id="ProductIcon" SourceFile="$(var.SuperPutty.ProjectDir)Apps-utilities-terminal.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="ProductIcon"/>
-    <Property Id="ARPHELPLINK" Value="https://github.com/jimradford/superputty/wiki/Documentation"/>
-    <Property Id="ARPURLINFOABOUT" Value="https://github.com/jimradford/superputty/wiki"/>
-    <Property Id="ARPNOREPAIR" Value="1"/>
+    <!-- SuperPutty.exe is a framework-dependent .NET 10 app -->
+    <netfx:DotNetCompatibilityCheck Property="DOTNETDESKTOPRUNTIME" RuntimeType="desktop" Platform="x64" Version="10.0.0" RollForward="minor" />
+    <Launch Condition="Installed OR DOTNETDESKTOPRUNTIME=&quot;0&quot;" Message="SuperPuTTY requires the .NET 10 Desktop Runtime (x64). Download it from https://dotnet.microsoft.com/download/dotnet/10.0 and run this setup again." />
 
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />    
+    <Icon Id="ProductIcon" SourceFile="$(var.SuperPutty.ProjectDir)Apps-utilities-terminal.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/jimradford/superputty/wiki/Documentation" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/jimradford/superputty/wiki" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <!-- MSI compares only the first three version fields; AllowSameVersionUpgrades replaces e.g. 1.4.0.8 with 1.4.0.9 -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
       <Media Id="1" Cabinet="Cab1.cab" EmbedCab="yes" />
     
     <Feature Id="ProductFeature" Title="SuperPuTTY" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="DefaultTheme" />
-      <ComponentRef Id="ApplicationShortcuts"/> 
+      <ComponentRef Id="ApplicationShortcuts" /> 
     </Feature>
 
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
 
-    <WixVariable Id="WixUIBannerBmp" Value="WixUIBannerBmp.bmp"/>
-    <WixVariable Id="WixUIDialogBmp" Value="WixUIDialogBmp.bmp"/>
+    <WixVariable Id="WixUIBannerBmp" Value="WixUIBannerBmp.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="WixUIDialogBmp.bmp" />
 
-    <WixVariable Id="WixUILicenseRtf" Value="$(var.SolutionDir)License.rtf" />
+    <WixVariable Id="WixUILicenseRtf" Value="..\License.rtf" />
 
     <UI>
-      <UIRef Id="WixUI_InstallDir" />      
-      <Publish Dialog="ExitDialog" 
-            Control="Finish" 
-            Event="DoAction" 
-            Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+      <ui:WixUI Id="WixUI_InstallDir" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed" />
     </UI>
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch SuperPuTTY" />    
     <Property Id="WixShellExecTarget" Value="[#ProductExe]" />
-    <CustomAction Id="LaunchApplication"
-        BinaryKey="WixCA"
-        DllEntry="WixShellExec"
-        Impersonate="yes" />
-  </Product>
+    <CustomAction Id="LaunchApplication" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)" />
+  </Package>
 
   <Fragment>
-    <Directory Id="TARGETDIR" Name="SourceDir">
-      <Directory Id="ProgramFilesFolder">
+      <StandardDirectory Id="ProgramFiles6432Folder">
         <Directory Id="INSTALLFOLDER" Name="SuperPuTTY">
           <Directory Id="INSTALLTHEMEFOLDER" Name="themes">
             <Directory Id="INSTALLDEFAULTTHEME" Name="default">
-              <Directory Id="INSTALLTHEMEICONSFOLDER" Name="icons"/>
+              <Directory Id="INSTALLTHEMEICONSFOLDER" Name="icons" />
             </Directory>
           </Directory>
         </Directory>
-      </Directory>
+      </StandardDirectory>
 
 
-      <Directory Id="ProgramMenuFolder">
+      <StandardDirectory Id="ProgramMenuFolder">
         <Directory Id="ProgramMenuSubfolder" Name="SuperPuTTY">
           <Component Id="ApplicationShortcuts" Guid="0CF406F3-901A-4C75-9DCB-BE6042BC70CE">
 
-            <Shortcut Id="ApplicationShortcut1"
-                      Name="SuperPuTTY" 
-                      Description="SuperPuTTY SSH Window Manager"
-                      Target="[#ProductExe]" 
-                      WorkingDirectory="INSTALLFOLDER"/>
+            <Shortcut Id="ApplicationShortcut1" Name="SuperPuTTY" Description="SuperPuTTY SSH Window Manager" Target="[#ProductExe]" WorkingDirectory="INSTALLFOLDER" />
 
-            <util:InternetShortcut Id="ProjectWebsiteShortcut"
-                        Name="Project Website"
-                               Target="https://github.com/jimradford/superputty/wiki/"/>
+            <util:InternetShortcut Id="ProjectWebsiteShortcut" Name="Project Website" Target="https://github.com/jimradford/superputty/wiki/" />
 
-            <Shortcut Id="UninstallProduct"
-            Name="Uninstall SuperPuTTY"
-            Target="[SystemFolder]msiexec.exe"
-            Arguments="/x [ProductCode]"
-            Description="Uninstalls SuperPuTTY" />
+            <Shortcut Id="UninstallProduct" Name="Uninstall SuperPuTTY" Target="[SystemFolder]msiexec.exe" Arguments="/x [ProductCode]" Description="Uninstalls SuperPuTTY" />
 
-            <RegistryValue Root="HKCU" 
-                           Key="Software\Jim Radford\SuperPuTTY"
-                           Name="installed" 
-                           Type="integer" 
-                           Value="1" 
-                           KeyPath="yes"/>
+            <RegistryValue Root="HKCU" Key="Software\Jim Radford\SuperPuTTY" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 
-            <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall"/>
+            <RemoveFolder Id="ProgramMenuSubfolder" On="uninstall" />
           </Component>
         </Directory>
-      </Directory>
-    </Directory>
-  </Fragment>
+      </StandardDirectory>
+    </Fragment>
 
   <Fragment>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="ProductExe">
-        <File Id="ProductExe" Source="$(var.SuperPutty.TargetPath)">
-          <netfx:NativeImage Id="ngen_ProductExe" Platform="all" Priority="3"/>
-        </File>
+        <File Id="ProductExe" Source="$(var.SuperPutty.TargetDir)SuperPutty.exe" />
+      </Component>
+      <Component Id="ProductDll">
+        <File Id="ProductDll" Source="$(var.SuperPutty.TargetPath)" />
       </Component>
       <Component Id="ProductExeConfig">
-        <File Source="$(var.SuperPutty.TargetPath).config" />
+        <File Id="ProductDllConfig" Source="$(var.SuperPutty.TargetPath).config" />
+      </Component>
+      <Component Id="ProductRuntimeConfig">
+        <File Id="ProductRuntimeConfig" Source="$(var.SuperPutty.TargetDir)SuperPutty.runtimeconfig.json" />
+      </Component>
+      <Component Id="ProductDeps">
+        <File Id="ProductDeps" Source="$(var.SuperPutty.TargetDir)SuperPutty.deps.json" />
       </Component>
       <Component Id="ProductLibLogging">
-        <File Source="$(var.SuperPutty.TargetDir)\log4net.dll" />
+        <File Id="log4net.dll" Source="$(var.SuperPutty.TargetDir)\log4net.dll" />
       </Component>
       <Component Id="ProductLibUI">
-        <File Source="$(var.SuperPutty.TargetDir)\WeifenLuo.WinFormsUI.Docking.dll" />
+        <File Id="WeifenLuo.WinFormsUI.Docking.dll" Source="$(var.SuperPutty.TargetDir)\WeifenLuo.WinFormsUI.Docking.dll" />
+      </Component>
+      <Component Id="ProductLibUITheme">
+        <File Id="WeifenLuo.WinFormsUI.Docking.ThemeVS2005.dll" Source="$(var.SuperPutty.TargetDir)\WeifenLuo.WinFormsUI.Docking.ThemeVS2005.dll" />
       </Component>
     </ComponentGroup>
     <ComponentGroup Id="DefaultTheme" Directory="INSTALLTHEMEICONSFOLDER">
       <Component Id="ThemeIconFiles" Guid="C834A688-708A-4DE1-8B64-7582CFF47F7C">
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\application_osx_terminal.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\application_xp_terminal.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\book.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\clock.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\comment.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\compress.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\database.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\drive_network.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\email.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\feed.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\firewall.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_blue.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_green.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_orange.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_pink.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_purple.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_red.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_yellow.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\help.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\house.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\information.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\ipod.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\lightbulb.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\lightning.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\lorry.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\map.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\monitor.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\printer.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\report.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\server.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\telephone.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\television.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\time.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\tux.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\webcam.png" />
-        <File Source="$(var.SuperPutty.TargetDir)themes\default\icons\world.png" />
+        <File Id="application_osx_terminal.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\application_osx_terminal.png" />
+        <File Id="application_xp_terminal.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\application_xp_terminal.png" />
+        <File Id="book.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\book.png" />
+        <File Id="clock.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\clock.png" />
+        <File Id="comment.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\comment.png" />
+        <File Id="compress.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\compress.png" />
+        <File Id="database.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\database.png" />
+        <File Id="drive_network.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\drive_network.png" />
+        <File Id="email.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\email.png" />
+        <File Id="feed.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\feed.png" />
+        <File Id="firewall.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\firewall.png" />
+        <File Id="flag_blue.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_blue.png" />
+        <File Id="flag_green.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_green.png" />
+        <File Id="flag_orange.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_orange.png" />
+        <File Id="flag_pink.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_pink.png" />
+        <File Id="flag_purple.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_purple.png" />
+        <File Id="flag_red.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_red.png" />
+        <File Id="flag_yellow.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\flag_yellow.png" />
+        <File Id="help.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\help.png" />
+        <File Id="house.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\house.png" />
+        <File Id="information.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\information.png" />
+        <File Id="ipod.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\ipod.png" />
+        <File Id="lightbulb.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\lightbulb.png" />
+        <File Id="lightning.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\lightning.png" />
+        <File Id="lorry.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\lorry.png" />
+        <File Id="map.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\map.png" />
+        <File Id="monitor.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\monitor.png" />
+        <File Id="printer.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\printer.png" />
+        <File Id="report.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\report.png" />
+        <File Id="server.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\server.png" />
+        <File Id="telephone.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\telephone.png" />
+        <File Id="television.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\television.png" />
+        <File Id="time.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\time.png" />
+        <File Id="tux.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\tux.png" />
+        <File Id="webcam.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\webcam.png" />
+        <File Id="world.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\world.png" />
+      </Component>
+      <!-- environment/role icons, generated by tools/session-icons/make_icons.py -->
+      <Component Id="SessionRoleIconFiles" Guid="B60FDDB5-C5D6-4232-8FA1-CE220CC93AF0">
+        <File Id="role_server.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-server.png" />
+        <File Id="role_web.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-web.png" />
+        <File Id="role_database.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-database.png" />
+        <File Id="role_docker.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-docker.png" />
+        <File Id="role_gpu.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-gpu.png" />
+        <File Id="role_app.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-app.png" />
+        <File Id="role_storage.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-storage.png" />
+        <File Id="role_security.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-security.png" />
+        <File Id="role_mail.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-mail.png" />
+        <File Id="role_monitoring.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-monitoring.png" />
+        <File Id="role_jumphost.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\role-jumphost.png" />
+        <File Id="dev_server.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-server.png" />
+        <File Id="dev_web.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-web.png" />
+        <File Id="dev_database.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-database.png" />
+        <File Id="dev_docker.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-docker.png" />
+        <File Id="dev_gpu.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-gpu.png" />
+        <File Id="dev_app.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-app.png" />
+        <File Id="dev_storage.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-storage.png" />
+        <File Id="dev_security.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-security.png" />
+        <File Id="dev_mail.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-mail.png" />
+        <File Id="dev_monitoring.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-monitoring.png" />
+        <File Id="dev_jumphost.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\dev-jumphost.png" />
+        <File Id="qual_server.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-server.png" />
+        <File Id="qual_web.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-web.png" />
+        <File Id="qual_database.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-database.png" />
+        <File Id="qual_docker.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-docker.png" />
+        <File Id="qual_gpu.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-gpu.png" />
+        <File Id="qual_app.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-app.png" />
+        <File Id="qual_storage.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-storage.png" />
+        <File Id="qual_security.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-security.png" />
+        <File Id="qual_mail.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-mail.png" />
+        <File Id="qual_monitoring.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-monitoring.png" />
+        <File Id="qual_jumphost.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\qual-jumphost.png" />
+        <File Id="prod_server.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-server.png" />
+        <File Id="prod_web.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-web.png" />
+        <File Id="prod_database.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-database.png" />
+        <File Id="prod_docker.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-docker.png" />
+        <File Id="prod_gpu.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-gpu.png" />
+        <File Id="prod_app.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-app.png" />
+        <File Id="prod_storage.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-storage.png" />
+        <File Id="prod_security.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-security.png" />
+        <File Id="prod_mail.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-mail.png" />
+        <File Id="prod_monitoring.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-monitoring.png" />
+        <File Id="prod_jumphost.png" Source="$(var.SuperPutty.TargetDir)themes\default\icons\prod-jumphost.png" />
       </Component>
     </ComponentGroup>
   </Fragment>

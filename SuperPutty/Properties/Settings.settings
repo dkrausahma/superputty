@@ -44,6 +44,21 @@
     <Setting Name="ShowToolBarCommands" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="ShowToolBarIcons" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AutoHealthCheck" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SessionLogging" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="NotifyBackgroundActivity" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="Action_CopyLastCommand_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
+      <Value Profile="(Default)">None</Value>
+    </Setting>
     <Setting Name="ExpandSessionsTreeOnStartup" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
@@ -74,8 +89,11 @@
     <Setting Name="SendCommandsToVisibleOnly" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="Action_FullScreen_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
+    <Setting Name="Action_KioskMode_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">F11</Value>
+    </Setting>
+    <Setting Name="Action_CopySessionToClipboard_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
+      <Value Profile="(Default)">None</Value>
     </Setting>
     <Setting Name="Action_CloseTab_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">None</Value>
@@ -97,9 +115,6 @@
     </Setting>
     <Setting Name="AlwaysOnTop" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="Opacity" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">1</Value>
     </Setting>
     <Setting Name="MultipleTabCloseConfirmation" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
@@ -165,7 +180,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="PersistCommandBarHistory" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="AllowPlainTextPuttyPasswordArg" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
@@ -181,9 +196,6 @@
     </Setting>
     <Setting Name="Action_RenameTab_Shortcut" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Windows.Forms.Keys" Scope="User">
       <Value Profile="(Default)">None</Value>
-    </Setting>
-    <Setting Name="TerminalOpacity" Provider="SuperPutty.Utils.PortableSettingsProvider" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">100</Value>
     </Setting>
   </Settings>
 </SettingsFile>

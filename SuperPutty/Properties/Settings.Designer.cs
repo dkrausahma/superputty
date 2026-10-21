@@ -208,6 +208,71 @@ namespace SuperPutty.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ShowToolBarIcons {
+            get {
+                return ((bool)(this["ShowToolBarIcons"]));
+            }
+            set {
+                this["ShowToolBarIcons"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AutoHealthCheck {
+            get {
+                return ((bool)(this["AutoHealthCheck"]));
+            }
+            set {
+                this["AutoHealthCheck"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SessionLogging {
+            get {
+                return ((bool)(this["SessionLogging"]));
+            }
+            set {
+                this["SessionLogging"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool NotifyBackgroundActivity {
+            get {
+                return ((bool)(this["NotifyBackgroundActivity"]));
+            }
+            set {
+                this["NotifyBackgroundActivity"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("None")]
+        public global::System.Windows.Forms.Keys Action_CopyLastCommand_Shortcut {
+            get {
+                return ((global::System.Windows.Forms.Keys)(this["Action_CopyLastCommand_Shortcut"]));
+            }
+            set {
+                this["Action_CopyLastCommand_Shortcut"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool ExpandSessionsTreeOnStartup {
             get {
@@ -339,12 +404,25 @@ namespace SuperPutty.Properties {
         [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("F11")]
-        public global::System.Windows.Forms.Keys Action_FullScreen_Shortcut {
+        public global::System.Windows.Forms.Keys Action_KioskMode_Shortcut {
             get {
-                return ((global::System.Windows.Forms.Keys)(this["Action_FullScreen_Shortcut"]));
+                return ((global::System.Windows.Forms.Keys)(this["Action_KioskMode_Shortcut"]));
             }
             set {
-                this["Action_FullScreen_Shortcut"] = value;
+                this["Action_KioskMode_Shortcut"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("None")]
+        public global::System.Windows.Forms.Keys Action_CopySessionToClipboard_Shortcut {
+            get {
+                return ((global::System.Windows.Forms.Keys)(this["Action_CopySessionToClipboard_Shortcut"]));
+            }
+            set {
+                this["Action_CopySessionToClipboard_Shortcut"] = value;
             }
         }
         
@@ -436,19 +514,6 @@ namespace SuperPutty.Properties {
             }
             set {
                 this["AlwaysOnTop"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
-        public double Opacity {
-            get {
-                return ((double)(this["Opacity"]));
-            }
-            set {
-                this["Opacity"] = value;
             }
         }
         
@@ -720,7 +785,7 @@ namespace SuperPutty.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool PersistCommandBarHistory {
             get {
                 return ((bool)(this["PersistCommandBarHistory"]));
@@ -788,19 +853,6 @@ namespace SuperPutty.Properties {
             }
             set {
                 this["Action_RenameTab_Shortcut"] = value;
-            }
-        }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Configuration.SettingsProviderAttribute(typeof(SuperPutty.Utils.PortableSettingsProvider))]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("100")]
-        public int TerminalOpacity {
-            get {
-                return ((int)(this["TerminalOpacity"]));
-            }
-            set {
-                this["TerminalOpacity"] = value;
             }
         }
     }

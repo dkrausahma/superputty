@@ -117,7 +117,8 @@ namespace SuperPutty.Scp
                                 }
                             }
                         }
-                    });
+                    },
+                    CancellationToken.None);
 
                 return result;
             }
@@ -174,7 +175,7 @@ namespace SuperPutty.Scp
             }
 
             sb.AppendFormat("-P {0} ", session.Port);
-            sb.AppendFormat("{0}@{1}:\"{2}\"", session.Username, session.Host, path);
+            sb.AppendFormat("{0}:\"{1}\"", UserAtHost(session), path);
 
             return sb.ToString();
         }
@@ -189,8 +190,9 @@ namespace SuperPutty.Scp
         /// <param name="sourceFiles"></param>
         /// <param name="target"></param>
         /// <param name="callback"></param>
+        /// <param name="cancellationToken">Kills the running pscp process when canceled</param>
         /// <returns></returns>
-        public FileTransferResult CopyFiles(List<BrowserFileInfo> sourceFiles, BrowserFileInfo target, TransferUpdateCallback callback)
+        public FileTransferResult CopyFiles(List<BrowserFileInfo> sourceFiles, BrowserFileInfo target, TransferUpdateCallback callback, CancellationToken cancellationToken = default(CancellationToken))
         {
             lock(this)
             {
@@ -219,11 +221,17 @@ namespace SuperPutty.Scp
                             }
                         }
                         return completed;
-                    }, 
-                    null, null);
+                    },
+                    null, null, cancellationToken);
 
                 return result;
             }
+        }
+
+        /// <summary>"user@host", or just the host when the session has no user (the PuTTY profile or a prompt supplies it)</summary>
+        public static string UserAtHost(SessionData session)
+        {
+            return string.IsNullOrEmpty(session.Username) ? session.Host : session.Username + "@" + session.Host;
         }
 
         private static string ToArgs(SessionData session, string password, List<BrowserFileInfo> source, BrowserFileInfo target)
@@ -248,7 +256,7 @@ namespace SuperPutty.Scp
                 {
                     sb.AppendFormat("\"{0}\" ", file.Path);
                 }
-                sb.AppendFormat(" {0}@{1}:\"{2}\"", session.Username, session.Host, target.Path);
+                sb.AppendFormat(" {0}:\"{1}\"", UserAtHost(session), target.Path);
             }
             else
             {
@@ -256,7 +264,7 @@ namespace SuperPutty.Scp
                 {
                     Log.WarnFormat("Not possible to transfer multiple remote files locally at one time.  Transferring first file only!");
                 }
-                sb.AppendFormat(" {0}@{1}:\"{2}\" ", session.Username, session.Host, source[0].Path);
+                sb.AppendFormat(" {0}:\"{1}\" ", UserAtHost(session), source[0].Path);
                 sb.AppendFormat("\"{0}\"", target.Path);
             }
 
@@ -275,13 +283,15 @@ namespace SuperPutty.Scp
         /// <param name="inlineOutHandler">Inline handler for output</param>
         /// <param name="inlineErrHandler">Inline handler for error</param>
         /// <param name="successOutHandler">Handler for output of successful operation</param>
+        /// <param name="cancellationToken">Kills the process when canceled</param>
         private void RunPscp(
-            PscpResult result, 
-            string args, 
-            string argsToLog, 
-            Func<string, bool> inlineOutHandler, 
-            Func<string, bool> inlineErrHandler, 
-            Action<string[]> successOutHandler)
+            PscpResult result,
+            string args,
+            string argsToLog,
+            Func<string, bool> inlineOutHandler,
+            Func<string, bool> inlineErrHandler,
+            Action<string[]> successOutHandler,
+            CancellationToken cancellationToken)
         {
             if (!File.Exists(this.Options.PscpLocation))
             {
@@ -306,11 +316,18 @@ namespace SuperPutty.Scp
                 Timer timeoutTimer = null;
                 AsyncStreamReader outReader = null;
                 AsyncStreamReader errReader = null;
+                CancellationTokenRegistration cancelRegistration = default(CancellationTokenRegistration);
                 try
                 {
                     // Start pscp
                     Log.InfoFormat("Starting process: file={0}, args={1}", this.Options.PscpLocation, argsToLog);
                     proc.Start();
+
+                    cancelRegistration = cancellationToken.Register(() =>
+                    {
+                        Log.InfoFormat("Canceling process, args={0}", argsToLog);
+                        SafeKill(proc);
+                    });
 
                     // Timeout when no output is received
                     timeoutTimer = new Timer(
@@ -376,6 +393,11 @@ namespace SuperPutty.Scp
                     string[] output = outReader.StopAndGetData();
                     string[] err = errReader.StopAndGetData();
 
+                    if (cancellationToken.IsCancellationRequested && result.StatusCode == ResultStatusCode.Success)
+                    {
+                        result.SetError("Canceled", null);
+                    }
+
                     string outputStr = String.Join("\r\n", output);
                     if (proc.ExitCode == 0 && outputStr.Contains(PUTTY_UNABLE_TO_OPEN))
                     {
@@ -414,6 +436,7 @@ namespace SuperPutty.Scp
                 }
                 finally
                 {
+                    cancelRegistration.Dispose();
                     SafeKill(proc);
                     SafeDispose(timeoutTimer, proc, outReader, errReader);
                 }
@@ -548,14 +571,16 @@ namespace SuperPutty.Scp
                         keepReading = AppendLineAndNotify(line);
                     }
                 }
-                catch (ThreadAbortException)
-                {
-                    // signal to stop
-                    Log.Debug("Thread aborted to stop read");
-                }
                 catch (Exception ex)
                 {
-                    Log.Error("Error reading stream", ex);
+                    if (this.stopped)
+                    {
+                        Log.Debug("Stream closed after reader was stopped");
+                    }
+                    else
+                    {
+                        Log.Error("Error reading stream", ex);
+                    }
                 }
             }
 
@@ -563,6 +588,12 @@ namespace SuperPutty.Scp
             {
                 lock (this)
                 {
+                    if (this.stopped)
+                    {
+                        // StopAndGetData/Dispose already returned the lines; ignore late output
+                        return false;
+                    }
+
                     bool keepReading = true;
 
                     string cleanLine = line.Trim('\r', '\n');
@@ -585,11 +616,13 @@ namespace SuperPutty.Scp
                 {
                     // consider better way to know operation is done reading output...timed out join is ok but not great.
                     this.Thread.Join(2000);
-                    this.Thread.Abort();
                 }
 
                 lock (this)
                 {
+                    // A reader still blocked on the pipe ends once the caller kills/disposes the process;
+                    // it is a background thread and won't report any further lines.
+                    this.stopped = true;
                     return this.Lines.ToArray();
                 }
             }
@@ -600,11 +633,13 @@ namespace SuperPutty.Scp
             List<string> Lines { get; set; }
             Thread Thread { get; set; }
 
+            private volatile bool stopped;
+
             public void Dispose()
             {
-                if (this.Thread.IsAlive)
+                lock (this)
                 {
-                    this.Thread.Abort();
+                    this.stopped = true;
                 }
             }
         }
@@ -620,7 +655,7 @@ namespace SuperPutty.Scp
             {
                 bool success = false;
 
-                if (line.StartsWith("Listing directory"))
+                if (line.StartsWith("Listing directory", StringComparison.Ordinal))
                 {
                     // ignore header line and current dir
                     fileInfo = null;
@@ -643,7 +678,7 @@ namespace SuperPutty.Scp
                         };
                         fileInfo.Type = fileInfo.Name == ".."
                             ? FileType.ParentDirectory
-                            : fileInfo.Permissions != null && fileInfo.Permissions.StartsWith("d")
+                            : fileInfo.Permissions != null && fileInfo.Permissions.StartsWith("d", StringComparison.Ordinal)
                                 ? FileType.Directory : FileType.File;
 
 
@@ -653,7 +688,7 @@ namespace SuperPutty.Scp
                             fileInfo.LastModTime = lastMod;
                         }
                         int blocks;
-                        if (int.TryParse(match.Groups["BlockCount"].Value, out blocks))
+                        if (int.TryParse(match.Groups["BlockCount"].Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out blocks))
                         {
                             fileInfo.Size = blocks;
                         }
@@ -670,17 +705,18 @@ namespace SuperPutty.Scp
             }
 
             // May 15 12:32, Mar  3 03:37, Nov 18 18:19, May 27  2012
+            // pscp/ls output uses English month names, so parse culture-invariant
             public bool TryParseTimestamp(string timeStamp, out DateTime dateTime)
             {
                 bool success = false;
 
                 DateTimeStyles style = DateTimeStyles.AllowInnerWhite | DateTimeStyles.AssumeLocal;
-                if (DateTime.TryParseExact(timeStamp, "MMM d yyyy", null, style, out dateTime))
+                if (DateTime.TryParseExact(timeStamp, "MMM d yyyy", CultureInfo.InvariantCulture, style, out dateTime))
                 {
                     // May 27  2012 or Nov  1  2013
                     success = true;
                 }
-                else if (DateTime.TryParseExact(timeStamp, "MMM d H:mm", null, style, out dateTime))
+                else if (DateTime.TryParseExact(timeStamp, "MMM d H:mm", CultureInfo.InvariantCulture, style, out dateTime))
                 {
                     // Nov 18 18:19 or Mar  3 03:37
                     success = true;

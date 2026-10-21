@@ -29,7 +29,10 @@ namespace SuperPutty.Utils
             }
         }
 
-        public PuttyStartInfo(SessionData session)
+        public PuttyStartInfo(SessionData session) : this(session, null) { }
+
+        /// <param name="logFile">PuTTY session log file (all session output), or null for no log</param>
+        public PuttyStartInfo(SessionData session, string logFile)
         {
             string argsToLog = null;
 
@@ -55,8 +58,8 @@ namespace SuperPutty.Utils
             }
             else
             {
-                this.Args = MakeArgs(session, true);
-                argsToLog = MakeArgs(session, false);
+                this.Args = MakeArgs(session, true, logFile);
+                argsToLog = MakeArgs(session, false, logFile);
             }
 
             // attempt to parse env vars
@@ -65,7 +68,7 @@ namespace SuperPutty.Utils
             Log.InfoFormat("Putty Args: '{0}'", argsToLog ?? this.Args);
         }
 
-        static string MakeArgs(SessionData session, bool includePassword)
+        static string MakeArgs(SessionData session, bool includePassword, string logFile)
         {
             if (!String.IsNullOrEmpty(session.Password) && includePassword && !SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg)
                 Log.Warn("SuperPuTTY is set to NOT allow the use of the -pw <password> argument, this can be overriden in Tools -> Options -> GUI");
@@ -78,6 +81,7 @@ namespace SuperPutty.Utils
             args += !String.IsNullOrEmpty(session.PuttySession) ? "-load \"" + session.PuttySession + "\" " : "";
 
             args += !String.IsNullOrEmpty(SuperPuTTY.Settings.PuttyDefaultParameters) ? SuperPuTTY.Settings.PuttyDefaultParameters + " " : "";
+            args += !String.IsNullOrEmpty(logFile) ? "-sessionlog \"" + logFile + "\" -logappend " : "";
 
             //If extra args contains the password, delete it (it's in session.password)
             string extraArgs = CommandLineOptions.replacePassword(session.ExtraArgs,"");            
@@ -116,7 +120,8 @@ namespace SuperPutty.Utils
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = this.Executable,
-                Arguments = this.Args
+                Arguments = this.Args,
+                UseShellExecute = true
             };
             if (this.WorkingDir != null && Directory.Exists(this.WorkingDir))
             {

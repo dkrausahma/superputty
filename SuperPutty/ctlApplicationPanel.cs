@@ -69,6 +69,22 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
 
         public IntPtr AppWindowHandle { get { return this.m_AppWin; } } 
 
+        /// <summary>ID of the embedded process, or 0 if it isn't running</summary>
+        public int ProcessId
+        {
+            get
+            {
+                try
+                {
+                    return this.m_Process != null && !this.m_Process.HasExited ? this.m_Process.Id : 0;
+                }
+                catch (InvalidOperationException)
+                {
+                    return 0;
+                }
+            }
+        }
+
         #endregion
 
         public ApplicationPanel()
@@ -255,12 +271,22 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
             }
         }
 
-        private void UpdateTitle()
+        /// <summary>The embedded window's title, e.g. "user@host: ~/dir" if the remote shell sets it</summary>
+        public string GetWindowTitle()
         {
-            int length = NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXTLENGTH, 0, 0) + 1;
+            if (m_AppWin == IntPtr.Zero)
+            {
+                return string.Empty;
+            }
+            int length = NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXTLENGTH, 0L, 0L) + 1;
             StringBuilder sb = new StringBuilder(length + 1);
             NativeMethods.SendMessage(m_AppWin, NativeMethods.WM_GETTEXT, sb.Capacity, sb);
-            string controlText = sb.ToString();
+            return sb.ToString();
+        }
+
+        private void UpdateTitle()
+        {
+            string controlText = GetWindowTitle();
             string parentText = ((ctlPuttyPanel)this.Parent).TextOverride;
 
             switch ((SuperPutty.frmSuperPutty.TabTextBehavior)Enum.Parse(typeof(frmSuperPutty.TabTextBehavior), SuperPuTTY.Settings.TabTextBehavior))
@@ -325,7 +351,8 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
                         StartInfo =
                         {
                             FileName = ApplicationName,
-                            Arguments = ApplicationParameters
+                            Arguments = ApplicationParameters,
+                            UseShellExecute = true
                         }
                     };
                     //m_Process.Exited += new EventHandler(p_Exited);

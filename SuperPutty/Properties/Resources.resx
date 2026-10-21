@@ -175,4 +175,31 @@
   <data name="script_code" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\script_code.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="kiosk" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\kiosk.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="commands_pane" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\commands_pane.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="containers_pane" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\containers_pane.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="copy_session" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\copy_session.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="sessions_pane" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\sessions_pane.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="layouts_pane" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\layouts_pane.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="transfer_files" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\transfer_files.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="upload_files" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\upload_files.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="kiosk_exit" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\kiosk_exit.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

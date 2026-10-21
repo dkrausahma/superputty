@@ -1,10 +1,46 @@
+# Visual Studio / user-specific
 .vs/
-bin/*
-SuperPutty/obj/*
-SuperPuttySetup/Debug/*
-SuperPuttySetup/Release/*
-SuperPuttyUnitTests/bin/*
-SuperPuttyUnitTests/obj/*
-SuperPuttyInstaller/bin/
-SuperPuttyInstaller/obj/
-SuperPutty.v12.suo
+*.suo
+*.user
+*.userprefs
+
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.nupkg
+packages/
+
+# Test results
+TestResult*.xml
+TestResults/
+
+# Upgrade/migration leftovers
+UpgradeLog*.htm
+_UpgradeReport_Files/
+Backup*/
+
+# ─── Agent skills installed with `npx skills add` ────────────────────────────
+# Third-party skills are downloaded into .agents/ and symlinked into .claude/skills/.
+# They are personal tooling, not project dependencies — nothing here builds, runs or
+# tests differently because of them — so none of it is committed, lockfile included.
+# Reinstall in any project with the global /bc-init-skills command.
+.agents/
+skills-lock.json
+.claude/skills/code-review-two-axis
+.claude/skills/frontend-design
+.claude/skills/grill-me
+.claude/skills/supabase-postgres-best-practices
+.claude/skills/vercel-react-best-practices
+.claude/skills/web-design-guidelines
+# impeccable (npx impeccable install): its skill, its agents and the Codex hooks it writes - reinstall the same way.
+# Its Claude Code hooks went into .claude/settings.local.json, which is personal anyway. PRODUCT.md, DESIGN.md and
+# .impeccable/design.json are project files and stay committed; only its local config is ignored.
+.claude/skills/impeccable/
+.claude/agents/impeccable-*.md
+.codex/
+.impeccable/config.local.json
+
+# Claude Code personal settings (local permissions, hooks) - never committed
+.claude/settings.local.json

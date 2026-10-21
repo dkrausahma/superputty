@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using SuperPutty.Scp;
 using log4net;
 using System.Threading;
@@ -16,7 +17,45 @@ namespace SuperPuttyUnitTests.Scp
     [TestFixture]
     public class FileTransferTests
     {
+        /// <summary>
+        /// Cancel must kill the running pscp process and leave the transfer in Canceled state.
+        /// A batch file that just waits stands in for pscp, so no SSH host is needed.
+        /// </summary>
+        [Test]
+        public void CancelStopsRunningTransfer()
+        {
+            string fakePscp = Path.Combine(Path.GetTempPath(), "superputty-fake-pscp-" + Guid.NewGuid().ToString("N") + ".cmd");
+            // loops inside cmd.exe itself (no child process holding the output pipes) until killed
+            File.WriteAllText(fakePscp, "@echo off\r\n:loop\r\ngoto loop\r\n");
+            try
+            {
+                PscpOptions options = new PscpOptions { PscpLocation = fakePscp, TimeoutMs = 60000 };
+                FileTransferRequest request = new FileTransferRequest
+                {
+                    Session = new SessionData { Host = "localhost", Username = "test", Port = 22 },
+                    TargetFile = new BrowserFileInfo { Path = "/tmp", Source = SourceType.Remote }
+                };
+                request.SourceFiles.Add(new BrowserFileInfo(new FileInfo(fakePscp)));
 
+                FileTransfer transfer = new FileTransfer(options, request);
+                transfer.Start();
+                Thread.Sleep(1000);
+                ClassicAssert.AreEqual(FileTransfer.Status.Running, transfer.TransferStatus);
+
+                transfer.Cancel();
+                ClassicAssert.AreEqual(FileTransfer.Status.Canceled, transfer.TransferStatus);
+
+                Thread worker = (Thread)typeof(FileTransfer)
+                    .GetField("thread", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                    .GetValue(transfer);
+                ClassicAssert.IsTrue(worker.Join(10000), "transfer thread did not finish after cancel");
+                ClassicAssert.AreEqual(FileTransfer.Status.Canceled, transfer.TransferStatus);
+            }
+            finally
+            {
+                try { File.Delete(fakePscp); } catch (IOException) { }
+            }
+        }
     }
 
     public class MockFileTransferPresenter : IFileTransferPresenter

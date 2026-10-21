@@ -1,0 +1,25 @@
+# Editor settings matching the existing code base; see https://aka.ms/editorconfigdocs
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_size = 4
+end_of_line = crlf
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+dotnet_sort_system_directives_first = false
+
+[*.{csproj,props,targets,config,xml,resx,settings,wxs,wixproj}]
+indent_size = 2
+
+[*.{sln,cmd,bat}]
+end_of_line = crlf
+
+[*.sln]
+indent_style = tab

@@ -79,6 +79,22 @@ namespace SuperPutty.Data
         }
         internal string OldSessionId { get; set; }
 
+        /// <summary>
+        /// For the temporary session of a tab running a remote command (container shell, log tab…): the SessionId
+        /// of the session it was copied from. Not saved.
+        /// </summary>
+        [XmlIgnore]
+        [Browsable(false)]
+        public string CommandTabOf { get; set; }
+
+        /// <summary>The SessionId that per-session settings (e.g. commands) belong to: the original session for command tabs</summary>
+        [XmlIgnore]
+        [Browsable(false)]
+        public string ScopeSessionId
+        {
+            get { return string.IsNullOrEmpty(this.CommandTabOf) ? this.SessionId : this.CommandTabOf; }
+        }
+
         private string _OldName;
         [XmlIgnore]
         [Browsable(false)]

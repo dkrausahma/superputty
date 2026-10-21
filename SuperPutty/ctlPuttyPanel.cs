@@ -57,15 +57,19 @@ namespace SuperPutty
         {
             m_Session = session;
             m_ApplicationExit = callback;
-            m_puttyStartInfo = new PuttyStartInfo(session);
+            this.LogFile = SessionLog.NewLogFile(session);
+            m_puttyStartInfo = new PuttyStartInfo(session, this.LogFile);
 
             InitializeComponent();
 
+            this.Tunnels = TunnelMonitor.ReadTunnels(session);
+            this.StartedUtc = DateTime.UtcNow;
+
             this.Text = session.SessionName;
-            this.TabText = session.SessionName;
             this.TextOverride = session.SessionName;
 
             CreatePanel();
+            EnableFileDrop();
             AdjustMenu();
         }
 
@@ -78,8 +82,8 @@ namespace SuperPutty
             }
             set
             {
-                this.TabText = value != null ? value.Replace("&", "&&") : null;
                 base.Text = value;
+                ApplyTabText();
 
                 if (Log.Logger.IsEnabledFor(Level.Trace))
                 {
@@ -91,7 +95,79 @@ namespace SuperPutty
         protected override void OnTextChanged(EventArgs e)
         {
             base.OnTextChanged(e);
-            this.ToolTipText = this.Text;
+            ApplyTabText();
+        }
+
+        /// <summary>PuTTY's session log of this tab (when session logging is on), otherwise null</summary>
+        public string LogFile { get; private set; }
+
+        /// <summary>Files or folders dropped from Explorer on the terminal area: (tab, paths)</summary>
+        public event Action<ctlPuttyPanel, string[]> FilesDropped;
+
+        /// <summary>
+        /// Accept files dropped on the panel behind PuTTY. Whether Windows hands a drop over PuTTY's window on to
+        /// this panel depends on how PuTTY is attached; dropping on the tab header always works.
+        /// </summary>
+        private void EnableFileDrop()
+        {
+            this.m_AppPanel.AllowDrop = true;
+            DragEventHandler over = delegate (object sender, DragEventArgs e)
+            {
+                e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) && this.FilesDropped != null ? DragDropEffects.Copy : DragDropEffects.None;
+            };
+            this.m_AppPanel.DragEnter += over;
+            this.m_AppPanel.DragOver += over;
+            this.m_AppPanel.DragDrop += delegate (object sender, DragEventArgs e)
+            {
+                string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files != null && files.Length > 0 && this.FilesDropped != null)
+                {
+                    this.BeginInvoke((MethodInvoker)delegate { this.FilesDropped(this, files); });
+                }
+            };
+        }
+
+        /// <summary>The session's SSH tunnels (PuTTY profile and -L/-R/-D arguments), read when the tab opens</summary>
+        public List<SshTunnel> Tunnels { get; private set; }
+
+        /// <summary>When the tab was opened; tunnels get a grace period to come up after login</summary>
+        public DateTime StartedUtc { get; private set; }
+
+        /// <summary>Appended to the tab text only (e.g. " ↔2"), so <see cref="Text"/> stays the plain title</summary>
+        private string tabTextSuffix = string.Empty;
+
+        /// <summary>Tunnel details appended to the tab tooltip</summary>
+        private string tunnelToolTip = string.Empty;
+
+        /// <summary>True while a background tab has a title change the user hasn't looked at yet</summary>
+        public bool HasActivity { get; private set; }
+
+        /// <summary>Mark the tab ("● " before its title) or clear the mark</summary>
+        public void SetActivity(bool activity)
+        {
+            if (activity != this.HasActivity)
+            {
+                this.HasActivity = activity;
+                ApplyTabText();
+            }
+        }
+
+        /// <summary>Show the tunnel marker and details on the tab</summary>
+        public void SetTunnelDisplay(string suffix, string toolTip)
+        {
+            if (suffix != this.tabTextSuffix || toolTip != this.tunnelToolTip)
+            {
+                this.tabTextSuffix = suffix ?? string.Empty;
+                this.tunnelToolTip = toolTip ?? string.Empty;
+                ApplyTabText();
+            }
+        }
+
+        private void ApplyTabText()
+        {
+            string text = base.Text ?? string.Empty;
+            this.TabText = (this.HasActivity ? "● " : string.Empty) + text.Replace("&", "&&") + this.tabTextSuffix;
+            this.ToolTipText = this.tunnelToolTip.Length == 0 ? text : text + "\n\n" + this.tunnelToolTip;
         }
 
         private void CreatePanel()
@@ -357,7 +433,7 @@ namespace SuperPutty
 
         private void aboutPuttyToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Process.Start("http://www.chiark.greenend.org.uk/~sgtatham/putty/");
+            Process.Start(new ProcessStartInfo("http://www.chiark.greenend.org.uk/~sgtatham/putty/") { UseShellExecute = true });
         }
 
  
@@ -427,7 +503,7 @@ namespace SuperPutty
                     this.SetFocusToChildApplication("MenuHandler");
                     for (int i = 0; i < commands.Length; ++i)
                     {
-                        NativeMethods.SendMessage(m_AppPanel.AppWindowHandle, (uint)NativeMethods.WM.SYSCOMMAND, commands[i], 0);
+                        NativeMethods.SendMessage(m_AppPanel.AppWindowHandle, (uint)NativeMethods.WM.SYSCOMMAND, commands[i], 0L);
                     }
                 }
                 catch (Exception ex)
@@ -435,6 +511,29 @@ namespace SuperPutty
                     Log.ErrorFormat("Error sending command menu command to embedded putty", ex);
                 }
             });
+        }
+
+        /// <summary>PuTTY's "Copy All to Clipboard" system menu command (IDM_COPYALL)</summary>
+        private const uint PuttyCopyAllCommand = 0x0170;
+
+        /// <summary>True if the embedded program is PuTTY/KiTTY, which understands PuTTY's system menu commands</summary>
+        public bool SupportsPuttyCommands
+        {
+            get { return m_Session.Proto != ConnectionProtocol.Mintty && m_Session.Proto != ConnectionProtocol.VNC; }
+        }
+
+        /// <summary>
+        /// Let PuTTY copy the terminal screen and scrollback to the clipboard as plain text. Blocks until PuTTY has
+        /// done it, so call it off the UI thread. Returns false if the session can't do this.
+        /// </summary>
+        public bool CopyAllToClipboard()
+        {
+            if (!SupportsPuttyCommands || !m_AppPanel.ExternalProcessCaptured)
+            {
+                return false;
+            }
+            NativeMethods.SendMessage(m_AppPanel.AppWindowHandle, (uint)NativeMethods.WM.SYSCOMMAND, PuttyCopyAllCommand, 0L);
+            return true;
         }
 
         public bool AcceptCommands
