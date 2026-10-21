@@ -70,6 +70,7 @@ namespace SuperPutty
             this.layoutsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.commandsPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.containersPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.healthChecksToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
             this.toolbarsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -316,6 +317,7 @@ namespace SuperPutty
             this.showStatusBarToolStripMenuItem,
             this.showMenuBarToolStripMenuItem,
             this.alwaysOnTopToolStripMenuItem,
+            this.healthChecksToolStripMenuItem,
             this.toolStripMenuItem9,
             this.kioskModeToolStripMenuItem});
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
@@ -351,6 +353,14 @@ namespace SuperPutty
             this.containersPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.containersPaneToolStripMenuItem.Text = "Co&ntainers";
             this.containersPaneToolStripMenuItem.Click += new System.EventHandler(this.containersPaneToolStripMenuItem_Click);
+            // 
+            // healthChecksToolStripMenuItem
+            // 
+            this.healthChecksToolStripMenuItem.Name = "healthChecksToolStripMenuItem";
+            this.healthChecksToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.healthChecksToolStripMenuItem.Text = "&Health Checks for Open Tabs";
+            this.healthChecksToolStripMenuItem.ToolTipText = "Check load, disk, memory, failed units and containers of open tabs' hosts every 5 minutes (via plink)";
+            this.healthChecksToolStripMenuItem.Click += new System.EventHandler(this.healthChecksToolStripMenuItem_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -1195,6 +1205,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnCommandsPane;
         private System.Windows.Forms.ToolStripButton btnContainersPane;
         private System.Windows.Forms.ToolStripMenuItem containersPaneToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem healthChecksToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
         private System.Windows.Forms.ToolStripButton btnCopySession;

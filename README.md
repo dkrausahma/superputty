@@ -48,6 +48,9 @@ and Pageant integration) but adds the window management on top.
   them to that host, by default into the shell's current directory.
 - **Transfer files** — copy files and folders between this PC and any session, or directly from one
   host to another (relayed through this PC, so the hosts need no keys for each other).
+- **Health badges** — the session tree marks hosts with full disks, high load or memory, failed systemd
+  units or unhealthy containers (orange/red, details in the tooltip). Open tabs are checked every five
+  minutes; any session or folder on demand.
 - **Copy session to clipboard** — one click copies the active terminal's screen and scrollback (commands
   and output) as plain text, e.g. to paste into a chat or ticket.
 - **Quick selector, keyboard shortcuts, global hot keys, tab switcher.**

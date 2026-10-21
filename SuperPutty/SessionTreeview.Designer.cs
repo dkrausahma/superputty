@@ -62,6 +62,8 @@
             this.btnClear = new System.Windows.Forms.Button();
             this.winSCPToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fileZillaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkHealthToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.checkHealthFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStripAddTreeItem.SuspendLayout();
             this.contextMenuStripFolder.SuspendLayout();
             this.panelSearch.SuspendLayout();
@@ -112,7 +114,8 @@
             this.toolStripSeparator2,
             this.fileBrowserToolStripMenuItem,
             this.winSCPToolStripMenuItem,
-            this.fileZillaToolStripMenuItem});
+            this.fileZillaToolStripMenuItem,
+            this.checkHealthToolStripMenuItem});
             this.contextMenuStripAddTreeItem.Name = "contextMenuStripAddTreeItem";
             this.contextMenuStripAddTreeItem.ShowImageMargin = false;
             this.contextMenuStripAddTreeItem.Size = new System.Drawing.Size(182, 258);
@@ -197,7 +200,8 @@
             this.connectAllToolStripMenuItem,
             this.toolStripMenuItem2,
             this.expandAllToolStripMenuItem,
-            this.collapseAllToolStripMenuItem});
+            this.collapseAllToolStripMenuItem,
+            this.checkHealthFolderToolStripMenuItem});
             this.contextMenuStripFolder.Name = "contextMenuStripAddTreeItem";
             this.contextMenuStripFolder.ShowImageMargin = false;
             this.contextMenuStripFolder.Size = new System.Drawing.Size(129, 182);
@@ -336,6 +340,22 @@
             this.winSCPToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
             this.winSCPToolStripMenuItem.Text = "WinSCP";
             this.winSCPToolStripMenuItem.Click += new System.EventHandler(this.winSCPToolStripMenuItem_Click);
+            //
+            // checkHealthToolStripMenuItem
+            //
+            this.checkHealthToolStripMenuItem.Name = "checkHealthToolStripMenuItem";
+            this.checkHealthToolStripMenuItem.Size = new System.Drawing.Size(181, 22);
+            this.checkHealthToolStripMenuItem.Text = "Check &Health";
+            this.checkHealthToolStripMenuItem.ToolTipText = "Load, disk, memory, failed units, unhealthy containers (via plink)";
+            this.checkHealthToolStripMenuItem.Click += new System.EventHandler(this.checkHealthToolStripMenuItem_Click);
+            //
+            // checkHealthFolderToolStripMenuItem
+            //
+            this.checkHealthFolderToolStripMenuItem.Name = "checkHealthFolderToolStripMenuItem";
+            this.checkHealthFolderToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
+            this.checkHealthFolderToolStripMenuItem.Text = "Check &Health";
+            this.checkHealthFolderToolStripMenuItem.ToolTipText = "Check the health of all sessions in this folder (via plink)";
+            this.checkHealthFolderToolStripMenuItem.Click += new System.EventHandler(this.checkHealthFolderToolStripMenuItem_Click);
             // 
             // fileZillaToolStripMenuItem
             // 
@@ -390,6 +410,8 @@
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
         private System.Windows.Forms.ToolStripMenuItem expandAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem collapseAllToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem checkHealthToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem checkHealthFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectExternalToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectInNewSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;

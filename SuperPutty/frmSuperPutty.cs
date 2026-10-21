@@ -94,6 +94,9 @@ namespace SuperPutty
         /// <summary>Send command history, per session</summary>
         private readonly CommandHistory commandHistory;
 
+        /// <summary>Triggers the health checks of the open tabs' hosts (each host at most every HealthMonitor.Interval)</summary>
+        private readonly System.Windows.Forms.Timer healthTimer = new System.Windows.Forms.Timer { Interval = 30000 };
+
         /// <summary>Checks the SSH tunnels of the open tabs and updates their tab markers</summary>
         private readonly System.Windows.Forms.Timer tunnelTimer = new System.Windows.Forms.Timer { Interval = 5000 };
 
@@ -204,6 +207,11 @@ namespace SuperPutty
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
             this.tunnelTimer.Start();
+
+            // health of the open tabs' hosts (session tree colours)
+            this.healthTimer.Tick += delegate { CheckOpenTabsHealth(); };
+            this.healthTimer.Start();
+            this.healthChecksToolStripMenuItem.Checked = SuperPuTTY.Settings.AutoHealthCheck;
 
             // Apply Settings
             this.ApplySettings();
@@ -1764,6 +1772,26 @@ namespace SuperPutty
                 }
                 panel.SetTunnelDisplay(TunnelMonitor.TabSuffix(states), TunnelMonitor.ToolTip(panel.Tunnels, states, holders));
             }
+        }
+
+        /// <summary>Check the hosts of the open terminal tabs (command tabs count as their original session)</summary>
+        private void CheckOpenTabsHealth()
+        {
+            if (!SuperPuTTY.Settings.AutoHealthCheck)
+            {
+                return;
+            }
+            HealthMonitor.Check(this.DockPanel.Contents.OfType<ctlPuttyPanel>()
+                .Select(p => SuperPuTTY.GetSessionById(p.Session.ScopeSessionId))
+                .Where(s => s != null).Distinct().ToList(), false);
+        }
+
+        private void healthChecksToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.healthChecksToolStripMenuItem.Checked = !this.healthChecksToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.AutoHealthCheck = this.healthChecksToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.Save();
+            CheckOpenTabsHealth();
         }
 
         /// <summary>The holders of a port, for tunnel conflicts: "tab 'name'" for SuperPuTTY tabs, else "name (PID)"</summary>
