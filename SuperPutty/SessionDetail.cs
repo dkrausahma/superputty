@@ -129,7 +129,7 @@ namespace SuperPutty
                     
                     if (!String.IsNullOrEmpty(CommandLineOptions.getcommand(Session.ExtraArgs, "-pw")))
                     {
-                        if (MessageBox.Show("SuperPutty save the password in Sessions.xml file in plain text.\nUse a password in 'Extra PuTTY Arguments' is very insecure.\nFor a secure connection use SSH authentication with Pageant. \nSelect yes, if you want save the password", "Are you sure that you want to save the password?",
+                        if (MessageBox.Show("SuperPuTTY saves the password in Sessions.XML, encrypted for your Windows user (it can't be used by other users or on other machines).\nKey-based login with Pageant is still more secure.\nSave the password?", "Save the password?",
                             MessageBoxButtons.OKCancel,
                             MessageBoxIcon.Warning,
                             MessageBoxDefaultButton.Button1) == DialogResult.Cancel)

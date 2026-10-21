@@ -595,9 +595,9 @@
             this.checkBoxAllowPuttyPWArg.Name = "checkBoxAllowPuttyPWArg";
             this.checkBoxAllowPuttyPWArg.Size = new System.Drawing.Size(286, 17);
             this.checkBoxAllowPuttyPWArg.TabIndex = 0;
-            this.checkBoxAllowPuttyPWArg.Text = "Allow plain text passwords on putty command line";
-            this.toolTip.SetToolTip(this.checkBoxAllowPuttyPWArg, "Enabling this will allow plain text passwords to be cached and shown on the comma" +
-        "nd line. It is Recommended you do NOT enable this");
+            this.checkBoxAllowPuttyPWArg.Text = "Pass stored passwords to PuTTY";
+            this.toolTip.SetToolTip(this.checkBoxAllowPuttyPWArg, "Stored passwords (-pw in the extra arguments) are saved encrypted for your Windows user and passed to PuTTY, PSC" +
+        "P and plink through a short-lived file (-pwfile, PuTTY 0.77+), not the command line. Key-based login with Pageant is still recommended.");
             this.checkBoxAllowPuttyPWArg.UseVisualStyleBackColor = true;
             // 
             // checkConfirmTabClose

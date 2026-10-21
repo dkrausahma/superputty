@@ -89,8 +89,17 @@ namespace SuperPutty.Utils
             }
             if (!string.IsNullOrEmpty(session.Password) && SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg)
             {
-                args.Add("-pw");
-                args.Add(session.Password);
+                // a short-lived file instead of -pw, so the password doesn't show in the process list
+                if (PasswordFile.IsSupported(SuperPuTTY.Settings.PuttyExe))
+                {
+                    args.Add("-pwfile");
+                    args.Add(PasswordFile.Create(session.Password));
+                }
+                else
+                {
+                    args.Add("-pw");
+                    args.Add(session.Password);
+                }
             }
             args.Add(session.Host);
             args.Add(remoteCommand);
