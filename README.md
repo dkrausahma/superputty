@@ -129,4 +129,4 @@ The original project, its issue tracker, documentation and historic releases are
 - Releases: https://github.com/jimradford/superputty/releases (latest upstream: 1.4.0.9, .NET Framework)
 - Facebook page: https://www.facebook.com/superputty
 
-Note that the in-app update check still queries the upstream GitHub releases.
+The in-app update check of this edition points to its own release location (placeholder until published).

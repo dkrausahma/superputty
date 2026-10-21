@@ -1,3 +1,16 @@
+1.5.0.0 - Kraus-Ahma IT Consulting edition (2026-10-21)
+ - Ported to .NET 10 (requires the .NET 10 Desktop Runtime), dependencies from NuGet, WiX 5 installer
+ - Icon bar, kiosk mode (F11), menu and toolbars react to the first click
+ - Commands pane: commands per session/folder/all, placeholders remembered per session, Docker Compose commands,
+   Favorites, run in all/folder terminals or a new tab, import/export
+ - Containers pane: docker containers of the active host, shell/logs/inspect/start/stop/restart
+ - SSH tunnels shown on the tab (with conflict detection) and in Tools > SSH Tunnels
+ - File transfer: drag & drop upload onto a tab, Transfer Files dialog (download, host-to-host relay)
+ - Health badges in the session tree (disk, memory, load, failed systemd units, unhealthy containers)
+ - Per-session command history, Copy Session / Copy Last Command, session log files with clean text copies
+ - Session icons by environment (prod/qual/dev) and role
+ - Stored passwords encrypted (DPAPI) and passed via -pwfile instead of the command line
+ - Background tab activity marker and notification
 1.4.0.9
  - Fixes several bugs and feature updates since 1.4.0.8 See https://github.com/jimradford/superputty/compare/1.4.0.8...master for all 79 commits
 1.4.0.8

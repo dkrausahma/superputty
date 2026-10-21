@@ -61,6 +61,15 @@ namespace SuperPutty
             // must run before the first access to SuperPuTTY.Settings
             LegacyUserConfig.ImportIfMissing();
 
+            // user.config lives in a folder per version: carry the values over on the first start of a new version
+            if (SuperPuTTY.Settings.ApplicationVersion != SuperPuTTY.Version)
+            {
+                Log.InfoFormat("Version changed ({0} -> {1}), upgrading user settings", SuperPuTTY.Settings.ApplicationVersion, SuperPuTTY.Version);
+                SuperPuTTY.Settings.Upgrade();
+                SuperPuTTY.Settings.ApplicationVersion = SuperPuTTY.Version;
+                SuperPuTTY.Settings.Save();
+            }
+
             bool onlyInstance = false;
             mutex = new Mutex(true, "SuperPutty", out onlyInstance);
 
