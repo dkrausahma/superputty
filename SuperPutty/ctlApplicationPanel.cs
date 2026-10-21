@@ -301,7 +301,11 @@ DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
                     this.Parent.Text = parentText + ": " + controlText;
                     break;
             }
+            this.WindowTitleChanged?.Invoke(this, EventArgs.Empty);
         }
+
+        /// <summary>The embedded window changed its title (e.g. PuTTY's "(inactive)" after a dropped connection)</summary>
+        public event EventHandler WindowTitleChanged;
 
         public event EventHandler InnerApplicationFocused;
 
