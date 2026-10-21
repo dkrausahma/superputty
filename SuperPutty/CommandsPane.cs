@@ -133,18 +133,10 @@ namespace SuperPutty
 
         #region Tree
 
-        /// <summary>Where a command may apply for the active tab: all sessions, its folders (outermost first), the session</summary>
-        private List<CommandScopeOption> ScopeOptions()
+        /// <summary>Where a command may apply: all sessions, every folder, every session of the session tree</summary>
+        private static List<CommandScopeOption> ScopeOptions()
         {
-            List<CommandScopeOption> options = new List<CommandScopeOption> { CommandScopeOption.Global() };
-            if (this.shownSessionId != null)
-            {
-                List<string> folders = CommandLibrary.FolderChain(this.shownSessionId);
-                folders.Reverse();
-                options.AddRange(folders.Select(CommandScopeOption.Folder));
-                options.Add(CommandScopeOption.Session(this.shownSessionId));
-            }
-            return options;
+            return CommandLibrary.ScopeOptions(SuperPuTTY.GetAllSessions().Select(s => s.SessionId));
         }
 
         /// <summary>The sections for the active tab, most specific first</summary>

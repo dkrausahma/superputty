@@ -24,6 +24,18 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void ScopeOptionsListAllFoldersAndSessions()
+        {
+            List<CommandScopeOption> options = CommandLibrary.ScopeOptions(new[] { "Prod/Web/web01", "Prod/DB/db01", "dev01", "Prod/DB/db01" });
+
+            CollectionAssert.AreEqual(new[] {
+                "All sessions",
+                "Folder Prod", "Folder Prod/DB", "Folder Prod/Web",
+                "Session dev01", "Session Prod/DB/db01", "Session Prod/Web/web01" },
+                options.Select(o => o.Text).ToArray());
+        }
+
+        [Test]
         public void CommandsApplyByScope()
         {
             ClassicAssert.IsTrue(CommandLibrary.AppliesTo(Global("ls"), "Prod/DB/db01"));
