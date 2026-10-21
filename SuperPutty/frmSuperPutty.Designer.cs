@@ -51,6 +51,7 @@ namespace SuperPutty
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.fromAnsibleInventoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromPuTTYSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromPuTTYCMExportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -211,7 +212,8 @@ namespace SuperPutty
             this.importSettingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fromFileToolStripMenuItem,
             this.fromPuTTYSettingsToolStripMenuItem,
-            this.fromPuTTYCMExportToolStripMenuItem});
+            this.fromPuTTYCMExportToolStripMenuItem,
+            this.fromAnsibleInventoryToolStripMenuItem});
             this.importSettingsToolStripMenuItem.Name = "importSettingsToolStripMenuItem";
             this.importSettingsToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
             this.importSettingsToolStripMenuItem.Text = "&Import Sessions";
@@ -236,6 +238,14 @@ namespace SuperPutty
             this.fromPuTTYCMExportToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
             this.fromPuTTYCMExportToolStripMenuItem.Text = "From PuTTY &CM Export";
             this.fromPuTTYCMExportToolStripMenuItem.Click += new System.EventHandler(this.fromPuTTYCMExportToolStripMenuItem_Click);
+            // 
+            // fromAnsibleInventoryToolStripMenuItem
+            // 
+            this.fromAnsibleInventoryToolStripMenuItem.Enabled = false;
+            this.fromAnsibleInventoryToolStripMenuItem.Name = "fromAnsibleInventoryToolStripMenuItem";
+            this.fromAnsibleInventoryToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
+            this.fromAnsibleInventoryToolStripMenuItem.Text = "From &Ansible Inventory (coming soon)";
+            this.fromAnsibleInventoryToolStripMenuItem.ToolTipText = "Planned: create sessions from an Ansible inventory (hosts, groups as folders)";
             // 
             // toolStripMenuItem1
             // 
@@ -1272,6 +1282,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem editSessionsInNotepadToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem reloadSessionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem fromAnsibleInventoryToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromPuTTYSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromPuTTYCMExportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sessionsToolStripMenuItem;
