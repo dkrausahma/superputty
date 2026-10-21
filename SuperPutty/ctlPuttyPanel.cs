@@ -163,10 +163,18 @@ namespace SuperPutty
             }
         }
 
+        /// <summary>The session's environment (prod/qual/dev), shown as a marker on the tab</summary>
+        public EnvironmentKind Environment
+        {
+            get { return SessionEnvironment.Of(this.m_Session); }
+        }
+
         private void ApplyTabText()
         {
             string text = base.Text ?? string.Empty;
-            this.TabText = (this.HasActivity ? "● " : string.Empty) + text.Replace("&", "&&") + this.tabTextSuffix;
+            // room for the prod badge painted at the tab's right end (EnvironmentTabStripFactory)
+            string badgeSpace = this.m_Session != null && this.Environment == EnvironmentKind.Prod ? "     " : string.Empty;
+            this.TabText = (this.HasActivity ? "● " : string.Empty) + text.Replace("&", "&&") + this.tabTextSuffix + badgeSpace;
             this.ToolTipText = this.tunnelToolTip.Length == 0 ? text : text + "\n\n" + this.tunnelToolTip;
         }
 

@@ -115,6 +115,9 @@ namespace SuperPutty
             this.DockPanel.Theme.Extender.DockPaneCaptionFactory = new NoAutoHideCaptionFactory(this.DockPanel.Theme.Extender.DockPaneCaptionFactory);
             // tab tooltips also while PuTTY has the focus (the main window then counts as inactive)
             this.DockPanel.Theme.Extender.DockPaneStripFactory = new ShowAlwaysTabToolTipFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory);
+            // environment marker on terminal tabs (prod red bar and badge, qual amber, dev green)
+            this.DockPanel.Theme.Extender.DockPaneStripFactory = new EnvironmentTabStripFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory,
+                content => content is ctlPuttyPanel ? ((ctlPuttyPanel)content).Environment : EnvironmentKind.None);
             // files dropped from Explorer on a terminal tab's header are uploaded to that host
             this.DockPanel.Theme.Extender.DockPaneStripFactory = new FileDropTabStripFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory,
                 content => content is ctlPuttyPanel && CanUpload(((ctlPuttyPanel)content).Session),
@@ -1120,9 +1123,17 @@ namespace SuperPutty
                 SuperPuTTY.ReportStatus("{0}: no open terminal tab accepts commands", title);
                 return 0;
             }
-            if (MessageBox.Show(this, string.Format("Run this command in {0} terminal(s)?\n\n{1}\n\n{2}", targets.Count, command.Trim(),
-                    string.Join(", ", targets.Select(t => t.Text))),
-                title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            // production tabs among the targets get an explicit warning
+            List<ctlPuttyPanel> prod = targets.Where(t => t.Environment == EnvironmentKind.Prod).ToList();
+            string question = string.Format("Run this command in {0} terminal(s)?\n\n{1}\n\n{2}", targets.Count, command.Trim(),
+                string.Join(", ", targets.Select(t => t.Text)));
+            if (prod.Count > 0)
+            {
+                question = string.Format("WARNING: {0} of the {1} terminals are PRODUCTION systems:\n{2}\n\n", prod.Count, targets.Count,
+                    string.Join(", ", prod.Select(t => t.Text))) + question;
+            }
+            if (MessageBox.Show(this, question, title, MessageBoxButtons.OKCancel,
+                prod.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
             {
                 return 0;
             }
