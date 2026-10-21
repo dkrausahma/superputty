@@ -10,8 +10,9 @@ namespace SuperPutty.Utils
 {
     /// <summary>
     /// PuTTY session logs: with session logging on (View → Log Sessions to Files), every PuTTY tab writes all
-    /// session output to its own file in &lt;settings folder&gt;\logs. The raw log contains terminal control codes;
-    /// <see cref="WriteCleanCopy"/> produces a readable text file.
+    /// session output to its own file in &lt;settings folder&gt;\logs. The raw log contains terminal control codes
+    /// (colours, window titles); <see cref="WriteCleanCopy"/> produces a readable "&lt;log&gt;.txt" next to it, written
+    /// automatically when the tab closes and on demand (Tools → Open Session Log).
     /// </summary>
     public static class SessionLog
     {
@@ -63,8 +64,40 @@ namespace SuperPutty.Utils
                 raw = reader.ReadToEnd();
             }
             string cleanFile = Path.ChangeExtension(logFile, ".txt");
-            File.WriteAllText(cleanFile, TerminalText.Clean(raw), new UTF8Encoding(false));
+            // with BOM, so Windows editors don't show UTF-8 characters such as lsblk's "├─" as "â”œâ”€"
+            File.WriteAllText(cleanFile, TerminalText.Clean(raw), new UTF8Encoding(true));
             return cleanFile;
+        }
+
+        /// <summary>Logs larger than this are cleaned in the background when their tab closes</summary>
+        private const long ForegroundLimit = 20L * 1024 * 1024;
+
+        /// <summary>Write the clean copy of a closed tab's log; failures are only logged</summary>
+        public static void WriteCleanCopyAfterClose(string logFile)
+        {
+            if (string.IsNullOrEmpty(logFile) || !File.Exists(logFile))
+            {
+                return;
+            }
+            System.Threading.WaitCallback write = delegate
+            {
+                try
+                {
+                    WriteCleanCopy(logFile);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    Log.Warn("Could not write the clean copy of " + logFile, ex);
+                }
+            };
+            if (new FileInfo(logFile).Length > ForegroundLimit)
+            {
+                System.Threading.ThreadPool.QueueUserWorkItem(write);
+            }
+            else
+            {
+                write(null);
+            }
         }
     }
 }

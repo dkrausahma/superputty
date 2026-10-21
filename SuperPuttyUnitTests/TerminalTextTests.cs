@@ -74,6 +74,29 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void CleanCopyIsUtf8WithBomAndWithoutControlCodes()
+        {
+            string log = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "SuperPuTTY.TerminalTextTests." + Guid.NewGuid().ToString("N") + ".log");
+            string raw = "\u001B]0;root@gpu01: ~\u0007[root@gpu01 ~]# lsblk\r\n\u001B[?2004l\r" +
+                         "\u251C\u2500nvme1n1p1 259:2 0 256M 0 part\r\n\u001B[0;38;5;245m\u2591\u2591\u001B[0m ok\r\n";
+            System.IO.File.WriteAllText(log, raw, new System.Text.UTF8Encoding(false));
+            try
+            {
+                string txt = SessionLog.WriteCleanCopy(log);
+                byte[] bytes = System.IO.File.ReadAllBytes(txt);
+
+                CollectionAssert.AreEqual(new byte[] { 0xEF, 0xBB, 0xBF }, new[] { bytes[0], bytes[1], bytes[2] }, "UTF-8 BOM");
+                ClassicAssert.AreEqual("[root@gpu01 ~]# lsblk\r\n\u251C\u2500nvme1n1p1 259:2 0 256M 0 part\r\n\u2591\u2591 ok\r\n",
+                    System.IO.File.ReadAllText(txt));
+                System.IO.File.Delete(txt);
+            }
+            finally
+            {
+                System.IO.File.Delete(log);
+            }
+        }
+
+        [Test]
         public void LogFileNamesAreSafe()
         {
             ClassicAssert.AreEqual("web01 _prod_-20261021-063005.log", SessionLog.FileName("web01 <prod>", new DateTime(2026, 10, 21, 6, 30, 5)));

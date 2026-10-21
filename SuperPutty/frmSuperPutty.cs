@@ -250,6 +250,8 @@ namespace SuperPutty
             {
                 p.TextChanged += puttyPanel_TextChanged;
                 p.FilesDropped += UploadFiles;
+                // readable copy of the session log once the tab is closed
+                p.FormClosed += delegate { SessionLog.WriteCleanCopyAfterClose(p.LogFile); };
             }
             else
             {
