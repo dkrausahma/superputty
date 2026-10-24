@@ -6,7 +6,6 @@ The generated site is committed, so building the app and the installer needs nei
 Rebuild after every change in docs/ and commit docs/ and SuperPutty/help/ together.
 """
 import os
-import shutil
 import subprocess
 import sys
 
@@ -15,6 +14,8 @@ VENV = os.path.join(HERE, ".venv")
 PYTHON = os.path.join(VENV, "Scripts", "python.exe") if os.name == "nt" else os.path.join(VENV, "bin", "python")
 SITE = os.path.normpath(os.path.join(HERE, "..", "..", "SuperPutty", "help"))
 SHIM_URL = "https://unpkg.com/iframe-worker/shim"
+CRLF = bytes([13, 10])
+LF = bytes([10])
 
 
 def main():
@@ -27,8 +28,10 @@ def main():
 
     # the offline plugin loads its search shim (iframe-worker, MIT) from unpkg.com: use the vendored copy instead
     shim_dir = os.path.join(SITE, "assets", "javascripts")
-    shutil.copy(os.path.join(HERE, "vendor", "iframe-worker-shim.js"), os.path.join(shim_dir, "iframe-worker-shim.js"))
-    shutil.copy(os.path.join(HERE, "vendor", "iframe-worker-LICENSE"), os.path.join(shim_dir, "iframe-worker-LICENSE"))
+    for name in ("iframe-worker-shim.js", "iframe-worker-LICENSE"):
+        # LF like the rest of the site (a Windows checkout may have turned the vendored copies into CRLF)
+        data = open(os.path.join(HERE, "vendor", name), "rb").read().replace(CRLF, LF)
+        open(os.path.join(shim_dir, name), "wb").write(data)
     for root, _, files in os.walk(SITE):
         for name in files:
             if name.endswith(".html"):

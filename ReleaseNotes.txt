@@ -1,3 +1,6 @@
+1.5.7.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Commands pane: new Background category - tmux/screen, moving a job to the background after Ctrl+Z, nohup,
+   systemd-run and reptyr, so work keeps running after the SSH session ends (added once to existing libraries)
 1.5.6.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
  - Icon bar: empty spaces as spacers (Customize Icon Bar > Add Space); Toggle Command Mask as an icon
  - Recent sessions button in front of the session search field

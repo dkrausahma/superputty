@@ -25,7 +25,7 @@ namespace SuperPutty.Data
         public const string FavoritesCategory = "Favorites";
 
         /// <summary>File format version; 1 added the Favorites category, 2 the Docker Compose commands</summary>
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         [XmlAttribute]
         public int Version { get; set; }
@@ -245,8 +245,45 @@ namespace SuperPutty.Data
             {
                 this.Commands.AddRange(ComposeCommands());
             }
+            if (this.Version < 3)
+            {
+                this.Commands.AddRange(BackgroundCommands());
+            }
             this.Version = CurrentVersion;
             return true;
+        }
+
+        /// <summary>
+        /// Keeping work running after the SSH session ends: tmux/screen (the clean way, start long work in them), moving
+        /// a job stopped with Ctrl+Z to the background and detaching it, nohup for new commands, a transient systemd
+        /// unit, reptyr to pull a running process into tmux
+        /// </summary>
+        private static List<CommandSnippet> BackgroundCommands()
+        {
+            const string category = "Background";
+            return new List<CommandSnippet>
+            {
+                new CommandSnippet { Category = category, Name = "tmux: new session", Command = "tmux new -s {{session:work}}",
+                    Description = "Start long work inside tmux; leave with Ctrl+B, D — it keeps running after you disconnect" },
+                new CommandSnippet { Category = category, Name = "tmux: attach", Command = "tmux attach -t {{session:work}}",
+                    Description = "Back into the tmux session after reconnecting, output included" },
+                new CommandSnippet { Category = category, Name = "tmux: list sessions", Command = "tmux ls",
+                    Description = "The tmux sessions on this host" },
+                new CommandSnippet { Category = category, Name = "screen: new session", Command = "screen -S {{session:work}}",
+                    Description = "Like tmux, where only screen is installed; leave with Ctrl+A, D" },
+                new CommandSnippet { Category = category, Name = "screen: reattach", Command = "screen -r {{session:work}}",
+                    Description = "Back into the screen session" },
+                new CommandSnippet { Category = category, Name = "Stopped job to background (after Ctrl+Z)", Command = "bg %+ && disown -h %+",
+                    Description = "Press Ctrl+Z first: the job continues in the background and survives closing the session (its output still goes to this terminal)" },
+                new CommandSnippet { Category = category, Name = "List jobs", Command = "jobs -l",
+                    Description = "Jobs of this shell with their process ids" },
+                new CommandSnippet { Category = category, Name = "Start with nohup", Command = "nohup {{command}} > {{log file:job.log}} 2>&1 &",
+                    Description = "Start a command that survives logout, output into a log file" },
+                new CommandSnippet { Category = category, Name = "Run as a systemd unit", Command = "systemd-run --user --unit={{unit name}} {{command}}",
+                    Description = "Runs independently of the session; log: journalctl --user -u <unit>. May need: loginctl enable-linger" },
+                new CommandSnippet { Category = category, Name = "Pull a running process into tmux (reptyr)", Command = "reptyr {{pid}}",
+                    Description = "Run inside tmux; needs the reptyr package and often: sudo sysctl kernel.yama.ptrace_scope=0" },
+            };
         }
 
         /// <summary>Docker Compose commands; the project directory is a placeholder remembered per session</summary>
@@ -387,6 +424,7 @@ namespace SuperPutty.Data
             Add(docker, "docker compose logs -f", "Follow the compose project's logs");
 
             library.Commands.AddRange(ComposeCommands());
+            library.Commands.AddRange(BackgroundCommands());
 
             return library;
         }
