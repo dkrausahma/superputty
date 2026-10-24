@@ -112,6 +112,29 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void BackgroundCommandsComeOnceWithVersion3()
+        {
+            List<CommandSnippet> defaults = CommandLibrary.CreateDefault().Commands.Where(c => c.Category == "Background").ToList();
+            ClassicAssert.GreaterOrEqual(defaults.Count, 8);
+            CollectionAssert.Contains(defaults.Select(c => c.Command).ToList(), "tmux attach -t {{session:work}}");
+            CollectionAssert.Contains(defaults.Select(c => c.Command).ToList(), "bg %+ && disown -h %+");
+            // placeholders are recognised (and nothing else in these commands looks like one)
+            CollectionAssert.AreEquivalent(new[] { "command", "log file" },
+                CommandPlaceholders.Parse(defaults.Single(c => c.Name == "Start with nohup").Command).Select(p => p.Name));
+
+            // a version 2 file gets them once; a user who deletes one keeps it deleted
+            CommandLibrary v2 = new CommandLibrary { Version = 2 };
+            v2.Commands.Add(new CommandSnippet { Command = "clear", Category = CommandLibrary.FavoritesCategory });
+            ClassicAssert.IsTrue(v2.Upgrade());
+            ClassicAssert.AreEqual(CommandLibrary.CurrentVersion, v2.Version);
+            ClassicAssert.AreEqual(defaults.Count, v2.Commands.Count(c => c.Category == "Background"));
+            ClassicAssert.AreEqual(0, v2.Commands.Count(c => c.Category == "Docker Compose"), "v2 already had its compose step");
+            v2.Commands.RemoveAll(c => c.Name == "tmux: list sessions");
+            ClassicAssert.IsFalse(v2.Upgrade());
+            ClassicAssert.AreEqual(defaults.Count - 1, v2.Commands.Count(c => c.Category == "Background"));
+        }
+
+        [Test]
         public void MergeSkipsExistingEntries()
         {
             CommandLibrary library = new CommandLibrary();

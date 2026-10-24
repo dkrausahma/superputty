@@ -602,6 +602,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keeping-jobs-running-after-you-disconnect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping jobs running after you disconnect
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#favorites-import-and-export" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1084,6 +1095,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keeping-jobs-running-after-you-disconnect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keeping jobs running after you disconnect
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#favorites-import-and-export" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1152,6 +1174,20 @@ sessions or folders appear under <em>Not assigned</em> and can be reassigned wit
 </code></pre></div>
 <p>The values are remembered per session. Placeholders are shown in purple. Docker's own templates such as
 <code>{{.Names}}</code> are left alone.</p>
+<h2 id="keeping-jobs-running-after-you-disconnect">Keeping jobs running after you disconnect<a class="headerlink" href="#keeping-jobs-running-after-you-disconnect" title="Permanent link">&para;</a></h2>
+<p>The default library has a <strong>Background</strong> category for work that must survive closing the PuTTY tab:</p>
+<ul>
+<li><strong>tmux: new session</strong> / <strong>tmux: attach</strong> — the clean way: start long work inside tmux, leave it with
+  <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-b">B</kbd></span> <span class="keys"><kbd class="key-d">D</kbd></span>, attach again later with the output still there. <strong>screen</strong> works the same with <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-a">A</kbd></span> <span class="keys"><kbd class="key-d">D</kbd></span>.</li>
+<li><strong>Stopped job to background (after Ctrl+Z)</strong> — a job already running in the foreground: press <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-z">Z</kbd></span>, then
+  run this entry (<code>bg %+ &amp;&amp; disown -h %+</code>); the job continues and survives closing the session. Its output still goes
+  to the closed terminal, which some programs don't survive — prefer tmux or nohup for new work.</li>
+<li><strong>Start with nohup</strong> — start a command with its output in a log file; it survives the logout.</li>
+<li><strong>Run as a systemd unit</strong> — independent of the session, logged in the journal.</li>
+<li><strong>Pull a running process into tmux (reptyr)</strong> — rescue a running job into a tmux session (needs the <code>reptyr</code>
+  package).</li>
+</ul>
+<p>Libraries from older versions get this category once when SuperPuTTY updates them.</p>
 <h2 id="favorites-import-and-export">Favorites, import and export<a class="headerlink" href="#favorites-import-and-export" title="Permanent link">&para;</a></h2>
 <p><strong>Favorites</strong> is always listed first. Import adds commands from another <code>Commands.XML</code> (skipping existing ones),
 Export writes a section or all commands. The library is stored in <code>Commands.XML</code> in the data folder.</p>
