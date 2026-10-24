@@ -73,6 +73,7 @@ namespace SuperPutty
             this.layoutsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.commandsPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.containersPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.hostInfoPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.healthChecksToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
@@ -144,6 +145,7 @@ namespace SuperPutty
             this.btnLayoutsPane = new System.Windows.Forms.ToolStripButton();
             this.btnCommandsPane = new System.Windows.Forms.ToolStripButton();
             this.btnContainersPane = new System.Windows.Forms.ToolStripButton();
+            this.btnHostInfoPane = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons = new System.Windows.Forms.ToolStripSeparator();
             this.btnCopySession = new System.Windows.Forms.ToolStripButton();
             this.btnUploadFiles = new System.Windows.Forms.ToolStripButton();
@@ -346,6 +348,7 @@ namespace SuperPutty
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.sessionsToolStripMenuItem,
             this.sessionDetailToolStripMenuItem,
+            this.hostInfoPaneToolStripMenuItem,
             this.layoutsToolStripMenuItem,
             this.commandsPaneToolStripMenuItem,
             this.containersPaneToolStripMenuItem,
@@ -394,6 +397,14 @@ namespace SuperPutty
             this.containersPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.containersPaneToolStripMenuItem.Text = "Co&ntainers";
             this.containersPaneToolStripMenuItem.Click += new System.EventHandler(this.containersPaneToolStripMenuItem_Click);
+            //
+            // hostInfoPaneToolStripMenuItem
+            //
+            this.hostInfoPaneToolStripMenuItem.Image = global::SuperPutty.Properties.Resources.host_info_pane;
+            this.hostInfoPaneToolStripMenuItem.Name = "hostInfoPaneToolStripMenuItem";
+            this.hostInfoPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.hostInfoPaneToolStripMenuItem.Text = "&Host Info";
+            this.hostInfoPaneToolStripMenuItem.Click += new System.EventHandler(this.hostInfoPaneToolStripMenuItem_Click);
             // 
             // healthChecksToolStripMenuItem
             // 
@@ -787,6 +798,7 @@ namespace SuperPutty
             this.btnLayoutsPane,
             this.btnCommandsPane,
             this.btnContainersPane,
+            this.btnHostInfoPane,
             this.toolStripSeparatorIcons,
             this.btnCopySession,
             this.btnUploadFiles,
@@ -844,6 +856,16 @@ namespace SuperPutty
             this.btnContainersPane.Text = "Containers";
             this.btnContainersPane.ToolTipText = "Show or close the Containers pane (docker on the active tab's host)";
             this.btnContainersPane.Click += new System.EventHandler(this.btnContainersPane_Click);
+            //
+            // btnHostInfoPane
+            //
+            this.btnHostInfoPane.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnHostInfoPane.Image = global::SuperPutty.Properties.Resources.host_info_pane;
+            this.btnHostInfoPane.Name = "btnHostInfoPane";
+            this.btnHostInfoPane.Size = new System.Drawing.Size(23, 22);
+            this.btnHostInfoPane.Text = "Host Info";
+            this.btnHostInfoPane.ToolTipText = "Show or close the Host Info pane (live facts about the active tab's host)";
+            this.btnHostInfoPane.Click += new System.EventHandler(this.btnHostInfoPane_Click);
             //
             // toolStripSeparatorIcons
             //
@@ -1330,6 +1352,8 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnCommandsPane;
         private System.Windows.Forms.ToolStripButton btnContainersPane;
         private System.Windows.Forms.ToolStripMenuItem containersPaneToolStripMenuItem;
+        private System.Windows.Forms.ToolStripButton btnHostInfoPane;
+        private System.Windows.Forms.ToolStripMenuItem hostInfoPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem healthChecksToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;

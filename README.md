@@ -44,6 +44,9 @@ and Pageant integration) but adds the window management on top.
   single session (the pane shows what applies to the active tab). Placeholders like `{{service}}` are
   asked for before sending and remembered per session; ready-made Docker Compose commands remember each
   host's project directory.
+- **Host Info pane** — live facts about the active tab's host: name, OS, public and private addresses, uptime,
+  CPU, load, memory, swap, disks, logged-in users and the busiest processes, updated every 5 seconds over a single
+  SSH connection; Copy puts it on the clipboard as text. Opens as a tab in front of Session Detail.
 - **Containers pane** — the docker containers on the active tab's host, grouped by compose project, with a
   status dot (green healthy/running, amber starting, red unhealthy/failed), uptime and published ports at a glance.
   Double-click opens a shell inside a container in a new tab; follow logs, inspect, start/stop/restart

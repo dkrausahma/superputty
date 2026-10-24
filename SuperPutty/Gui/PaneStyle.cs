@@ -171,6 +171,44 @@ namespace SuperPutty.Gui
             });
         }
 
+        /// <summary>A rounded gauge: track in a light tint, filled to <paramref name="share"/> (0..1)</summary>
+        public static void DrawBar(Graphics g, Rectangle bounds, double share, Color color, Color window)
+        {
+            share = Math.Max(0, Math.Min(1, share));
+            Color track = HighContrast ? window : Blend(SystemColors.GrayText, window, 0.18);
+            WithSmoothing(g, () =>
+            {
+                using (GraphicsPath path = RoundedRectangle(bounds, bounds.Height / 2))
+                using (SolidBrush brush = new SolidBrush(track))
+                {
+                    g.FillPath(brush, path);
+                    if (HighContrast)
+                    {
+                        using (Pen pen = new Pen(SystemColors.WindowText))
+                        {
+                            g.DrawPath(pen, path);
+                        }
+                    }
+                }
+                int filled = (int)Math.Round(bounds.Width * share);
+                if (filled >= bounds.Height)
+                {
+                    using (GraphicsPath path = RoundedRectangle(new Rectangle(bounds.X, bounds.Y, filled, bounds.Height), bounds.Height / 2))
+                    using (SolidBrush brush = new SolidBrush(color))
+                    {
+                        g.FillPath(brush, path);
+                    }
+                }
+                else if (filled > 0)
+                {
+                    using (SolidBrush brush = new SolidBrush(color))
+                    {
+                        g.FillEllipse(brush, bounds.X, bounds.Y, bounds.Height, bounds.Height);
+                    }
+                }
+            });
+        }
+
         /// <summary>Width a chip with this text needs</summary>
         public static int ChipWidth(Graphics g, string text, Font font)
         {

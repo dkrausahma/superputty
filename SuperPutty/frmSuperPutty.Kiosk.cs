@@ -87,6 +87,8 @@ namespace SuperPutty
             public bool SessionDetail { get; set; }
             public bool CommandsWindow { get; set; }
             public bool ContainersWindow { get; set; }
+            /// <summary>Not Visible: as a background tab Host Info is invisible but open</summary>
+            public bool HostInfoWindow { get; set; }
 
             public FormBorderStyle FormBorderStyle { get; set; }
             public FormWindowState FormWindowState { get; set; }
@@ -108,6 +110,7 @@ namespace SuperPutty
                 this.SessionDetail = this.MainForm.sessionDetail.IsVisible;
                 this.CommandsWindow = this.MainForm.commandsPane.IsVisible;
                 this.ContainersWindow = this.MainForm.containersPane.IsVisible;
+                this.HostInfoWindow = this.MainForm.hostInfoPane.Instance != null && !this.MainForm.hostInfoPane.Instance.IsHidden;
 
                 this.FormBorderStyle = this.MainForm.FormBorderStyle;
                 this.FormWindowState = this.MainForm.WindowState;
@@ -127,6 +130,7 @@ namespace SuperPutty
                     this.MainForm.sessionDetail.Hide();
                     this.MainForm.commandsPane.Hide();
                     this.MainForm.containersPane.Hide();
+                    this.MainForm.hostInfoPane.Hide();
 
                     // status bar
                     this.MainForm.statusStrip1.Hide();
@@ -167,6 +171,7 @@ namespace SuperPutty
                     if (this.SessionDetail) { this.MainForm.sessionDetail.Restore(); }
                     if (this.CommandsWindow) { this.MainForm.commandsPane.Restore(); }
                     if (this.ContainersWindow) { this.MainForm.containersPane.Restore(); }
+                    if (this.HostInfoWindow) { this.MainForm.hostInfoPane.Restore(); }
 
                     // status bar, toolbars, menu bar and always-on-top as set in the View menu
                     this.MainForm.ApplySettingsToToolbars();

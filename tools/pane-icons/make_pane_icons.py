@@ -66,7 +66,16 @@ def show_stopped(d):
     d.rounded_rectangle((20, 20, 44, 44), radius=4, fill=GREY)
 
 
+def host_info(d):
+    # monitor with a pulse line, on a stand
+    d.rounded_rectangle((4, 8, 60, 48), radius=6, fill=(44, 62, 80, 255))
+    d.line([(10, 30), (22, 30), (28, 18), (36, 42), (42, 26), (46, 30), (54, 30)], fill=(80, 220, 120, 255), width=5, joint="curve")
+    d.rectangle((28, 48, 36, 54), fill=GREY)
+    d.rounded_rectangle((18, 54, 46, 60), radius=3, fill=GREY)
+
+
 ICONS = {
+    "host_info_pane": host_info,
     "pane_add": add,
     "pane_edit": edit,
     "pane_delete": delete,

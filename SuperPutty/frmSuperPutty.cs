@@ -60,6 +60,7 @@ namespace SuperPutty
         private SingletonToolWindowHelper<SessionDetail> sessionDetail;
         private SingletonToolWindowHelper<CommandsPane> commandsPane;
         private SingletonToolWindowHelper<ContainersPane> containersPane;
+        private SingletonToolWindowHelper<HostInfoPane> hostInfoPane;
 
         private TextBoxFocusHelper tbFocusHelperHost;
         private TextBoxFocusHelper tbFocusHelperUserName;
@@ -151,6 +152,7 @@ namespace SuperPutty
             this.sessions.InstanceChanged += SessionsInstanceChanged;
             this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab, ActiveSession, RunInFolder));
             this.containersPane = new SingletonToolWindowHelper<ContainersPane>("Containers", this.DockPanel, null, x => new ContainersPane(ActiveSession));
+            this.hostInfoPane = new SingletonToolWindowHelper<HostInfoPane>("Host Info", this.DockPanel, null, x => new HostInfoPane(ActiveSession));
 
             // for toolbar
             this.tbFocusHelperHost = new TextBoxFocusHelper(this.tbTxtBoxHost.TextBox);
@@ -411,6 +413,10 @@ namespace SuperPutty
             if (this.containersPane.Instance != null)
             {
                 this.containersPane.Instance.ActiveSessionChanged();
+            }
+            if (this.hostInfoPane.Instance != null)
+            {
+                this.hostInfoPane.Instance.ActiveSessionChanged();
             }
             if (this.commandsPane.Instance != null)
             {
@@ -771,6 +777,20 @@ namespace SuperPutty
             UpdateIconBar();
         }
 
+        /// <summary>Host Info icon: opens the Host Info pane, or closes it when pressed</summary>
+        private void btnHostInfoPane_Click(object sender, EventArgs e)
+        {
+            if (IsOpen(this.hostInfoPane))
+            {
+                this.hostInfoPane.Instance.Close();
+            }
+            else
+            {
+                ShowHostInfo();
+            }
+            UpdateIconBar();
+        }
+
         private void btnLayoutsPane_Click(object sender, EventArgs e)
         {
             if (IsOpen(this.layouts))
@@ -791,6 +811,7 @@ namespace SuperPutty
             this.btnLayoutsPane.Checked = IsOpen(this.layouts);
             this.btnCommandsPane.Checked = IsOpen(this.commandsPane);
             this.btnContainersPane.Checked = IsOpen(this.containersPane);
+            this.btnHostInfoPane.Checked = IsOpen(this.hostInfoPane);
             this.btnKioskToggle.Checked = this.isKioskMode;
 
             ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
@@ -863,6 +884,39 @@ namespace SuperPutty
             {
                 this.containersPane.ShowWindow(DockState.DockLeft);
             }
+        }
+
+        private void hostInfoPaneToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ShowHostInfo();
+        }
+
+        /// <summary>
+        /// Host Info: in front, as a tab next to Session Detail; otherwise below the Sessions pane; otherwise on
+        /// the right. An open Host Info is only brought to the front.
+        /// </summary>
+        private void ShowHostInfo()
+        {
+            HostInfoPane pane = this.hostInfoPane.Instance;
+            if (pane != null && !pane.IsHidden)
+            {
+                pane.Activate();
+                return;
+            }
+            if (this.sessionDetail.IsVisibleAsToolWindow && !this.sessionDetail.Instance.IsHidden)
+            {
+                this.hostInfoPane.ShowWindow(this.sessionDetail.Instance.DockHandler.Pane, null);
+            }
+            else if (this.sessions.IsVisibleAsToolWindow && !this.sessions.Instance.IsHidden
+                && this.sessions.Instance.DockHandler.Pane.DockState != DockState.Float)
+            {
+                this.hostInfoPane.ShowWindow(this.sessions.Instance.DockHandler.Pane, DockAlignment.Bottom, 0.5);
+            }
+            else
+            {
+                this.hostInfoPane.ShowWindow(DockState.DockRight);
+            }
+            this.hostInfoPane.Instance.Activate();
         }
 
         private void logViewerToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1101,6 +1155,10 @@ namespace SuperPutty
             else if (typeof(Log4netLogViewer).FullName == persistString)
             {
                 return this.logViewer.Instance ?? this.logViewer.Initialize();
+            }
+            else if (typeof(HostInfoPane).FullName == persistString)
+            {
+                return this.hostInfoPane.Instance ?? this.hostInfoPane.Initialize();
             }
             else if (typeof(ContainersPane).FullName == persistString)
             {

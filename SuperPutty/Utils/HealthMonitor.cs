@@ -72,6 +72,23 @@ namespace SuperPutty.Utils
             }
         }
 
+        /// <summary>
+        /// A result measured elsewhere (the Host Info pane's live connection); counts as a fresh check, so the
+        /// periodic check skips the host. Call from the UI thread.
+        /// </summary>
+        public static void Report(string sessionId, HostHealth health)
+        {
+            if (sessionId == null || health == null)
+            {
+                return;
+            }
+            lock (Sync)
+            {
+                Results[sessionId] = health;
+            }
+            Raise(sessionId);
+        }
+
         private static async Task Probe(SessionData session, string id, SynchronizationContext ui)
         {
             HostHealth health;
