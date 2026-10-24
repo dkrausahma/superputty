@@ -70,6 +70,11 @@ and Pageant integration) but adds the window management on top.
   optionally reconnects automatically (Options → GUI, off by default).
 - **Pageant indicator** — the status bar shows whether Pageant runs and how many keys it holds
   (green: keys loaded, amber: no keys, grey: not running).
+- **Run on Hosts** — run a command on every host of a session-tree folder in the background and compare the
+  results in a table (exit code, time, output per host); copy or save the report. Production hosts need a
+  confirmation.
+- **Health notifications** — a Windows notification when a host turns critical (full disk, unhealthy
+  container, …) and when it recovers (View → Notify When a Host Turns Critical).
 - **Health badges** — the session tree marks hosts with full disks, high load or memory, failed systemd
   units or unhealthy containers (orange/red, details in the tooltip). Open tabs are checked every five
   minutes; any session or folder on demand.

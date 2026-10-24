@@ -64,6 +64,7 @@
             this.fileZillaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkHealthToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkHealthFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runOnHostsFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStripAddTreeItem.SuspendLayout();
             this.contextMenuStripFolder.SuspendLayout();
             this.panelSearch.SuspendLayout();
@@ -201,7 +202,8 @@
             this.toolStripMenuItem2,
             this.expandAllToolStripMenuItem,
             this.collapseAllToolStripMenuItem,
-            this.checkHealthFolderToolStripMenuItem});
+            this.checkHealthFolderToolStripMenuItem,
+            this.runOnHostsFolderToolStripMenuItem});
             this.contextMenuStripFolder.Name = "contextMenuStripAddTreeItem";
             this.contextMenuStripFolder.ShowImageMargin = false;
             this.contextMenuStripFolder.Size = new System.Drawing.Size(129, 182);
@@ -356,6 +358,14 @@
             this.checkHealthFolderToolStripMenuItem.Text = "Check &Health";
             this.checkHealthFolderToolStripMenuItem.ToolTipText = "Check the health of all sessions in this folder (via plink)";
             this.checkHealthFolderToolStripMenuItem.Click += new System.EventHandler(this.checkHealthFolderToolStripMenuItem_Click);
+            //
+            // runOnHostsFolderToolStripMenuItem
+            //
+            this.runOnHostsFolderToolStripMenuItem.Name = "runOnHostsFolderToolStripMenuItem";
+            this.runOnHostsFolderToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
+            this.runOnHostsFolderToolStripMenuItem.Text = "Run Command on H&osts…";
+            this.runOnHostsFolderToolStripMenuItem.ToolTipText = "Run a command on all hosts in this folder and compare the results (via plink)";
+            this.runOnHostsFolderToolStripMenuItem.Click += new System.EventHandler(this.runOnHostsFolderToolStripMenuItem_Click);
             // 
             // fileZillaToolStripMenuItem
             // 
@@ -412,6 +422,7 @@
         private System.Windows.Forms.ToolStripMenuItem collapseAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem checkHealthToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem checkHealthFolderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runOnHostsFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectExternalToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectInNewSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;

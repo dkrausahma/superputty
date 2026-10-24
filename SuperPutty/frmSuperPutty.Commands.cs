@@ -47,6 +47,24 @@ namespace SuperPutty
     /// <summary>Sending commands to terminals: active session, Run in All/Folder/New Tab, command bar, live input</summary>
     public partial class frmSuperPutty
     {
+        /// <summary>Run on Hosts for the active tab's folder (all sessions without a tab or folder)</summary>
+        private void runOnHostsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SessionData active = ActiveSession();
+            string sessionId = active == null ? null : active.ScopeSessionId;
+            int slash = sessionId == null ? -1 : sessionId.LastIndexOf('/');
+            List<SessionData> all = SuperPuTTY.GetAllSessions();
+            if (slash > 0)
+            {
+                string folder = sessionId.Substring(0, slash);
+                dlgRunOnHosts.ShowFor(this, all.Where(s => s.SessionId.StartsWith(folder + "/", StringComparison.Ordinal)), "Folder " + folder);
+            }
+            else
+            {
+                dlgRunOnHosts.ShowFor(this, all, "All sessions");
+            }
+        }
+
         /// <summary>The session of the active terminal tab, or null</summary>
         private SessionData ActiveSession()
         {
