@@ -1,3 +1,9 @@
+1.5.3.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Run on Hosts (session tree folder menu, Tools menu): one command on many hosts in the background, results per
+   host in a table (exit code, time, output), copy or save as a report; production hosts need a confirmation
+ - Containers pane: click a port chip to open it in the browser, through an SSH tunnel when not reachable directly
+ - Host Info: NVIDIA GPUs (utilisation, VRAM, temperature) and the processes holding GPU memory
+ - Windows notification when a host turns critical and when it recovers (View > Notify When a Host Turns Critical)
 1.5.2.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
  - Host Info pane (View > Host Info, icon bar): live facts about the active tab's host - name, OS, public/private
    addresses, uptime, CPU, load, memory, swap, disks, logged-in users, busiest processes - every 5 s over one SSH

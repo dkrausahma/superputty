@@ -159,6 +159,7 @@ namespace SuperPutty
             this.sessionLoggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.notifyActivityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tunnelsOverviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runOnHostsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileDialogUpload = new System.Windows.Forms.OpenFileDialog();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
@@ -447,6 +448,14 @@ namespace SuperPutty
             this.tunnelsOverviewToolStripMenuItem.Text = "SSH T&unnels…";
             this.tunnelsOverviewToolStripMenuItem.ToolTipText = "All SSH tunnels of the open tabs";
             this.tunnelsOverviewToolStripMenuItem.Click += new System.EventHandler(this.tunnelsOverview_Click);
+            //
+            // runOnHostsToolStripMenuItem
+            //
+            this.runOnHostsToolStripMenuItem.Name = "runOnHostsToolStripMenuItem";
+            this.runOnHostsToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.runOnHostsToolStripMenuItem.Text = "Run on &Hosts…";
+            this.runOnHostsToolStripMenuItem.ToolTipText = "Run a command on the hosts of the active tab's folder and compare the results";
+            this.runOnHostsToolStripMenuItem.Click += new System.EventHandler(this.runOnHostsToolStripMenuItem_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -551,6 +560,7 @@ namespace SuperPutty
             this.openLogFolderToolStripMenuItem,
             this.transferFilesToolStripMenuItem,
             this.tunnelsOverviewToolStripMenuItem,
+            this.runOnHostsToolStripMenuItem,
             this.toolStripMenuItemCopySessionSep,
             this.puTTYConfigurationToolStripMenuItem,
             this.toolStripMenuItem11,
@@ -1378,6 +1388,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem openLogFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sessionLoggingToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem notifyActivityToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runOnHostsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tunnelsOverviewToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog openFileDialogUpload;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;

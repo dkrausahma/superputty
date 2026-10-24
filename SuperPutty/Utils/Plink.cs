@@ -16,8 +16,10 @@ namespace SuperPutty.Utils
         public string Output { get; set; }
         public string Error { get; set; }
         public bool TimedOut { get; set; }
+        /// <summary>Stopped by the caller's cancellation token</summary>
+        public bool Cancelled { get; set; }
 
-        public bool Success { get { return !this.TimedOut && this.ExitCode == 0; } }
+        public bool Success { get { return !this.TimedOut && !this.Cancelled && this.ExitCode == 0; } }
     }
 
     /// <summary>
@@ -228,6 +230,12 @@ namespace SuperPutty.Utils
         /// <summary>Run a command on the session's host and collect its output</summary>
         public static Task<PlinkResult> RunAsync(SessionData session, string remoteCommand, TimeSpan timeout)
         {
+            return RunAsync(session, remoteCommand, timeout, CancellationToken.None);
+        }
+
+        /// <summary>Run a command on the session's host and collect its output; cancelling kills plink</summary>
+        public static Task<PlinkResult> RunAsync(SessionData session, string remoteCommand, TimeSpan timeout, CancellationToken cancel)
+        {
             string exe = FindExecutable();
             if (exe == null)
             {
@@ -241,10 +249,19 @@ namespace SuperPutty.Utils
                     process.StandardInput.Close();
                     Task<string> output = process.StandardOutput.ReadToEndAsync();
                     Task<string> error = process.StandardError.ReadToEndAsync();
-                    if (!process.WaitForExit((int)timeout.TotalMilliseconds))
+                    Stopwatch watch = Stopwatch.StartNew();
+                    while (!process.WaitForExit(200))
                     {
-                        try { process.Kill(true); } catch (InvalidOperationException) { }
-                        return new PlinkResult { TimedOut = true, ExitCode = -1, Output = string.Empty, Error = "Timed out after " + timeout.TotalSeconds + " s" };
+                        bool cancelled = cancel.IsCancellationRequested;
+                        if (cancelled || watch.Elapsed >= timeout)
+                        {
+                            try { process.Kill(true); } catch (InvalidOperationException) { }
+                            return new PlinkResult
+                            {
+                                TimedOut = !cancelled, Cancelled = cancelled, ExitCode = -1, Output = string.Empty,
+                                Error = cancelled ? "Stopped" : "Timed out after " + timeout.TotalSeconds + " s"
+                            };
+                        }
                     }
                     process.WaitForExit();
                     return new PlinkResult { ExitCode = process.ExitCode, Output = output.Result, Error = error.Result };

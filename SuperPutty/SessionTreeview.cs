@@ -654,6 +654,18 @@ namespace SuperPutty
             }
         }
 
+        private void runOnHostsFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode node = this.treeView1.SelectedNode;
+            if (node != null && !IsSessionNode(node))
+            {
+                List<SessionData> sessions = new List<SessionData>();
+                GetAllSessions(node, sessions);
+                Gui.dlgRunOnHosts.ShowFor(this.DockPanel == null ? (IWin32Window)this : this.DockPanel.FindForm(), sessions,
+                    node == this.nodeRoot ? "All sessions" : "Folder " + node.Text);
+            }
+        }
+
         private void checkHealthFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
             TreeNode node = this.treeView1.SelectedNode;
