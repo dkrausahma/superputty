@@ -216,6 +216,46 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void ReadsGpusAndTheProcessesHoldingTheirMemory()
+        {
+            string[] round =
+            {
+                "gpu=0, GPU-0652f32d-821e-d8f0-6c74-c77d51695ff9, NVIDIA H100 80GB HBM3, 45, 30100, 81559, 64",
+                "gpu=1, GPU-1111aaaa-821e-d8f0-6c74-c77d51695ff9, NVIDIA H100 80GB HBM3, [N/A], 0, 81559, [N/A]",
+                "gpuapp=GPU-0652f32d-821e-d8f0-6c74-c77d51695ff9, 812, /opt/conda/bin/python3, 29000",
+                "gpuapp=GPU-1111aaaa-821e-d8f0-6c74-c77d51695ff9, 900, vllm, 512",
+                "gpuapp=GPU-0652f32d-821e-d8f0-6c74-c77d51695ff9, 2268, [Insufficient Permissions], [N/A]",
+                "--end",
+            };
+            HostInfo info = Feed(round).Single();
+
+            ClassicAssert.AreEqual(2, info.Gpus.Count);
+            GpuInfo first = info.Gpus[0];
+            ClassicAssert.AreEqual("NVIDIA H100 80GB HBM3", first.Name);
+            ClassicAssert.AreEqual(45, first.UtilizationPercent);
+            ClassicAssert.AreEqual(36, first.MemoryPercent);
+            ClassicAssert.AreEqual(64, first.TemperatureC);
+            ClassicAssert.IsNull(info.Gpus[1].UtilizationPercent, "[N/A]");
+            ClassicAssert.IsNull(info.Gpus[1].TemperatureC);
+
+            // without memory figure ([N/A]) a process is left out; the path is cut to the program name
+            CollectionAssert.AreEqual(new[] { "python3", "vllm" }, info.GpuProcesses.Select(p => p.Name));
+            CollectionAssert.AreEqual(new[] { 0, 1 }, info.GpuProcesses.Select(p => p.GpuIndex));
+
+            StringAssert.Contains(" - GPU 0...............: NVIDIA H100 80GB HBM3, 45 % busy, 30100 / 81559 MB, 64 °C", info.ToText());
+        }
+
+        [Test]
+        public void GpusAreReadEveryRound()
+        {
+            List<HostInfo> snapshots = Feed(new[] { "gpu=0, GPU-a, Tesla T4, 10, 100, 15360, 40", "--end" }, new[] { "--end" });
+
+            ClassicAssert.AreEqual(1, snapshots[0].Gpus.Count);
+            CollectionAssert.IsEmpty(snapshots[1].Gpus, "a round without GPU lines has no GPUs (nvidia-smi gone or failing)");
+            ClassicAssert.IsNull(HostInfoReader.ParseGpu("NVIDIA-SMI has failed because it couldn't communicate with the NVIDIA driver"));
+        }
+
+        [Test]
         public void FormatsSizesAndUptime()
         {
             ClassicAssert.AreEqual("940 MB", HostInfo.FormatSize(940 * 1024));

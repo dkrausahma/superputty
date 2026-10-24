@@ -68,7 +68,9 @@ namespace SuperPuttyUnitTests
                 "proc=812=5000=python3", "proc=901=300=dockerd", "proc=950=100=containerd", "--end",
                 "uptime=3083372", "loadavg=1.45 0.60 0.30 3/672 12346", "cpustat=cpu 13000 0 5400 84200 600 0 0 0 0 0",
                 "meminfo=MemTotal=65378304", "meminfo=MemAvailable=50034688", "meminfo=SwapTotal=8388608", "meminfo=SwapFree=6021120",
-                "proc=812=5000=python3", "proc=812=7600=python3", "proc=901=340=dockerd", "proc=950=105=containerd", "--end",
+                "proc=812=5000=python3", "proc=812=7600=python3", "proc=901=340=dockerd", "proc=950=105=containerd",
+                "gpu=0, GPU-aaaa, NVIDIA H100 80GB HBM3, 97, 71200, 81559, 78", "gpu=1, GPU-bbbb, NVIDIA H100 80GB HBM3, 3, 81000, 81559, 41",
+                "gpuapp=GPU-aaaa, 812, /opt/conda/bin/python3, 71000", "gpuapp=GPU-bbbb, 990, /usr/local/bin/vllm, 80900", "--end",
             };
             HostInfoReader reader = new HostInfoReader();
             HostInfo info = null;
