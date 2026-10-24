@@ -216,6 +216,7 @@ namespace SuperPutty
             // Pageant state and key count in the status bar, before the version
             this.pageantIndicator = new PageantIndicator(this.statusStrip1, this.statusStrip1.Items.IndexOf(this.toolStripStatusLabelVersion));
             this.FormClosed += delegate { this.pageantIndicator.Dispose(); };
+            this.FormClosed += delegate { PortOpener.CloseAll(); };
 
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };

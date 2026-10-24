@@ -32,6 +32,10 @@ namespace SuperPutty
         private List<DockerContainer> containers = new List<DockerContainer>();
         private int requestId;
 
+        /// <summary>Where each container row drew its port chips (client coordinates of the last paint), for clicks</summary>
+        private readonly Dictionary<TreeNode, List<KeyValuePair<Rectangle, PublishedPort>>> chipAreas =
+            new Dictionary<TreeNode, List<KeyValuePair<Rectangle, PublishedPort>>>();
+
         /// <summary>Compose projects the user collapsed; kept across refreshes</summary>
         private readonly HashSet<string> collapsedProjects = new HashSet<string>();
 
@@ -56,6 +60,8 @@ namespace SuperPutty
             // header rows two units high, container rows (name/status above image/ports) three
             this.treeViewContainers.RowUnits = node => node.Tag is DockerContainer ? 3 : 2;
             this.treeViewContainers.DrawRow += treeViewContainers_DrawRow;
+            this.treeViewContainers.MouseMove += treeViewContainers_MouseMove;
+            this.treeViewContainers.NodeMouseClick += treeViewContainers_NodeMouseClick;
             this.treeViewContainers.AfterCollapse += (s, e) =>
             {
                 ProjectGroup group = e.Node.Tag as ProjectGroup;
@@ -199,6 +205,7 @@ namespace SuperPutty
             try
             {
                 this.treeViewContainers.Nodes.Clear();
+                this.chipAreas.Clear();
                 foreach (IGrouping<string, DockerContainer> project in this.containers
                     .OrderBy(c => string.IsNullOrEmpty(c.Project) ? 1 : 0).ThenBy(c => c.Project).ThenBy(c => c.Name)
                     .GroupBy(c => c.Project ?? string.Empty))
@@ -248,7 +255,7 @@ namespace SuperPutty
             List<string> ports = container.PublishedPorts;
             if (ports.Count > 0)
             {
-                lines.Add("Ports: " + string.Join(", ", ports));
+                lines.Add("Ports: " + string.Join(", ", ports) + " (click one to open it in the browser)");
             }
             return string.Join("\n", lines);
         }
@@ -336,14 +343,16 @@ namespace SuperPutty
                 Rectangle.FromLTRB(textLeft, line1.Top, b.Right - statusWidth - 8, line1.Bottom), container.IsRunning ? e.ForeColor : e.SubtleColor);
 
             // ports from the right, as long as they leave 40 % of the width for the image, the rest as "+N"
-            List<string> ports = container.PublishedPorts;
+            List<PublishedPort> ports = container.PublishedPortList;
+            List<KeyValuePair<Rectangle, PublishedPort>> areas = new List<KeyValuePair<Rectangle, PublishedPort>>();
+            this.chipAreas[e.Node] = areas;
             int chipRight = b.Right;
             int chipLimit = textLeft + (b.Right - textLeft) * 2 / 5;
             int chipTop = line2.Top + 1;
             int chipHeight = line2.Height - 2;
             for (int i = ports.Count - 1; i >= 0; i--)
             {
-                int width = PaneStyle.ChipWidth(g, ports[i], tree.SmallFont);
+                int width = PaneStyle.ChipWidth(g, ports[i].Text, tree.SmallFont);
                 int reserve = i > 0 ? PaneStyle.ChipWidth(g, "+" + i, tree.SmallFont) + 3 : 0;
                 if (chipRight - width - reserve < chipLimit)
                 {
@@ -356,7 +365,9 @@ namespace SuperPutty
                     }
                     break;
                 }
-                PaneStyle.DrawChip(g, new Rectangle(chipRight - width, chipTop, width, chipHeight), ports[i], tree.SmallFont, tree.BackColor, e.ForeColor);
+                Rectangle chip = new Rectangle(chipRight - width, chipTop, width, chipHeight);
+                PaneStyle.DrawChip(g, chip, ports[i].Text, tree.SmallFont, tree.BackColor, e.ForeColor);
+                areas.Add(new KeyValuePair<Rectangle, PublishedPort>(chip, ports[i]));
                 chipRight -= width + 3;
             }
             PaneStyle.DrawText(g, container.Image, tree.SmallFont, Rectangle.FromLTRB(textLeft, line2.Top, chipRight - 5, line2.Bottom), e.SubtleColor);
@@ -458,8 +469,72 @@ namespace SuperPutty
             }
         }
 
+        /// <summary>The openable port chip at a point of the tree, or null</summary>
+        private PublishedPort ChipAt(Point location)
+        {
+            TreeNode node = this.treeViewContainers.GetNodeAt(location);
+            List<KeyValuePair<Rectangle, PublishedPort>> areas;
+            if (node == null || !this.chipAreas.TryGetValue(node, out areas))
+            {
+                return null;
+            }
+            foreach (KeyValuePair<Rectangle, PublishedPort> area in areas)
+            {
+                if (area.Key.Contains(location) && area.Value.CanOpen)
+                {
+                    return area.Value;
+                }
+            }
+            return null;
+        }
+
+        private void treeViewContainers_MouseMove(object sender, MouseEventArgs e)
+        {
+            Cursor cursor = ChipAt(e.Location) != null ? Cursors.Hand : Cursors.Default;
+            if (this.treeViewContainers.Cursor != cursor)
+            {
+                this.treeViewContainers.Cursor = cursor;
+            }
+        }
+
+        private void treeViewContainers_NodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
+        {
+            PublishedPort port = e.Button == MouseButtons.Left ? ChipAt(e.Location) : null;
+            if (port != null)
+            {
+                OpenPort(port);
+            }
+        }
+
+        /// <summary>Open a published port of the active host in the browser (directly or through an SSH tunnel)</summary>
+        private async void OpenPort(PublishedPort port)
+        {
+            SessionData target = this.session;
+            if (target == null)
+            {
+                return;
+            }
+            this.labelStatus.Text = "Opening " + port.Text + "…";
+            string result;
+            try
+            {
+                result = await PortOpener.OpenAsync(target, port);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is FileNotFoundException || ex is System.ComponentModel.Win32Exception)
+            {
+                Log.Warn("Could not open port " + port.Text, ex);
+                result = "Could not open " + port.Text + ": " + ex.Message;
+            }
+            this.labelStatus.Text = result;
+            SuperPuTTY.ReportStatus(result);
+        }
+
         private void treeViewContainers_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
+            if (ChipAt(e.Location) != null)
+            {
+                return; // the click already opened the port
+            }
             // on a project header the tree itself expands/collapses
             if (e.Button == MouseButtons.Left && e.Node.Tag is DockerContainer)
             {
@@ -494,6 +569,15 @@ namespace SuperPutty
             this.startToolStripMenuItem.Enabled = !container.IsRunning;
             this.stopToolStripMenuItem.Enabled = container.IsRunning;
             this.restartToolStripMenuItem.Enabled = container.IsRunning;
+
+            // one entry per openable port
+            this.openPortToolStripMenuItem.DropDownItems.Clear();
+            foreach (PublishedPort port in container.PublishedPortList.Where(p => p.CanOpen))
+            {
+                PublishedPort open = port;
+                this.openPortToolStripMenuItem.DropDownItems.Add(port.Text + (port.NeedsTunnel ? "  (via SSH tunnel)" : string.Empty), null, delegate { OpenPort(open); });
+            }
+            this.openPortToolStripMenuItem.Enabled = container.IsRunning && this.openPortToolStripMenuItem.DropDownItems.Count > 0;
         }
 
         private void toolStripButtonRefresh_Click(object sender, EventArgs e)

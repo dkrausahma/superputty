@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace SuperPutty.Data
@@ -35,7 +36,7 @@ namespace SuperPutty.Data
         public const string ListFormat = "{{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project\"}}\\t{{.Ports}}";
 
         /// <summary>One published port as docker lists it: "0.0.0.0:9089->8080/tcp", ":::9089->8080/tcp", "127.0.0.1:80-81->80-81/udp"</summary>
-        private static readonly Regex PublishedPort = new Regex(@"^(?<ip>.*):(?<host>\d+(?:-\d+)?)->(?<container>\d+(?:-\d+)?)/(?<proto>\w+)$", RegexOptions.Compiled);
+        private static readonly Regex PublishedPortPattern = new Regex(@"^(?<ip>.*):(?<host>\d+(?:-\d+)?)->(?<container>\d+(?:-\d+)?)/(?<proto>\w+)$", RegexOptions.Compiled);
 
         /// <summary>The health or pause marker docker appends to "Up …", e.g. "(healthy)", "(health: starting)"</summary>
         private static readonly Regex StatusMarker = new Regex(@"\s*\((?<marker>healthy|unhealthy|health: starting|paused)\)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -127,6 +128,12 @@ namespace SuperPutty.Data
             get { return ParsePorts(this.Ports); }
         }
 
+        /// <summary>The published ports with their addresses, for opening them</summary>
+        public List<PublishedPort> PublishedPortList
+        {
+            get { return ParsePublishedPorts(this.Ports); }
+        }
+
         /// <summary>
         /// Published ports from docker's ports text as "host→container", once even when docker lists IPv4 and IPv6;
         /// the address only when bound to a specific one, the protocol only when it isn't tcp. Exposed but
@@ -134,22 +141,30 @@ namespace SuperPutty.Data
         /// </summary>
         public static List<string> ParsePorts(string ports)
         {
-            List<string> result = new List<string>();
+            return ParsePublishedPorts(ports).Select(p => p.Text).ToList();
+        }
+
+        public static List<PublishedPort> ParsePublishedPorts(string ports)
+        {
+            List<PublishedPort> result = new List<PublishedPort>();
             foreach (string part in (ports ?? string.Empty).Split(','))
             {
-                Match match = PublishedPort.Match(part.Trim());
+                Match match = PublishedPortPattern.Match(part.Trim());
                 if (!match.Success)
                 {
                     continue;
                 }
-                string ip = match.Groups["ip"].Value;
-                bool anyAddress = ip.Length == 0 || ip == "0.0.0.0" || ip == "::" || ip == "[::]";
-                string proto = match.Groups["proto"].Value;
-                string text = (anyAddress ? string.Empty : ip + ":") + match.Groups["host"].Value + "→" + match.Groups["container"].Value
-                    + (proto.Equals("tcp", StringComparison.OrdinalIgnoreCase) ? string.Empty : "/" + proto);
-                if (!result.Contains(text))
+                string ip = match.Groups["ip"].Value.Trim('[', ']');
+                PublishedPort port = new PublishedPort
                 {
-                    result.Add(text);
+                    HostAddress = ip.Length == 0 || ip == "0.0.0.0" || ip == "::" ? null : ip,
+                    HostPorts = match.Groups["host"].Value,
+                    ContainerPorts = match.Groups["container"].Value,
+                    Protocol = match.Groups["proto"].Value.ToLowerInvariant()
+                };
+                if (!result.Any(p => p.Text == port.Text))
+                {
+                    result.Add(port);
                 }
             }
             return result;
@@ -196,6 +211,78 @@ namespace SuperPutty.Data
         public override string ToString()
         {
             return this.Name;
+        }
+    }
+
+    /// <summary>A port docker publishes on the host: "0.0.0.0:9089->8080/tcp"</summary>
+    public class PublishedPort
+    {
+        /// <summary>The address the port is bound to; null when bound to all addresses</summary>
+        public string HostAddress { get; set; }
+        /// <summary>The port on the host, or a range "8000-8001"</summary>
+        public string HostPorts { get; set; }
+        public string ContainerPorts { get; set; }
+        public string Protocol { get; set; }
+
+        /// <summary>"9089→8080", "127.0.0.1:9229→9229", "[::1]:80→80", "53→53/udp"</summary>
+        public string Text
+        {
+            get
+            {
+                string address = this.HostAddress == null ? string.Empty
+                    : this.HostAddress.Contains(":") ? "[" + this.HostAddress + "]:" : this.HostAddress + ":";
+                return address + this.HostPorts + "→" + this.ContainerPorts + (this.Protocol == "tcp" ? string.Empty : "/" + this.Protocol);
+            }
+        }
+
+        /// <summary>The (first) port on the host</summary>
+        public int HostPort
+        {
+            get
+            {
+                int port;
+                return int.TryParse(this.HostPorts.Split('-')[0], out port) ? port : 0;
+            }
+        }
+
+        /// <summary>Only TCP ports can be opened in a browser</summary>
+        public bool CanOpen
+        {
+            get { return this.Protocol == "tcp" && this.HostPort > 0; }
+        }
+
+        /// <summary>Bound to the host's loopback: reachable from here only through an SSH tunnel</summary>
+        public bool NeedsTunnel
+        {
+            get { return this.HostAddress != null && (this.HostAddress.StartsWith("127.") || this.HostAddress == "::1"); }
+        }
+
+        /// <summary>Where a tunnel on the host connects to: the bound address, or loopback for all addresses</summary>
+        public string TunnelTarget
+        {
+            get { return this.HostAddress == null || this.HostAddress.Contains(":") ? "127.0.0.1" : this.HostAddress; }
+        }
+
+        /// <summary>https for the usual TLS ports of the container, otherwise http</summary>
+        public string Scheme
+        {
+            get
+            {
+                string port = this.ContainerPorts.Split('-')[0];
+                return port == "443" || port == "8443" ? "https" : "http";
+            }
+        }
+
+        /// <summary>The URL to open for host:port (IPv6 addresses in brackets)</summary>
+        public string Url(string host, int port)
+        {
+            string name = host.Contains(":") && !host.StartsWith("[") ? "[" + host + "]" : host;
+            return this.Scheme + "://" + name + ":" + port + "/";
+        }
+
+        public override string ToString()
+        {
+            return this.Text;
         }
     }
 

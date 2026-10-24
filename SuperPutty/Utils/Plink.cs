@@ -132,7 +132,22 @@ namespace SuperPutty.Utils
             {
                 args.Add(session.Host);
             }
-            args.Add(remoteCommand);
+            if (remoteCommand != null)
+            {
+                args.Add(remoteCommand);
+            }
+            return args;
+        }
+
+        /// <summary>
+        /// The plink arguments for a local port forwarding without a command (-N): 127.0.0.1:localPort on this PC
+        /// leads to target:targetPort as seen from the session's host
+        /// </summary>
+        public static List<string> BuildTunnelArguments(SessionData session, int localPort, string target, int targetPort)
+        {
+            List<string> args = BuildArguments(session, null);
+            // options before the host name: right after -ssh -batch -T
+            args.InsertRange(3, new[] { "-N", "-L", string.Format("127.0.0.1:{0}:{1}:{2}", localPort, target, targetPort) });
             return args;
         }
 
@@ -156,6 +171,14 @@ namespace SuperPutty.Utils
 
         private static ProcessStartInfo CreateStartInfo(string exe, SessionData session, string remoteCommand)
         {
+            ProcessStartInfo startInfo = CreateStartInfo(exe, BuildArguments(session, remoteCommand));
+            Log.InfoFormat("plink: session={0}, command=[{1}]", session.SessionId,
+                remoteCommand.Length > 120 ? remoteCommand.Substring(0, 120) + "…" : remoteCommand);
+            return startInfo;
+        }
+
+        private static ProcessStartInfo CreateStartInfo(string exe, List<string> args)
+        {
             // redirected output needs UseShellExecute = false
             ProcessStartInfo startInfo = new ProcessStartInfo(exe)
             {
@@ -165,13 +188,25 @@ namespace SuperPutty.Utils
                 RedirectStandardError = true,
                 RedirectStandardInput = true
             };
-            foreach (string arg in BuildArguments(session, remoteCommand))
+            foreach (string arg in args)
             {
                 startInfo.ArgumentList.Add(arg);
             }
-            Log.InfoFormat("plink: session={0}, command=[{1}]", session.SessionId,
-                remoteCommand.Length > 120 ? remoteCommand.Substring(0, 120) + "…" : remoteCommand);
             return startInfo;
+        }
+
+        /// <summary>Start a port forwarding (see <see cref="BuildTunnelArguments"/>); the caller kills the process to close it</summary>
+        public static Process StartTunnel(SessionData session, int localPort, string target, int targetPort)
+        {
+            string exe = FindExecutable();
+            if (exe == null)
+            {
+                throw new FileNotFoundException("plink.exe not found next to PuTTY or on the PATH");
+            }
+            Log.InfoFormat("plink tunnel: session={0}, 127.0.0.1:{1} -> {2}:{3}", session.SessionId, localPort, target, targetPort);
+            Process process = Process.Start(CreateStartInfo(exe, BuildTunnelArguments(session, localPort, target, targetPort)));
+            process.StandardInput.Close();
+            return process;
         }
 
         /// <summary>
