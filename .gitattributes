@@ -1,0 +1,3 @@
+# Generated help (tools/help-docs/build.py writes LF): store and check out as-is, so rebuilding
+# it does not show unchanged pages as modified
+SuperPutty/help/** -text
