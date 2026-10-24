@@ -9,11 +9,13 @@ namespace SuperPutty.Gui
 {
     /// <summary>
     /// Customize Icon Bar: every tool with a checkbox (shown or not), in icon bar order followed by the hidden
-    /// ones; Move Up/Down reorder, Add Separator inserts one. Separators count like tools: only checked ones.
+    /// ones; Move Up/Down reorder, Add Separator / Add Space insert a divider or an empty gap. Separators and spaces
+    /// count like tools: only checked ones.
     /// </summary>
     public class dlgCustomizeIconBar : Form
     {
         private const string SeparatorText = "──────  separator  ──────";
+        private const string SpaceText = "(space)";
 
         private readonly Dictionary<string, frmSuperPutty.IconBarTool> tools;
         private readonly List<string> defaults;
@@ -22,6 +24,7 @@ namespace SuperPutty.Gui
         private readonly Button buttonUp = new Button { Text = "Move &Up" };
         private readonly Button buttonDown = new Button { Text = "Move &Down" };
         private readonly Button buttonSeparator = new Button { Text = "Add &Separator" };
+        private readonly Button buttonSpace = new Button { Text = "Add S&pace" };
         private readonly Button buttonReset = new Button { Text = "&Reset to Default" };
 
         /// <summary>The chosen entries: tool ids and "|" separators, in order</summary>
@@ -52,7 +55,7 @@ namespace SuperPutty.Gui
 
             Label hint = new Label
             {
-                Text = "Checked tools and separators appear on the icon bar, in this order.",
+                Text = "Checked tools, separators and spaces appear on the icon bar, in this order.",
                 Location = new Point(12, 10), Size = new Size(416, 30)
             };
 
@@ -69,15 +72,16 @@ namespace SuperPutty.Gui
             this.list.SelectedIndexChanged += delegate { UpdateButtons(); };
 
             int x = 314;
-            foreach (Button button in new[] { this.buttonUp, this.buttonDown, this.buttonSeparator, this.buttonReset })
+            Button[] buttons = { this.buttonUp, this.buttonDown, this.buttonSeparator, this.buttonSpace, this.buttonReset };
+            foreach (Button button in buttons)
             {
-                button.Location = new Point(x, 42 + 34 * Array.IndexOf(new[] { this.buttonUp, this.buttonDown, this.buttonSeparator, this.buttonReset }, button)
-                    + (button == this.buttonReset ? 20 : 0));
+                button.Location = new Point(x, 42 + 34 * Array.IndexOf(buttons, button) + (button == this.buttonReset ? 20 : 0));
                 button.Size = new Size(114, 26);
             }
             this.buttonUp.Click += delegate { MoveSelected(-1); };
             this.buttonDown.Click += delegate { MoveSelected(1); };
-            this.buttonSeparator.Click += delegate { AddSeparator(); };
+            this.buttonSeparator.Click += delegate { AddGap(IconBarLayout.Separator); };
+            this.buttonSpace.Click += delegate { AddGap(IconBarLayout.Space); };
             this.buttonReset.Click += delegate { Fill(this.defaults); };
 
             Button ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Location = new Point(272, 432), Size = new Size(75, 26) };
@@ -85,7 +89,7 @@ namespace SuperPutty.Gui
             this.AcceptButton = ok;
             this.CancelButton = cancel;
 
-            this.Controls.AddRange(new Control[] { hint, this.list, this.buttonUp, this.buttonDown, this.buttonSeparator, this.buttonReset, ok, cancel });
+            this.Controls.AddRange(new Control[] { hint, this.list, this.buttonUp, this.buttonDown, this.buttonSeparator, this.buttonSpace, this.buttonReset, ok, cancel });
             Fill(current);
         }
 
@@ -114,9 +118,9 @@ namespace SuperPutty.Gui
 
         private ListViewItem CreateItem(string entry, bool shown)
         {
-            if (entry == IconBarLayout.Separator)
+            if (IconBarLayout.IsGap(entry))
             {
-                return new ListViewItem(SeparatorText) { Tag = entry, Checked = true, ForeColor = SystemColors.GrayText };
+                return new ListViewItem(entry == IconBarLayout.Separator ? SeparatorText : SpaceText) { Tag = entry, Checked = true, ForeColor = SystemColors.GrayText };
             }
             frmSuperPutty.IconBarTool tool = this.tools[entry];
             return new ListViewItem(tool.Text) { Tag = entry, Checked = shown, ImageKey = tool.Image == null ? null : entry };
@@ -142,13 +146,14 @@ namespace SuperPutty.Gui
             UpdateButtons();
         }
 
-        private void AddSeparator()
+        /// <summary>Insert a separator or a space after the selected entry</summary>
+        private void AddGap(string gap)
         {
             int index = this.list.SelectedItems.Count == 0 ? 0 : this.list.SelectedItems[0].Index + 1;
-            ListViewItem separator = CreateItem(IconBarLayout.Separator, true);
-            this.list.Items.Insert(index, separator);
-            separator.Selected = true;
-            separator.EnsureVisible();
+            ListViewItem item = CreateItem(gap, true);
+            this.list.Items.Insert(index, item);
+            item.Selected = true;
+            item.EnsureVisible();
             this.list.Focus();
         }
 

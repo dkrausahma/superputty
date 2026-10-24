@@ -303,7 +303,7 @@
             this.txtSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtSearch.Location = new System.Drawing.Point(0, 3);
+            this.txtSearch.Location = new System.Drawing.Point(23, 3);
             this.txtSearch.Margin = new System.Windows.Forms.Padding(4);
             this.txtSearch.Name = "txtSearch";
             this.txtSearch.Size = new System.Drawing.Size(362, 19);
@@ -342,7 +342,7 @@
             //
             this.btnRecent.AutoSize = true;
             this.btnRecent.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.btnRecent.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnRecent.Dock = System.Windows.Forms.DockStyle.Left;
             this.btnRecent.Image = global::SuperPutty.Properties.Resources.recent_sessions;
             this.btnRecent.Margin = new System.Windows.Forms.Padding(0);
             this.btnRecent.Name = "btnRecent";

@@ -1,3 +1,7 @@
+1.5.6.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Icon bar: empty spaces as spacers (Customize Icon Bar > Add Space); Toggle Command Mask as an icon
+ - Recent sessions button in front of the session search field
+ - Open Session dialog larger (640 x 480) and resizable; keeps its size while SuperPuTTY runs
 1.5.5.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
  - Help: built-in documentation for all features (Help > Documentation), works offline; F1 in a pane or dialog
    opens its page

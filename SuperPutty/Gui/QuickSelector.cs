@@ -13,9 +13,17 @@ namespace SuperPutty.Gui
         private static char[] sanitizeChars = { '*', '[', ',' };
         private static char[] splitChars = { ' ', '.', '*' };
 
+        /// <summary>The size the user last gave the dialog (kept while SuperPuTTY runs)</summary>
+        private static Size? lastSize;
+
         public QuickSelector()
         {
             InitializeComponent();
+            if (lastSize != null)
+            {
+                this.Size = lastSize.Value;
+            }
+            this.FormClosed += delegate { lastSize = this.Size; };
         }
 
         void DoClose()

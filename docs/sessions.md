@@ -7,7 +7,7 @@ session, right-click offers new sessions and folders, rename, connect all sessio
 and [Run Command on Hosts](run-on-hosts.md).
 
 - **Search**: type into the box at the top and press ++enter++ (the ✕ button clears it).
-- **Recent sessions**: the clock button next to the search box lists the **last 10 opened sessions**, newest
+- **Recent sessions**: the clock button in front of the search box lists the **last 10 opened sessions**, newest
   first, each once, with its folder on the right. A click opens it; **Clear List** empties it. The same list is
   available as an icon on the [icon bar](icon-bar.md). Only sessions of the session list count — quick
   connections and command tabs don't.
