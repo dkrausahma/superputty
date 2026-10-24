@@ -154,6 +154,42 @@ namespace SuperPutty.Utils
             }
         }
 
+        private static ProcessStartInfo CreateStartInfo(string exe, SessionData session, string remoteCommand)
+        {
+            // redirected output needs UseShellExecute = false
+            ProcessStartInfo startInfo = new ProcessStartInfo(exe)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true
+            };
+            foreach (string arg in BuildArguments(session, remoteCommand))
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+            Log.InfoFormat("plink: session={0}, command=[{1}]", session.SessionId,
+                remoteCommand.Length > 120 ? remoteCommand.Substring(0, 120) + "…" : remoteCommand);
+            return startInfo;
+        }
+
+        /// <summary>
+        /// Start a long-running command on the session's host (e.g. a loop printing values) and return the
+        /// process; the caller reads its output and kills it when done. Standard input is closed already.
+        /// </summary>
+        public static Process Start(SessionData session, string remoteCommand)
+        {
+            string exe = FindExecutable();
+            if (exe == null)
+            {
+                throw new FileNotFoundException("plink.exe not found next to PuTTY or on the PATH");
+            }
+            Process process = Process.Start(CreateStartInfo(exe, session, remoteCommand));
+            process.StandardInput.Close();
+            return process;
+        }
+
         /// <summary>Run a command on the session's host and collect its output</summary>
         public static Task<PlinkResult> RunAsync(SessionData session, string remoteCommand, TimeSpan timeout)
         {
@@ -165,22 +201,7 @@ namespace SuperPutty.Utils
 
             return Task.Run(() =>
             {
-                // redirected output needs UseShellExecute = false
-                ProcessStartInfo startInfo = new ProcessStartInfo(exe)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true
-                };
-                foreach (string arg in BuildArguments(session, remoteCommand))
-                {
-                    startInfo.ArgumentList.Add(arg);
-                }
-
-                Log.InfoFormat("plink: session={0}, command=[{1}]", session.SessionId, remoteCommand);
-                using (Process process = Process.Start(startInfo))
+                using (Process process = Process.Start(CreateStartInfo(exe, session, remoteCommand)))
                 {
                     process.StandardInput.Close();
                     Task<string> output = process.StandardOutput.ReadToEndAsync();
