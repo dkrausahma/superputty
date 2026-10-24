@@ -86,6 +86,7 @@ namespace SuperPutty
             }
             this.ApplySettings();
             HealthMonitor.Updated += HealthMonitor_Updated;
+            new ToolTip(this.components).SetToolTip(this.btnRecent, "Recently opened sessions");
 
             // populate sessions in the treeview from the registry
             this.LoadSessions();
@@ -1114,6 +1115,12 @@ namespace SuperPutty
         private void btnSearch_Click(object sender, EventArgs e)
         {
             this.ApplySearch(this.txtSearch.Text);
+        }
+
+        /// <summary>The last opened sessions, below the clock button</summary>
+        private void btnRecent_Click(object sender, EventArgs e)
+        {
+            RecentSessionsMenu.ShowBelow(this.btnRecent);
         }
 
         private void btnClear_Click(object sender, EventArgs e)

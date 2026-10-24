@@ -1,3 +1,7 @@
+1.5.4.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Configurable icon bar: every tool has an icon; right-click the bar (or View > Toolbars) to choose and order them
+ - Icons for all panes and tools in the menus
+ - Recent sessions: the last 10 opened sessions next to the session search and on the icon bar
 1.5.3.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
  - Run on Hosts (session tree folder menu, Tools menu): one command on many hosts in the background, results per
    host in a table (exit code, time, output), copy or save as a report; production hosts need a confirmation

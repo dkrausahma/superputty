@@ -420,6 +420,46 @@ namespace SuperPutty
             if (attributeName == "SessionId" && sessionsList.Contains(session))
             {
                 CommandStore.SessionIdChanged(session.OldSessionId, session.SessionId);
+                SetRecentSessions(RecentSessions.Rename(RecentSessions.Parse(Settings.RecentSessions), session.OldSessionId, session.SessionId));
+            }
+        }
+
+        /// <summary>Raised (UI thread) when the list of recently opened sessions changed</summary>
+        public static event EventHandler RecentSessionsChanged;
+
+        /// <summary>The recently opened sessions that still exist, newest first</summary>
+        public static List<SessionData> GetRecentSessions()
+        {
+            return RecentSessions.Resolve(RecentSessions.Parse(Settings.RecentSessions), GetSessionById);
+        }
+
+        /// <summary>Put a session of the session list at the top of the recent sessions (ad-hoc sessions and command tabs aren't)</summary>
+        public static void RememberRecentSession(SessionData session)
+        {
+            if (session == null || GetSessionById(session.SessionId) != session)
+            {
+                return;
+            }
+            SetRecentSessions(RecentSessions.Add(RecentSessions.Parse(Settings.RecentSessions), session.SessionId));
+        }
+
+        public static void ClearRecentSessions()
+        {
+            SetRecentSessions(new List<string>());
+        }
+
+        private static void SetRecentSessions(List<string> ids)
+        {
+            string text = RecentSessions.Format(ids);
+            if (text == (Settings.RecentSessions ?? string.Empty))
+            {
+                return;
+            }
+            Settings.RecentSessions = text;
+            Settings.Save();
+            if (RecentSessionsChanged != null)
+            {
+                RecentSessionsChanged(null, EventArgs.Empty);
             }
         }
 
@@ -499,6 +539,7 @@ namespace SuperPutty
                     ApplyIconForWindow(panel, session);
                     panel.Show(MainForm.DockPanel, session.LastDockstate);
                     ReportStatus("Opened session: {0} [{1}]", session.SessionId, session.Proto);
+                    RememberRecentSession(session);
 
                     if (!String.IsNullOrEmpty(session.SPSLFileName)
                         && File.Exists(session.SPSLFileName))

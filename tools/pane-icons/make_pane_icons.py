@@ -74,8 +74,141 @@ def host_info(d):
     d.rounded_rectangle((18, 54, 46, 60), radius=3, fill=GREY)
 
 
+NAVY = (44, 62, 80, 255)
+PURPLE = (136, 57, 190, 255)
+ORANGE = (230, 126, 34, 255)
+PAPER = (250, 250, 250, 255)
+
+
+def page(d, box=(12, 4, 52, 60), lines=True):
+    """A sheet of paper with a folded corner"""
+    x0, y0, x1, y1 = box
+    d.polygon([(x0, y0), (x1 - 12, y0), (x1, y0 + 12), (x1, y1), (x0, y1)], fill=PAPER, outline=DARK)
+    d.line([(x0, y0), (x1 - 12, y0), (x1, y0 + 12), (x1, y1), (x0, y1), (x0, y0)], fill=DARK, width=4)
+    d.polygon([(x1 - 12, y0), (x1 - 12, y0 + 12), (x1, y0 + 12)], fill=(200, 200, 200, 255))
+    if lines:
+        for y in range(y0 + 20, y1 - 6, 9):
+            d.line([(x0 + 8, y), (x1 - 8, y)], fill=GREY, width=4)
+
+
+def terminal(d, box=(4, 10, 60, 54)):
+    """A small terminal window with a prompt"""
+    x0, y0, x1, y1 = box
+    d.rounded_rectangle(box, radius=5, fill=NAVY)
+    d.rectangle((x0, y0, x1, y0 + 8), fill=(90, 110, 130, 255))
+    d.line([(x0 + 8, y0 + 18), (x0 + 16, y0 + 25), (x0 + 8, y0 + 32)], fill=WHITE, width=5)
+
+
+def session_detail(d):
+    page(d)
+    d.ellipse((30, 30, 60, 60), fill=BLUE)
+    d.rectangle((43, 42, 47, 55), fill=WHITE)
+    d.rectangle((43, 34, 47, 38), fill=WHITE)
+
+
+def log_viewer(d):
+    page(d)
+    d.ellipse((28, 30, 52, 54), outline=DARK, width=5)
+    d.line([(48, 50), (60, 62)], fill=DARK, width=7)
+
+
+def open_session(d):
+    terminal(d)
+    d.line([(28, 40), (44, 40)], fill=(80, 220, 120, 255), width=5)
+    d.ellipse((34, 26, 58, 50), outline=YELLOW, width=5)
+    d.line([(54, 46), (62, 54)], fill=YELLOW, width=6)
+
+
+def recent_sessions(d):
+    d.ellipse((4, 4, 60, 60), fill=BLUE)
+    d.ellipse((10, 10, 54, 54), fill=WHITE)
+    d.line([(32, 32), (32, 16)], fill=DARK, width=5)
+    d.line([(32, 32), (44, 40)], fill=DARK, width=5)
+    d.ellipse((28, 28, 36, 36), fill=DARK)
+
+
+def copy_last_command(d):
+    page(d, (22, 16, 60, 62), lines=False)
+    terminal(d, (2, 2, 42, 34))
+    d.line([(18, 22), (34, 22)], fill=WHITE, width=4)
+    for y in (36, 45, 54):
+        d.line([(30, y), (52, y)], fill=GREY, width=4)
+
+
+def explain_claude(d):
+    # speech bubble with a sparkle
+    d.rounded_rectangle((4, 6, 60, 46), radius=10, fill=ORANGE)
+    d.polygon([(14, 44), (28, 44), (12, 60)], fill=ORANGE)
+    cx, cy = 32, 26
+    d.polygon([(cx, cy - 14), (cx + 4, cy - 4), (cx + 14, cy), (cx + 4, cy + 4), (cx, cy + 14), (cx - 4, cy + 4), (cx - 14, cy), (cx - 4, cy - 4)], fill=WHITE)
+
+
+def session_log(d):
+    page(d)
+    d.rounded_rectangle((30, 34, 60, 60), radius=4, fill=NAVY)
+    d.line([(36, 41), (42, 47), (36, 53)], fill=WHITE, width=4)
+
+
+def log_folder(d):
+    d.polygon([(4, 14), (24, 14), (30, 20), (60, 20), (60, 56), (4, 56)], fill=YELLOW, outline=DARK)
+    d.line([(4, 14), (24, 14), (30, 20), (60, 20), (60, 56), (4, 56), (4, 14)], fill=(150, 110, 0, 255), width=4)
+    for y in (30, 39, 48):
+        d.line([(16, y), (48, y)], fill=(150, 110, 0, 255), width=4)
+
+
+def ssh_tunnels(d):
+    # two hosts joined by a pipe with arrows both ways
+    d.rounded_rectangle((2, 18, 18, 46), radius=3, fill=NAVY)
+    d.rounded_rectangle((46, 18, 62, 46), radius=3, fill=NAVY)
+    d.rectangle((18, 27, 46, 37), fill=(80, 220, 120, 255))
+    d.polygon([(22, 32), (30, 24), (30, 40)], fill=DARK)
+    d.polygon([(42, 32), (34, 24), (34, 40)], fill=DARK)
+
+
+def run_on_hosts(d):
+    for i, y in enumerate((6, 24, 42)):
+        d.rounded_rectangle((2, y, 40, y + 14), radius=3, fill=NAVY)
+        d.ellipse((30, y + 5, 35, y + 10), fill=(80, 220, 120, 255))
+    d.polygon([(40, 18), (62, 32), (40, 46)], fill=GREEN)
+
+
+def gear(d, color):
+    cx, cy = 32, 32
+    for i in range(8):
+        a = math.radians(i * 45)
+        x, y = cx + 22 * math.cos(a), cy + 22 * math.sin(a)
+        d.ellipse((x - 7, y - 7, x + 7, y + 7), fill=color)
+    d.ellipse((10, 10, 54, 54), fill=color)
+    d.ellipse((24, 24, 40, 40), fill=WHITE)
+
+
+def putty_config(d):
+    terminal(d, (2, 2, 44, 36))
+    d.line([(16, 20), (30, 20)], fill=WHITE, width=4)
+    # wrench
+    d.line([(30, 58), (52, 36)], fill=GREY, width=9)
+    d.ellipse((44, 24, 62, 42), fill=GREY)
+    d.ellipse((51, 27, 61, 37), fill=(0, 0, 0, 0))
+
+
+def options(d):
+    gear(d, GREY)
+
+
 ICONS = {
     "host_info_pane": host_info,
+    "session_detail": session_detail,
+    "log_viewer": log_viewer,
+    "open_session": open_session,
+    "recent_sessions": recent_sessions,
+    "copy_last_command": copy_last_command,
+    "explain_claude": explain_claude,
+    "session_log": session_log,
+    "log_folder": log_folder,
+    "ssh_tunnels": ssh_tunnels,
+    "run_on_hosts": run_on_hosts,
+    "putty_config": putty_config,
+    "options": options,
     "pane_add": add,
     "pane_edit": edit,
     "pane_delete": delete,
@@ -98,7 +231,7 @@ def main():
         images[name] = image
         print("wrote", name + ".png")
     if "--preview" in sys.argv:
-        cell = 16 * 8
+        cell = 16 * 6
         preview = Image.new("RGBA", (cell * len(images), cell + 20), (255, 255, 255, 255))
         d = ImageDraw.Draw(preview)
         for i, (name, image) in enumerate(images.items()):

@@ -220,4 +220,40 @@
   <data name="host_info_pane" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\host_info_pane.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="session_detail" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\session_detail.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="log_viewer" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\log_viewer.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="open_session" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\open_session.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="recent_sessions" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\recent_sessions.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="copy_last_command" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\copy_last_command.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="explain_claude" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\explain_claude.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="session_log" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\session_log.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="log_folder" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\log_folder.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ssh_tunnels" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ssh_tunnels.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="run_on_hosts" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\run_on_hosts.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="putty_config" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\putty_config.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="options" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\options.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

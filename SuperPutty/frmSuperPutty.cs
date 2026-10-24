@@ -125,6 +125,9 @@ namespace SuperPutty
                 content => content is ctlPuttyPanel && CanUpload(((ctlPuttyPanel)content).Session),
                 (content, files) => UploadFiles((ctlPuttyPanel)content, files));
 
+            // the icons of the IconBarLayout setting, before the command bar is placed after the icon bar
+            ApplyIconBarLayout();
+
             // force toolbar locations...designer likes to flip them around
             // row 1: menu; row 2: icon bar with the command bar right after it; row 3: quick connection bar (hidden)
             this.tsIcons.Location = new System.Drawing.Point(0, 24);
@@ -827,6 +830,7 @@ namespace SuperPutty
             this.explainInClaudeToolStripMenuItem.Enabled = canCopy;
             this.openSessionLogToolStripMenuItem.Enabled = panel != null && panel.LogFile != null;
             this.btnUploadFiles.Enabled = panel != null && CanUpload(panel.Session);
+            UpdateExtraIconBarButtons();
         }
 
         /// <summary>Update the icon bar once the current docking operation has finished</summary>

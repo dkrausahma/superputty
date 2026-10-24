@@ -30,8 +30,11 @@ and Pageant integration) but adds the window management on top.
   connect or from the script editor.
 - **File transfer** — PSCP-based file browser with drag-and-drop transfers; launch FileZilla or WinSCP for
   a session.
-- **Icon bar** with toggle buttons (pressed while active, click again to undo): show/close the Sessions pane (with Session Detail below it), show/close the Layouts
-  pane, and toggle **kiosk mode** (F11; full screen, menus and panels hidden, only terminal tabs visible).
+- **Configurable icon bar** — every tool has an icon; right-click the bar (or View → Toolbars → Customize Icon Bar)
+  to choose and order them. Pane icons are toggles (pressed while open, click again to close); **kiosk mode** (F11)
+  shows only the terminal tabs.
+- **Recent sessions** — the clock button next to the session search (and on the icon bar) lists the last 10 opened
+  sessions.
 - **Production at a glance** — terminal tabs carry a coloured bar for their environment (prod red with a
   warning badge, qual amber, dev green); running a command in several terminals warns when production
   systems are among them.

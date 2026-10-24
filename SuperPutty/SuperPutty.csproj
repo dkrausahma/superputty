@@ -37,7 +37,7 @@
     <EmbeddedResource Update="Log4netDebugLogForm.resx" DependentUpon="Log4netDebugLogForm.cs" />
     <!-- frmSuperPutty is split by feature into partial files: nest them under the form and keep
          Visual Studio from opening them in the form designer -->
-    <Compile Update="frmSuperPutty.Commands.cs;frmSuperPutty.Hooks.cs;frmSuperPutty.Kiosk.cs;frmSuperPutty.Monitoring.cs;frmSuperPutty.TerminalText.cs;frmSuperPutty.Upload.cs">
+    <Compile Update="frmSuperPutty.Commands.cs;frmSuperPutty.Hooks.cs;frmSuperPutty.IconBar.cs;frmSuperPutty.Kiosk.cs;frmSuperPutty.Monitoring.cs;frmSuperPutty.TerminalText.cs;frmSuperPutty.Upload.cs">
       <DependentUpon>frmSuperPutty.cs</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
