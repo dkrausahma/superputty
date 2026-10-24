@@ -171,6 +171,53 @@ namespace SuperPutty
                 .Where(s => s != null).Distinct().ToList(), false);
         }
 
+        #region Health notifications
+
+        private readonly HealthAlerts healthAlerts = new HealthAlerts();
+        private readonly List<HealthAlert> pendingHealthAlerts = new List<HealthAlert>();
+
+        /// <summary>Collects alerts for 2 s, so results arriving together (e.g. after start-up) make one notification</summary>
+        private readonly System.Windows.Forms.Timer healthAlertTimer = new System.Windows.Forms.Timer { Interval = 2000 };
+
+        /// <summary>A health result arrived (UI thread): queue a notification when a host turned critical or recovered</summary>
+        private void HealthMonitor_Updated(string sessionId)
+        {
+            SessionData session = SuperPuTTY.GetSessionById(sessionId);
+            // levels are tracked even with notifications off, so switching them on doesn't report old news
+            HealthAlert alert = this.healthAlerts.Update(sessionId, session == null ? sessionId : session.SessionName, HealthMonitor.Get(sessionId));
+            if (alert == null || !SuperPuTTY.Settings.NotifyHealthChanges)
+            {
+                return;
+            }
+            this.pendingHealthAlerts.RemoveAll(a => a.SessionId == alert.SessionId);
+            this.pendingHealthAlerts.Add(alert);
+            this.healthAlertTimer.Stop();
+            this.healthAlertTimer.Start();
+        }
+
+        private void ShowHealthAlerts()
+        {
+            this.healthAlertTimer.Stop();
+            if (this.pendingHealthAlerts.Count == 0)
+            {
+                return;
+            }
+            KeyValuePair<string, string> message = HealthAlerts.Compose(this.pendingHealthAlerts);
+            bool critical = this.pendingHealthAlerts.Any(a => a.Critical);
+            this.pendingHealthAlerts.Clear();
+            Log.InfoFormat("Health notification: {0} - {1}", message.Key, message.Value.Replace("\n", "; "));
+            ShowNotification(message.Key, message.Value, critical ? ToolTipIcon.Warning : ToolTipIcon.Info);
+        }
+
+        private void notifyHealthToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            this.notifyHealthToolStripMenuItem.Checked = !this.notifyHealthToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.NotifyHealthChanges = this.notifyHealthToolStripMenuItem.Checked;
+            SuperPuTTY.Settings.Save();
+        }
+
+        #endregion
+
         private void healthChecksToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.healthChecksToolStripMenuItem.Checked = !this.healthChecksToolStripMenuItem.Checked;
