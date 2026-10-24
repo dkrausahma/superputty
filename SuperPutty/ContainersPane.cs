@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using log4net;
 using SuperPutty.Data;
+using SuperPutty.Gui;
 using SuperPutty.Utils;
 
 namespace SuperPutty
@@ -31,6 +32,20 @@ namespace SuperPutty
         private List<DockerContainer> containers = new List<DockerContainer>();
         private int requestId;
 
+        /// <summary>Compose projects the user collapsed; kept across refreshes</summary>
+        private readonly HashSet<string> collapsedProjects = new HashSet<string>();
+
+        /// <summary>Tag of a compose project's header row: counts over all its containers, shown or not</summary>
+        private class ProjectGroup
+        {
+            public string Key { get; set; }
+            public string Title { get; set; }
+            public int Total { get; set; }
+            public int Running { get; set; }
+            /// <summary>Unhealthy or failed containers</summary>
+            public int Problems { get; set; }
+        }
+
         /// <summary>For the layout restore and the designer</summary>
         public ContainersPane() : this(null) { }
 
@@ -38,6 +53,25 @@ namespace SuperPutty
         {
             InitializeComponent();
             this.activeSession = activeSession;
+            // header rows two units high, container rows (name/status above image/ports) three
+            this.treeViewContainers.RowUnits = node => node.Tag is DockerContainer ? 3 : 2;
+            this.treeViewContainers.DrawRow += treeViewContainers_DrawRow;
+            this.treeViewContainers.AfterCollapse += (s, e) =>
+            {
+                ProjectGroup group = e.Node.Tag as ProjectGroup;
+                if (group != null)
+                {
+                    this.collapsedProjects.Add(group.Key);
+                }
+            };
+            this.treeViewContainers.AfterExpand += (s, e) =>
+            {
+                ProjectGroup group = e.Node.Tag as ProjectGroup;
+                if (group != null)
+                {
+                    this.collapsedProjects.Remove(group.Key);
+                }
+            };
             // Load fires when the docked window is shown for the first time
             this.Load += delegate { RefreshContainers(); };
         }
@@ -161,42 +195,62 @@ namespace SuperPutty
             string selected = SelectedContainer == null ? null : SelectedContainer.Name;
             bool showStopped = this.toolStripButtonShowStopped.Checked;
 
-            this.listViewContainers.BeginUpdate();
+            this.treeViewContainers.BeginUpdate();
             try
             {
-                this.listViewContainers.Items.Clear();
-                this.listViewContainers.Groups.Clear();
+                this.treeViewContainers.Nodes.Clear();
                 foreach (IGrouping<string, DockerContainer> project in this.containers
-                    .Where(c => showStopped || c.IsRunning)
                     .OrderBy(c => string.IsNullOrEmpty(c.Project) ? 1 : 0).ThenBy(c => c.Project).ThenBy(c => c.Name)
                     .GroupBy(c => c.Project ?? string.Empty))
                 {
-                    ListViewGroup group = this.listViewContainers.Groups.Add(project.Key,
-                        string.IsNullOrEmpty(project.Key) ? "(no compose project)" : project.Key);
-                    foreach (DockerContainer container in project)
+                    List<DockerContainer> shown = project.Where(c => showStopped || c.IsRunning).ToList();
+                    if (shown.Count == 0)
                     {
-                        ListViewItem item = new ListViewItem(new[] { container.Name, container.Status, container.Image }, group)
+                        continue;
+                    }
+                    ProjectGroup group = new ProjectGroup
+                    {
+                        Key = project.Key,
+                        Title = string.IsNullOrEmpty(project.Key) ? "(no compose project)" : project.Key,
+                        Total = project.Count(),
+                        Running = project.Count(c => c.IsRunning),
+                        Problems = project.Count(c => c.State == ContainerState.Unhealthy || c.State == ContainerState.Failed)
+                    };
+                    TreeNode groupNode = this.treeViewContainers.Nodes.Add(group.Title);
+                    groupNode.Tag = group;
+                    foreach (DockerContainer container in shown)
+                    {
+                        // Text is what the tree's type-ahead search matches
+                        TreeNode node = groupNode.Nodes.Add(container.ShortName);
+                        node.Tag = container;
+                        node.ToolTipText = ToolTip(container);
+                        if (container.Name == selected)
                         {
-                            Tag = container,
-                            ToolTipText = container.Image + "\n" + container.Status
-                        };
-                        if (container.IsUnhealthy)
-                        {
-                            item.ForeColor = Color.Firebrick;
+                            this.treeViewContainers.SelectedNode = node;
                         }
-                        else if (!container.IsRunning)
-                        {
-                            item.ForeColor = SystemColors.GrayText;
-                        }
-                        item.Selected = container.Name == selected;
-                        this.listViewContainers.Items.Add(item);
+                    }
+                    if (!this.collapsedProjects.Contains(group.Key))
+                    {
+                        groupNode.Expand();
                     }
                 }
+                this.treeViewContainers.ApplyRowHeights();
             }
             finally
             {
-                this.listViewContainers.EndUpdate();
+                this.treeViewContainers.EndUpdate();
             }
+        }
+
+        private static string ToolTip(DockerContainer container)
+        {
+            List<string> lines = new List<string> { container.Name, container.Image, container.Status };
+            List<string> ports = container.PublishedPorts;
+            if (ports.Count > 0)
+            {
+                lines.Add("Ports: " + string.Join(", ", ports));
+            }
+            return string.Join("\n", lines);
         }
 
         private string ListPrefix(SessionData target)
@@ -213,11 +267,108 @@ namespace SuperPutty
 
         #endregion
 
+        #region Drawing
+
+        private void treeViewContainers_DrawRow(object sender, TreeRowDrawEventArgs e)
+        {
+            DockerContainer container = e.Node.Tag as DockerContainer;
+            if (container != null)
+            {
+                DrawContainer(e, container);
+            }
+            else if (e.Node.Tag is ProjectGroup)
+            {
+                DrawGroup(e, (ProjectGroup)e.Node.Tag);
+            }
+        }
+
+        /// <summary>Project name, then "3/4 running" at the right (problems in red before it)</summary>
+        private void DrawGroup(TreeRowDrawEventArgs e, ProjectGroup group)
+        {
+            OwnerDrawTreeView tree = this.treeViewContainers;
+            Graphics g = e.Graphics;
+            Rectangle b = e.Bounds;
+            if (e.Node.Index > 0)
+            {
+                PaneStyle.DrawRule(g, e.RowBounds.Left + 4, e.RowBounds.Right - 4, e.RowBounds.Top, tree.BackColor);
+            }
+
+            string summary = string.Format("{0}/{1} running", group.Running, group.Total);
+            int right = b.Right;
+            int width = PaneStyle.MeasureText(g, summary, tree.SmallFont);
+            PaneStyle.DrawText(g, summary, tree.SmallFont, Rectangle.FromLTRB(right - width, b.Top, right, b.Bottom), e.SubtleColor);
+            right -= width + 6;
+            if (group.Problems > 0)
+            {
+                string problems = group.Problems == 1 ? "1 problem" : group.Problems + " problems";
+                width = PaneStyle.MeasureText(g, problems, tree.SmallFont);
+                PaneStyle.DrawText(g, problems, tree.SmallFont, Rectangle.FromLTRB(right - width, b.Top, right, b.Bottom), PaneStyle.Red);
+                right -= width + 6;
+            }
+            PaneStyle.DrawText(g, group.Title, tree.BoldFont, Rectangle.FromLTRB(b.Left, b.Top, right, b.Bottom), e.ForeColor);
+        }
+
+        /// <summary>
+        /// Line 1: status dot, short name (bold), status at the right.
+        /// Line 2: image (grey), published ports as chips at the right.
+        /// </summary>
+        private void DrawContainer(TreeRowDrawEventArgs e, DockerContainer container)
+        {
+            OwnerDrawTreeView tree = this.treeViewContainers;
+            Graphics g = e.Graphics;
+            Rectangle b = e.Bounds;
+            int lineHeight = (b.Height - 6) / 2;
+            Rectangle line1 = new Rectangle(b.Left, b.Top + 3, b.Width, lineHeight);
+            Rectangle line2 = new Rectangle(b.Left, line1.Bottom, b.Width, lineHeight);
+            ContainerState state = container.State;
+
+            PaneStyle.DrawDot(g, new Point(b.Left + 5, line1.Top + line1.Height / 2), 8, PaneStyle.StateColor(state));
+            int textLeft = b.Left + 14;
+
+            // status at the right, at most half the width; coloured when something needs attention
+            Color statusColor = state == ContainerState.Unhealthy || state == ContainerState.Failed ? PaneStyle.Red
+                : state == ContainerState.Starting || state == ContainerState.Restarting || state == ContainerState.Paused ? PaneStyle.Amber
+                : e.SubtleColor;
+            int statusWidth = Math.Min(PaneStyle.MeasureText(g, container.DisplayStatus, tree.SmallFont), (b.Right - textLeft) / 2);
+            PaneStyle.DrawText(g, container.DisplayStatus, tree.SmallFont,
+                Rectangle.FromLTRB(b.Right - statusWidth, line1.Top, b.Right, line1.Bottom), statusColor, TextFormatFlags.Right);
+            PaneStyle.DrawText(g, container.ShortName, tree.BoldFont,
+                Rectangle.FromLTRB(textLeft, line1.Top, b.Right - statusWidth - 8, line1.Bottom), container.IsRunning ? e.ForeColor : e.SubtleColor);
+
+            // ports from the right, as long as they leave 40 % of the width for the image, the rest as "+N"
+            List<string> ports = container.PublishedPorts;
+            int chipRight = b.Right;
+            int chipLimit = textLeft + (b.Right - textLeft) * 2 / 5;
+            int chipTop = line2.Top + 1;
+            int chipHeight = line2.Height - 2;
+            for (int i = ports.Count - 1; i >= 0; i--)
+            {
+                int width = PaneStyle.ChipWidth(g, ports[i], tree.SmallFont);
+                int reserve = i > 0 ? PaneStyle.ChipWidth(g, "+" + i, tree.SmallFont) + 3 : 0;
+                if (chipRight - width - reserve < chipLimit)
+                {
+                    string rest = "+" + (i + 1);
+                    int restWidth = PaneStyle.ChipWidth(g, rest, tree.SmallFont);
+                    if (chipRight - restWidth >= chipLimit)
+                    {
+                        PaneStyle.DrawChip(g, new Rectangle(chipRight - restWidth, chipTop, restWidth, chipHeight), rest, tree.SmallFont, tree.BackColor, e.SubtleColor);
+                        chipRight -= restWidth + 3;
+                    }
+                    break;
+                }
+                PaneStyle.DrawChip(g, new Rectangle(chipRight - width, chipTop, width, chipHeight), ports[i], tree.SmallFont, tree.BackColor, e.ForeColor);
+                chipRight -= width + 3;
+            }
+            PaneStyle.DrawText(g, container.Image, tree.SmallFont, Rectangle.FromLTRB(textLeft, line2.Top, chipRight - 5, line2.Bottom), e.SubtleColor);
+        }
+
+        #endregion
+
         #region Actions
 
         private DockerContainer SelectedContainer
         {
-            get { return this.listViewContainers.SelectedItems.Count == 0 ? null : this.listViewContainers.SelectedItems[0].Tag as DockerContainer; }
+            get { return this.treeViewContainers.SelectedNode == null ? null : this.treeViewContainers.SelectedNode.Tag as DockerContainer; }
         }
 
         private void OpenTab(string command, string what)
@@ -307,14 +458,18 @@ namespace SuperPutty
             }
         }
 
-        private void listViewContainers_DoubleClick(object sender, EventArgs e)
+        private void treeViewContainers_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            shellToolStripMenuItem_Click(sender, e);
+            // on a project header the tree itself expands/collapses
+            if (e.Button == MouseButtons.Left && e.Node.Tag is DockerContainer)
+            {
+                shellToolStripMenuItem_Click(sender, e);
+            }
         }
 
-        private void listViewContainers_KeyDown(object sender, KeyEventArgs e)
+        private void treeViewContainers_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter)
+            if (e.KeyCode == Keys.Enter && SelectedContainer != null)
             {
                 shellToolStripMenuItem_Click(sender, e);
                 e.Handled = e.SuppressKeyPress = true;

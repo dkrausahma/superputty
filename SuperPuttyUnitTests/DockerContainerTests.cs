@@ -34,6 +34,74 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void ReadsThePortsField()
+        {
+            List<DockerContainer> containers = DockerContainer.ParseList(
+                "verum-api\tapi-image\tUp 15 hours (healthy)\tverum\t0.0.0.0:9088->8082/tcp, :::9088->8082/tcp\n" +
+                "old\tbusybox\tExited (0) 2 days ago\t\n");
+
+            ClassicAssert.AreEqual("0.0.0.0:9088->8082/tcp, :::9088->8082/tcp", containers[0].Ports);
+            ClassicAssert.AreEqual(string.Empty, containers[1].Ports); // older output without the field
+        }
+
+        [Test]
+        public void PublishedPortsAreListedOnceAndShort()
+        {
+            CollectionAssert.AreEqual(new[] { "5013→5005", "9088→8082" },
+                DockerContainer.ParsePorts("0.0.0.0:5013->5005/tcp, :::5013->5005/tcp, 0.0.0.0:9088->8082/tcp, :::9088->8082/tcp"));
+            CollectionAssert.AreEqual(new[] { "127.0.0.1:8080→80", "53→53/udp", "8000-8001→8000-8001" },
+                DockerContainer.ParsePorts("127.0.0.1:8080->80/tcp, 0.0.0.0:53->53/udp, [::]:8000-8001->8000-8001/tcp"));
+            // exposed but not published
+            CollectionAssert.IsEmpty(DockerContainer.ParsePorts("6379/tcp"));
+            CollectionAssert.IsEmpty(DockerContainer.ParsePorts(null));
+        }
+
+        [Test]
+        public void StateFollowsDockersStatusText()
+        {
+            Dictionary<string, ContainerState> cases = new Dictionary<string, ContainerState>
+            {
+                { "Up 14 hours (healthy)", ContainerState.Healthy },
+                { "Up 2 minutes", ContainerState.Running },
+                { "Up 3 seconds (health: starting)", ContainerState.Starting },
+                { "Up 15 hours (unhealthy)", ContainerState.Unhealthy },
+                { "Up 2 hours (Paused)", ContainerState.Paused },
+                { "Restarting (1) 5 seconds ago", ContainerState.Restarting },
+                { "Exited (0) 2 days ago", ContainerState.Exited },
+                { "Exited (137) 1 hour ago", ContainerState.Exited },
+                { "Exited (143) 1 hour ago", ContainerState.Exited },
+                { "Exited (1) 2 days ago", ContainerState.Failed },
+                { "Dead", ContainerState.Failed },
+                { "Created", ContainerState.Created },
+                { "Removal In Progress", ContainerState.Other },
+            };
+            foreach (KeyValuePair<string, ContainerState> entry in cases)
+            {
+                ClassicAssert.AreEqual(entry.Value, new DockerContainer { Status = entry.Key }.State, entry.Key);
+            }
+        }
+
+        [Test]
+        public void DisplayStatusMovesTheHealthBehindADot()
+        {
+            ClassicAssert.AreEqual("Up 14 hours · healthy", new DockerContainer { Status = "Up 14 hours (healthy)" }.DisplayStatus);
+            ClassicAssert.AreEqual("Up 3 seconds · starting", new DockerContainer { Status = "Up 3 seconds (health: starting)" }.DisplayStatus);
+            ClassicAssert.AreEqual("Exited (1) 2 days ago", new DockerContainer { Status = "Exited (1) 2 days ago" }.DisplayStatus);
+        }
+
+        [Test]
+        public void ShortNameDropsTheComposeProject()
+        {
+            ClassicAssert.AreEqual("api", new DockerContainer { Name = "verum-dev-api", Project = "verum-dev" }.ShortName);
+            ClassicAssert.AreEqual("web_1", new DockerContainer { Name = "app_web_1", Project = "app" }.ShortName); // compose v1
+            ClassicAssert.AreEqual("verum-dev-api", new DockerContainer { Name = "verum-dev-api", Project = "other" }.ShortName);
+            ClassicAssert.AreEqual("verum-dev-api", new DockerContainer { Name = "verum-dev-api", Project = "" }.ShortName);
+            // nothing left after the prefix: keep the name
+            ClassicAssert.AreEqual("app-", new DockerContainer { Name = "app-", Project = "app" }.ShortName);
+            ClassicAssert.AreEqual("appx-web", new DockerContainer { Name = "appx-web", Project = "app" }.ShortName);
+        }
+
+        [Test]
         public void SkipsLinesThatAreNotContainers()
         {
             string output = "WARNING: something\nbad name;rm\timg\tUp 1 second\t\nok\timg\tUp 1 second\n";
@@ -58,7 +126,7 @@ namespace SuperPuttyUnitTests
         [Test]
         public void BuildsDockerCommands()
         {
-            ClassicAssert.AreEqual("docker ps -a --format '{{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project\"}}'", DockerCommands.List(""));
+            ClassicAssert.AreEqual("docker ps -a --format '{{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project\"}}\\t{{.Ports}}'", DockerCommands.List(""));
             ClassicAssert.AreEqual("docker exec -it web sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'", DockerCommands.Shell("", "web", false));
             ClassicAssert.AreEqual("sudo docker exec -it -u 0 web sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'", DockerCommands.Shell("sudo ", "web", true));
             ClassicAssert.AreEqual("docker logs -f --tail 200 web", DockerCommands.FollowLogs("", "web"));

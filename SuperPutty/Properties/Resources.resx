@@ -202,4 +202,19 @@
   <data name="kiosk_exit" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\kiosk_exit.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="pane_add" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pane_add.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pane_edit" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pane_edit.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pane_delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pane_delete.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pane_refresh" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pane_refresh.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="pane_show_stopped" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\pane_show_stopped.png;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>

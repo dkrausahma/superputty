@@ -52,6 +52,34 @@ namespace SuperPutty.Data
             return placeholders;
         }
 
+        /// <summary>The command with its placeholders' defaults left out ("{{compose dir:~}}" -> "{{compose dir}}"), for display</summary>
+        public static string WithoutDefaults(string command)
+        {
+            return Pattern.Replace(command ?? string.Empty, match => "{{" + match.Groups["name"].Value.Trim() + "}}");
+        }
+
+        /// <summary>The command split into plain text (false) and placeholders (true), in order, for highlighting</summary>
+        public static List<KeyValuePair<string, bool>> Segments(string command)
+        {
+            List<KeyValuePair<string, bool>> segments = new List<KeyValuePair<string, bool>>();
+            string text = command ?? string.Empty;
+            int position = 0;
+            foreach (Match match in Pattern.Matches(text))
+            {
+                if (match.Index > position)
+                {
+                    segments.Add(new KeyValuePair<string, bool>(text.Substring(position, match.Index - position), false));
+                }
+                segments.Add(new KeyValuePair<string, bool>(match.Value, true));
+                position = match.Index + match.Length;
+            }
+            if (position < text.Length)
+            {
+                segments.Add(new KeyValuePair<string, bool>(text.Substring(position), false));
+            }
+            return segments;
+        }
+
         public static bool HasPlaceholders(string command)
         {
             return Pattern.IsMatch(command ?? string.Empty);

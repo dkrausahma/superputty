@@ -1,3 +1,8 @@
+1.5.1.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Commands and Containers panes redrawn: status dots, uptime and published ports per container, project
+   headers with running/problem counts, command names above the command, highlighted placeholders, icon toolbars
+ - Containers pane and health checks work with sessions whose PuTTY profile stores the host name
+   (plink ran the host as a command: "bash: <host>: command not found")
 1.5.0.0 - Kraus-Ahma IT Consulting edition (2026-10-21)
  - Ported to .NET 10 (requires the .NET 10 Desktop Runtime), dependencies from NuGet, WiX 5 installer
  - Icon bar, kiosk mode (F11), menu and toolbars react to the first click
