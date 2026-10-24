@@ -30,6 +30,7 @@ namespace SuperPutty
         private ToolStripButton btnSessionDetailPane;
         private ToolStripButton btnLogViewerPane;
         private ToolStripDropDownButton btnRecentSessions;
+        private ToolStripButton btnCommandMask;
 
         /// <summary>All tools, in the order the customize dialog offers new ones</summary>
         private List<IconBarTool> IconBarTools
@@ -53,6 +54,15 @@ namespace SuperPutty
             // a placeholder so the arrow opens a drop-down at all
             this.btnRecentSessions.DropDownItems.Add("…");
 
+            // a second switch for the command bar's mask button (a ToolStrip item can sit in one bar only)
+            this.btnCommandMask = new ToolStripButton("Toggle Command Mask", Properties.Resources.asterisk_gray, delegate { this.tbBtnMaskText.PerformClick(); })
+            {
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                ImageTransparentColor = Color.Magenta,
+                ToolTipText = "Toggle Command Mask – show the command bar's text as *** (e.g. to send a password)"
+            };
+            this.tbBtnMaskText.CheckedChanged += delegate { this.btnCommandMask.Checked = this.tbBtnMaskText.Checked; };
+
             return new List<IconBarTool>
             {
                 Existing("sessions", this.btnSessionsPane, this.sessionsToolStripMenuItem),
@@ -74,6 +84,7 @@ namespace SuperPutty
                 Tool("tunnels", null, this.tunnelsOverviewToolStripMenuItem, Properties.Resources.ssh_tunnels),
                 Tool("runonhosts", null, this.runOnHostsToolStripMenuItem, Properties.Resources.run_on_hosts),
                 Tool("puttyconfig", null, this.puTTYConfigurationToolStripMenuItem, Properties.Resources.putty_config),
+                Tool("commandmask", this.btnCommandMask, this.toggleCommandMaskToolStripMenuItem, null, false),
                 Tool("options", null, this.optionsToolStripMenuItem, Properties.Resources.options),
                 Existing("kiosk", this.btnKioskToggle, this.kioskModeToolStripMenuItem),
             };
@@ -130,7 +141,9 @@ namespace SuperPutty
                 this.tsIcons.Items.Clear();
                 foreach (string entry in layout)
                 {
-                    this.tsIcons.Items.Add(entry == IconBarLayout.Separator ? new ToolStripSeparator() : tools[entry].Button);
+                    this.tsIcons.Items.Add(entry == IconBarLayout.Separator ? new ToolStripSeparator()
+                        : entry == IconBarLayout.Space ? new ToolStripLabel { AutoSize = false, Size = new Size(12, 22) }
+                        : tools[entry].Button);
                 }
             }
             finally

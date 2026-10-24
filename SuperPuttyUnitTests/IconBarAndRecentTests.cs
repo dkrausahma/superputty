@@ -37,6 +37,17 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void SpacesRepeatForWiderGapsButNotAtTheEnds()
+        {
+            CollectionAssert.AreEqual(new[] { "sessions", "_", "_", "layouts", "|", "_", "kiosk" },
+                IconBarLayout.Normalize(new[] { "_", "sessions", "_", "_", "layouts", "|", "_", "kiosk", "_", "|" }, Known));
+            CollectionAssert.AreEqual(IconBarLayout.Default.Split(','), IconBarLayout.Parse("_,|,_", Known), "only gaps: default");
+            ClassicAssert.IsTrue(IconBarLayout.IsGap("_"));
+            ClassicAssert.IsTrue(IconBarLayout.IsGap("|"));
+            ClassicAssert.IsFalse(IconBarLayout.IsGap("sessions"));
+        }
+
+        [Test]
         public void RecentSessionsNewestFirstWithoutDuplicates()
         {
             List<string> list = new List<string>();

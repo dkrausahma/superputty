@@ -33,7 +33,7 @@ and Pageant integration) but adds the window management on top.
 - **Configurable icon bar** — every tool has an icon; right-click the bar (or View → Toolbars → Customize Icon Bar)
   to choose and order them. Pane icons are toggles (pressed while open, click again to close); **kiosk mode** (F11)
   shows only the terminal tabs.
-- **Recent sessions** — the clock button next to the session search (and on the icon bar) lists the last 10 opened
+- **Recent sessions** — the clock button in front of the session search (and on the icon bar) lists the last 10 opened
   sessions.
 - **Production at a glance** — terminal tabs carry a coloured bar for their environment (prod red with a
   warning badge, qual amber, dev green); running a command in several terminals warns when production

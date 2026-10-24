@@ -6,11 +6,20 @@ namespace SuperPutty.Utils
 {
     /// <summary>
     /// Which icons the icon bar shows, in which order: a comma-separated list of item ids with "|" for a
-    /// separator, stored in the setting IconBarLayout (empty = <see cref="Default"/>).
+    /// separator line and "_" for an empty space, stored in the setting IconBarLayout (empty = <see cref="Default"/>).
     /// </summary>
     public static class IconBarLayout
     {
         public const string Separator = "|";
+
+        /// <summary>An empty gap; several in a row make a wider one</summary>
+        public const string Space = "_";
+
+        /// <summary>A separator or a space: allowed only between icons</summary>
+        public static bool IsGap(string entry)
+        {
+            return entry == Separator || entry == Space;
+        }
 
         public const string Default = "sessions,recent,layouts,commands,containers,hostinfo,|,copysession,upload,transfer,|,kiosk";
 
@@ -18,11 +27,12 @@ namespace SuperPutty.Utils
         public static List<string> Parse(string text, ICollection<string> knownIds)
         {
             List<string> entries = Normalize((text ?? string.Empty).Split(','), knownIds);
-            return entries.Any(e => e != Separator) ? entries : Normalize(Default.Split(','), knownIds);
+            return entries.Any(e => !IsGap(e)) ? entries : Normalize(Default.Split(','), knownIds);
         }
 
         /// <summary>
-        /// Known ids once each, in order; separators only between icons (none at the ends, never two in a row)
+        /// Known ids once each, in order; separators and spaces only between icons (none at the ends), never two
+        /// separators in a row (spaces may repeat for a wider gap)
         /// </summary>
         public static List<string> Normalize(IEnumerable<string> entries, ICollection<string> knownIds)
         {
@@ -38,12 +48,19 @@ namespace SuperPutty.Utils
                         result.Add(Separator);
                     }
                 }
+                else if (entry == Space)
+                {
+                    if (result.Count > 0)
+                    {
+                        result.Add(Space);
+                    }
+                }
                 else if (knownIds.Contains(entry) && seen.Add(entry))
                 {
                     result.Add(entry);
                 }
             }
-            while (result.Count > 0 && result[result.Count - 1] == Separator)
+            while (result.Count > 0 && IsGap(result[result.Count - 1]))
             {
                 result.RemoveAt(result.Count - 1);
             }

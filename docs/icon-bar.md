@@ -12,12 +12,14 @@ Right-click the icon bar → **Customize Icon Bar…** (also **View → Toolbars
 
 - **Checked** tools are shown, in the order of the list; unchecked ones are hidden.
 - **Move Up / Move Down** change the order.
-- **Add Separator** inserts a divider after the selected entry; uncheck a separator to drop it.
+- **Add Separator** inserts a divider line, **Add Space** an empty gap after the selected entry (several spaces
+  make a wider gap); uncheck one to drop it.
 - **Reset to Default** brings back the standard bar.
 
 Available tools: Sessions, Session Detail, Host Info, Layouts, Commands, Containers, Log Viewer, Open Session,
 Recent Sessions, Copy Session, Copy Last Command, Explain in Claude, Open Session Log, Open Log Folder, Upload
-Files, Transfer Files, SSH Tunnels, Run on Hosts, PuTTY Configuration, Options, Kiosk Mode.
+Files, Transfer Files, SSH Tunnels, Run on Hosts, Toggle Command Mask (shows the command bar's text as `***`, e.g.
+for a password), PuTTY Configuration, Options, Kiosk Mode — every entry of the Tools menu.
 
 The choice is stored in your settings and survives updates.
 
