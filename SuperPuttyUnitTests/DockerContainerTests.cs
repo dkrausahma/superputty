@@ -91,11 +91,42 @@ namespace SuperPuttyUnitTests
                 ExtraArgs = "-L 8080:localhost:80 -i \"C:\\keys\\deploy.ppk\""
             };
 
-            List<string> args = Plink.BuildArguments(session, "docker ps");
+            List<string> args = Plink.BuildArguments(session, "docker ps", null);
 
             CollectionAssert.AreEqual(new[] {
                 "-ssh", "-batch", "-T", "-P", "2222", "-load", "Prod Profile", "-l", "deploy",
                 "-i", @"C:\keys\deploy.ppk", "web01.example.com", "docker ps" }, args);
+        }
+
+        [Test]
+        public void PlinkTakesTheHostFromAProfileThatHasOne()
+        {
+            // plink reads the first plain argument after such a profile as the command ("bash: <host>: command not found")
+            SessionData session = new SessionData
+            {
+                SessionId = "Test/verum", Host = "10.0.0.5", Port = 22, Proto = ConnectionProtocol.SSH,
+                Username = "root", PuttySession = "verum-test"
+            };
+
+            List<string> args = Plink.BuildArguments(session, "docker ps", "10.0.0.5 ");
+
+            CollectionAssert.AreEqual(new[] {
+                "-ssh", "-batch", "-T", "-P", "22", "-load", "verum-test", "-l", "root", "docker ps" }, args);
+        }
+
+        [Test]
+        public void PlinkSkipsAProfileThatPointsToAnotherHost()
+        {
+            SessionData session = new SessionData
+            {
+                SessionId = "Test/verum", Host = "10.0.0.6", Port = 22, Proto = ConnectionProtocol.SSH,
+                Username = "root", PuttySession = "verum-test"
+            };
+
+            List<string> args = Plink.BuildArguments(session, "docker ps", "10.0.0.5");
+
+            CollectionAssert.AreEqual(new[] {
+                "-ssh", "-batch", "-T", "-P", "22", "-l", "root", "10.0.0.6", "docker ps" }, args);
         }
     }
 }

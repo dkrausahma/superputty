@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Web;
 using log4net;
-using Microsoft.Win32;
 using SuperPutty.Data;
 
 namespace SuperPutty.Utils
@@ -47,25 +45,10 @@ namespace SuperPutty.Utils
             return tunnels;
         }
 
-        /// <summary>The "PortForwardings" value of a saved PuTTY/KiTTY profile (registry key names are URL-encoded)</summary>
+        /// <summary>The "PortForwardings" value of a saved PuTTY/KiTTY profile</summary>
         private static string ReadProfileForwardings(string profile)
         {
-            using (RegistryKey sessions = PuttyDataHelper.RootAppKey)
-            {
-                if (sessions == null)
-                {
-                    return null;
-                }
-                string keyName = sessions.GetSubKeyNames().FirstOrDefault(name => HttpUtility.UrlDecode(name) == profile);
-                if (keyName == null)
-                {
-                    return null;
-                }
-                using (RegistryKey key = sessions.OpenSubKey(keyName))
-                {
-                    return key == null ? null : key.GetValue("PortForwardings") as string;
-                }
-            }
+            return PuttyDataHelper.ReadProfileValue(profile, "PortForwardings");
         }
 
         /// <summary>
