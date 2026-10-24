@@ -51,9 +51,12 @@ namespace SuperPutty
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.importSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromFileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.fromAnsibleInventoryToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromPuTTYSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fromPuTTYCMExportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.backUpSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.restoreSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem7 = new System.Windows.Forms.ToolStripSeparator();
             this.openSessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.switchSessionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -70,7 +73,9 @@ namespace SuperPutty
             this.layoutsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.commandsPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.containersPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.hostInfoPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.healthChecksToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.notifyHealthToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
             this.toolbarsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -110,6 +115,7 @@ namespace SuperPutty
             this.tsSendCommandCombo = new System.Windows.Forms.ToolStripComboBox();
             this.tbBtnSendCommand = new System.Windows.Forms.ToolStripButton();
             this.tbBtnMaskText = new System.Windows.Forms.ToolStripButton();
+            this.tbBtnLiveInput = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonRunScript = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorSendCommands = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripSeparatorCommandOptions = new System.Windows.Forms.ToolStripSeparator();
@@ -140,17 +146,20 @@ namespace SuperPutty
             this.btnLayoutsPane = new System.Windows.Forms.ToolStripButton();
             this.btnCommandsPane = new System.Windows.Forms.ToolStripButton();
             this.btnContainersPane = new System.Windows.Forms.ToolStripButton();
+            this.btnHostInfoPane = new System.Windows.Forms.ToolStripButton();
             this.toolStripSeparatorIcons = new System.Windows.Forms.ToolStripSeparator();
             this.btnCopySession = new System.Windows.Forms.ToolStripButton();
             this.btnUploadFiles = new System.Windows.Forms.ToolStripButton();
             this.btnTransferFiles = new System.Windows.Forms.ToolStripButton();
             this.transferFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.copyLastCommandToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.explainInClaudeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openSessionLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openLogFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.sessionLoggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.notifyActivityToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tunnelsOverviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runOnHostsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openFileDialogUpload = new System.Windows.Forms.OpenFileDialog();
             this.toolStripSeparatorIcons2 = new System.Windows.Forms.ToolStripSeparator();
             this.btnKioskExit = new System.Windows.Forms.ToolStripButton();
@@ -186,6 +195,8 @@ namespace SuperPutty
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.importSettingsToolStripMenuItem,
             this.toolStripMenuItem1,
+            this.backUpSettingsToolStripMenuItem,
+            this.restoreSettingsToolStripMenuItem,
             this.toolStripMenuItem7,
             this.openSessionToolStripMenuItem,
             this.switchSessionToolStripMenuItem,
@@ -206,7 +217,8 @@ namespace SuperPutty
             this.importSettingsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fromFileToolStripMenuItem,
             this.fromPuTTYSettingsToolStripMenuItem,
-            this.fromPuTTYCMExportToolStripMenuItem});
+            this.fromPuTTYCMExportToolStripMenuItem,
+            this.fromAnsibleInventoryToolStripMenuItem});
             this.importSettingsToolStripMenuItem.Name = "importSettingsToolStripMenuItem";
             this.importSettingsToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
             this.importSettingsToolStripMenuItem.Text = "&Import Sessions";
@@ -232,12 +244,36 @@ namespace SuperPutty
             this.fromPuTTYCMExportToolStripMenuItem.Text = "From PuTTY &CM Export";
             this.fromPuTTYCMExportToolStripMenuItem.Click += new System.EventHandler(this.fromPuTTYCMExportToolStripMenuItem_Click);
             // 
+            // fromAnsibleInventoryToolStripMenuItem
+            // 
+            this.fromAnsibleInventoryToolStripMenuItem.Enabled = false;
+            this.fromAnsibleInventoryToolStripMenuItem.Name = "fromAnsibleInventoryToolStripMenuItem";
+            this.fromAnsibleInventoryToolStripMenuItem.Size = new System.Drawing.Size(198, 22);
+            this.fromAnsibleInventoryToolStripMenuItem.Text = "From &Ansible Inventory (coming soon)";
+            this.fromAnsibleInventoryToolStripMenuItem.ToolTipText = "Planned: create sessions from an Ansible inventory (hosts, groups as folders)";
+            // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
             this.toolStripMenuItem1.Size = new System.Drawing.Size(203, 22);
             this.toolStripMenuItem1.Text = "&Export Sessions";
             this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            // 
+            // backUpSettingsToolStripMenuItem
+            // 
+            this.backUpSettingsToolStripMenuItem.Name = "backUpSettingsToolStripMenuItem";
+            this.backUpSettingsToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.backUpSettingsToolStripMenuItem.Text = "&Back up Settings...";
+            this.backUpSettingsToolStripMenuItem.ToolTipText = "Save settings, sessions, commands and layouts in one zip file";
+            this.backUpSettingsToolStripMenuItem.Click += new System.EventHandler(this.backUpSettingsToolStripMenuItem_Click);
+            // 
+            // restoreSettingsToolStripMenuItem
+            // 
+            this.restoreSettingsToolStripMenuItem.Name = "restoreSettingsToolStripMenuItem";
+            this.restoreSettingsToolStripMenuItem.Size = new System.Drawing.Size(203, 22);
+            this.restoreSettingsToolStripMenuItem.Text = "&Restore Settings...";
+            this.restoreSettingsToolStripMenuItem.ToolTipText = "Restore a backup zip file (applied on the next start)";
+            this.restoreSettingsToolStripMenuItem.Click += new System.EventHandler(this.restoreSettingsToolStripMenuItem_Click);
             // 
             // toolStripMenuItem7
             // 
@@ -314,6 +350,7 @@ namespace SuperPutty
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.sessionsToolStripMenuItem,
             this.sessionDetailToolStripMenuItem,
+            this.hostInfoPaneToolStripMenuItem,
             this.layoutsToolStripMenuItem,
             this.commandsPaneToolStripMenuItem,
             this.containersPaneToolStripMenuItem,
@@ -325,6 +362,7 @@ namespace SuperPutty
             this.showMenuBarToolStripMenuItem,
             this.alwaysOnTopToolStripMenuItem,
             this.healthChecksToolStripMenuItem,
+            this.notifyHealthToolStripMenuItem,
             this.sessionLoggingToolStripMenuItem,
             this.notifyActivityToolStripMenuItem,
             this.toolStripMenuItem9,
@@ -362,6 +400,14 @@ namespace SuperPutty
             this.containersPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.containersPaneToolStripMenuItem.Text = "Co&ntainers";
             this.containersPaneToolStripMenuItem.Click += new System.EventHandler(this.containersPaneToolStripMenuItem_Click);
+            //
+            // hostInfoPaneToolStripMenuItem
+            //
+            this.hostInfoPaneToolStripMenuItem.Image = global::SuperPutty.Properties.Resources.host_info_pane;
+            this.hostInfoPaneToolStripMenuItem.Name = "hostInfoPaneToolStripMenuItem";
+            this.hostInfoPaneToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.hostInfoPaneToolStripMenuItem.Text = "&Host Info";
+            this.hostInfoPaneToolStripMenuItem.Click += new System.EventHandler(this.hostInfoPaneToolStripMenuItem_Click);
             // 
             // healthChecksToolStripMenuItem
             // 
@@ -370,6 +416,14 @@ namespace SuperPutty
             this.healthChecksToolStripMenuItem.Text = "&Health Checks for Open Tabs";
             this.healthChecksToolStripMenuItem.ToolTipText = "Check load, disk, memory, failed units and containers of open tabs' hosts every 5 minutes (via plink)";
             this.healthChecksToolStripMenuItem.Click += new System.EventHandler(this.healthChecksToolStripMenuItem_Click);
+            //
+            // notifyHealthToolStripMenuItem
+            //
+            this.notifyHealthToolStripMenuItem.Name = "notifyHealthToolStripMenuItem";
+            this.notifyHealthToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.notifyHealthToolStripMenuItem.Text = "&Notify When a Host Turns Critical";
+            this.notifyHealthToolStripMenuItem.ToolTipText = "Windows notification when a checked host becomes critical (full disk, unhealthy container, …) and when it recovers";
+            this.notifyHealthToolStripMenuItem.Click += new System.EventHandler(this.notifyHealthToolStripMenuItem_Click);
             // 
             // sessionLoggingToolStripMenuItem
             // 
@@ -394,6 +448,14 @@ namespace SuperPutty
             this.tunnelsOverviewToolStripMenuItem.Text = "SSH T&unnels…";
             this.tunnelsOverviewToolStripMenuItem.ToolTipText = "All SSH tunnels of the open tabs";
             this.tunnelsOverviewToolStripMenuItem.Click += new System.EventHandler(this.tunnelsOverview_Click);
+            //
+            // runOnHostsToolStripMenuItem
+            //
+            this.runOnHostsToolStripMenuItem.Name = "runOnHostsToolStripMenuItem";
+            this.runOnHostsToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.runOnHostsToolStripMenuItem.Text = "Run on &Hosts…";
+            this.runOnHostsToolStripMenuItem.ToolTipText = "Run a command on the hosts of the active tab's folder and compare the results";
+            this.runOnHostsToolStripMenuItem.Click += new System.EventHandler(this.runOnHostsToolStripMenuItem_Click);
             // 
             // logViewerToolStripMenuItem
             // 
@@ -493,10 +555,12 @@ namespace SuperPutty
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.copySessionToolStripMenuItem,
             this.copyLastCommandToolStripMenuItem,
+            this.explainInClaudeToolStripMenuItem,
             this.openSessionLogToolStripMenuItem,
             this.openLogFolderToolStripMenuItem,
             this.transferFilesToolStripMenuItem,
             this.tunnelsOverviewToolStripMenuItem,
+            this.runOnHostsToolStripMenuItem,
             this.toolStripMenuItemCopySessionSep,
             this.puTTYConfigurationToolStripMenuItem,
             this.toolStripMenuItem11,
@@ -571,6 +635,7 @@ namespace SuperPutty
             this.documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
             this.documentationToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.documentationToolStripMenuItem.Text = "&Documentation";
+            this.documentationToolStripMenuItem.ShortcutKeyDisplayString = "F1";
             this.documentationToolStripMenuItem.Click += new System.EventHandler(this.helpToolStripMenuItem1_Click);
             // 
             // diagnosticsToolStripMenuItem
@@ -754,6 +819,7 @@ namespace SuperPutty
             this.btnLayoutsPane,
             this.btnCommandsPane,
             this.btnContainersPane,
+            this.btnHostInfoPane,
             this.toolStripSeparatorIcons,
             this.btnCopySession,
             this.btnUploadFiles,
@@ -812,6 +878,16 @@ namespace SuperPutty
             this.btnContainersPane.ToolTipText = "Show or close the Containers pane (docker on the active tab's host)";
             this.btnContainersPane.Click += new System.EventHandler(this.btnContainersPane_Click);
             //
+            // btnHostInfoPane
+            //
+            this.btnHostInfoPane.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.btnHostInfoPane.Image = global::SuperPutty.Properties.Resources.host_info_pane;
+            this.btnHostInfoPane.Name = "btnHostInfoPane";
+            this.btnHostInfoPane.Size = new System.Drawing.Size(23, 22);
+            this.btnHostInfoPane.Text = "Host Info";
+            this.btnHostInfoPane.ToolTipText = "Show or close the Host Info pane (live facts about the active tab's host)";
+            this.btnHostInfoPane.Click += new System.EventHandler(this.btnHostInfoPane_Click);
+            //
             // toolStripSeparatorIcons
             //
             this.toolStripSeparatorIcons.Name = "toolStripSeparatorIcons";
@@ -862,6 +938,14 @@ namespace SuperPutty
             this.copyLastCommandToolStripMenuItem.Text = "Copy &Last Command";
             this.copyLastCommandToolStripMenuItem.ToolTipText = "Copy only the last command and its output (e.g. to paste into a chat)";
             this.copyLastCommandToolStripMenuItem.Click += new System.EventHandler(this.copyLastCommand_Click);
+            // 
+            // explainInClaudeToolStripMenuItem
+            // 
+            this.explainInClaudeToolStripMenuItem.Name = "explainInClaudeToolStripMenuItem";
+            this.explainInClaudeToolStripMenuItem.Size = new System.Drawing.Size(269, 22);
+            this.explainInClaudeToolStripMenuItem.Text = "E&xplain in Claude...";
+            this.explainInClaudeToolStripMenuItem.ToolTipText = "Show the last command and its output for review, then ask Claude to explain it";
+            this.explainInClaudeToolStripMenuItem.Click += new System.EventHandler(this.explainInClaude_Click);
             //
             // openSessionLogToolStripMenuItem
             //
@@ -917,6 +1001,7 @@ namespace SuperPutty
             this.tbBtnSendCommand,
             this.toolStripSeparatorCommandOptions,
             this.tbBtnMaskText,
+            this.tbBtnLiveInput,
             this.toolStripButtonRunScript,
             this.toolStripSeparatorSendCommands,
             this.tbBtnSelectDocs});
@@ -962,6 +1047,18 @@ namespace SuperPutty
             this.tbBtnMaskText.Text = "Mask Text";
             this.tbBtnMaskText.ToolTipText = "Mask text when typing";
             this.tbBtnMaskText.Click += new System.EventHandler(this.tbBtnMaskText_Click);
+            // 
+            // tbBtnLiveInput
+            // 
+            this.tbBtnLiveInput.CheckOnClick = true;
+            this.tbBtnLiveInput.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tbBtnLiveInput.Image = global::SuperPutty.Properties.Resources.keyboard;
+            this.tbBtnLiveInput.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tbBtnLiveInput.Name = "tbBtnLiveInput";
+            this.tbBtnLiveInput.Size = new System.Drawing.Size(23, 22);
+            this.tbBtnLiveInput.Text = "Live Input";
+            this.tbBtnLiveInput.ToolTipText = "Live input: what you type in a tab that accepts commands is typed in all of them";
+            this.tbBtnLiveInput.CheckedChanged += new System.EventHandler(this.tbBtnLiveInput_CheckedChanged);
             // 
             // toolStripButtonRunScript
             // 
@@ -1191,6 +1288,8 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem documentationToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem aboutSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem backUpSettingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem restoreSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem importSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem2;
@@ -1236,6 +1335,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem editSessionsInNotepadToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem reloadSessionsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromFileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem fromAnsibleInventoryToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromPuTTYSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fromPuTTYCMExportToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sessionsToolStripMenuItem;
@@ -1247,6 +1347,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem exitSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripButton toolStripButtonClearFields;
         private System.Windows.Forms.ToolStripButton tbBtnMaskText;
+        private System.Windows.Forms.ToolStripButton tbBtnLiveInput;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorSendCommands;
         private System.Windows.Forms.ToolStripButton tbBtnSelectDocs;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem9;
@@ -1272,7 +1373,10 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnCommandsPane;
         private System.Windows.Forms.ToolStripButton btnContainersPane;
         private System.Windows.Forms.ToolStripMenuItem containersPaneToolStripMenuItem;
+        private System.Windows.Forms.ToolStripButton btnHostInfoPane;
+        private System.Windows.Forms.ToolStripMenuItem hostInfoPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem healthChecksToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem notifyHealthToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
         private System.Windows.Forms.ToolStripButton btnCopySession;
@@ -1280,10 +1384,12 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnTransferFiles;
         private System.Windows.Forms.ToolStripMenuItem transferFilesToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem copyLastCommandToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem explainInClaudeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openSessionLogToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem openLogFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem sessionLoggingToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem notifyActivityToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runOnHostsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tunnelsOverviewToolStripMenuItem;
         private System.Windows.Forms.OpenFileDialog openFileDialogUpload;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons2;

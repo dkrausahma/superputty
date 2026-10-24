@@ -57,9 +57,53 @@ namespace SuperPutty
             // send log to console
             log4net.Config.BasicConfigurator.Configure();
 
+            // a restore chosen in File > Restore Settings is applied on the next start, before the settings are loaded
+            string restoreInto = null;
+            try
+            {
+                restoreInto = SettingsBackup.ApplySettingsFile(SettingsBackup.PendingFolder, new PortableSettingsProvider().GetAppSettingsFilePath());
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Unable to restore the settings file", ex);
+            }
+
             // .NET stores user.config under a different folder name than .NET Framework did;
             // must run before the first access to SuperPuTTY.Settings
             LegacyUserConfig.ImportIfMissing();
+
+            // user.config lives in a folder per version: carry the values over on the first start of a new version
+            if (SuperPuTTY.Settings.ApplicationVersion != SuperPuTTY.Version)
+            {
+                Log.InfoFormat("Version changed ({0} -> {1}), upgrading user settings", SuperPuTTY.Settings.ApplicationVersion, SuperPuTTY.Version);
+                SuperPuTTY.Settings.Upgrade();
+                SuperPuTTY.Settings.ApplicationVersion = SuperPuTTY.Version;
+                SuperPuTTY.Settings.Save();
+            }
+
+            // before 1.5 some settings lived in user.config instead of SuperPuTTY.settings: move them once
+            if (!SuperPuTTY.Settings.UserConfigMigrated)
+            {
+                UserConfigMigration.Run(SuperPuTTY.Settings);
+            }
+
+            if (restoreInto != null)
+            {
+                try
+                {
+                    // the data goes into this computer's settings folder, not the one recorded in the backup
+                    if (restoreInto.Length > 0 && SuperPuTTY.Settings.SettingsFolder != restoreInto)
+                    {
+                        SuperPuTTY.Settings.SettingsFolder = restoreInto;
+                        SuperPuTTY.Settings.Save();
+                    }
+                    SettingsBackup.ApplyData(SettingsBackup.PendingFolder, SuperPuTTY.Settings.SettingsFolder);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Unable to restore the settings folder", ex);
+                }
+            }
 
             bool onlyInstance = false;
             mutex = new Mutex(true, "SuperPutty", out onlyInstance);

@@ -27,6 +27,27 @@ namespace SuperPutty.Data
                 return key;
             }
         }
+        /// <summary>A string value of a saved PuTTY/KiTTY profile (registry key names are URL-encoded); null if missing</summary>
+        public static string ReadProfileValue(string profile, string valueName)
+        {
+            using (RegistryKey sessions = RootAppKey)
+            {
+                if (sessions == null)
+                {
+                    return null;
+                }
+                string keyName = sessions.GetSubKeyNames().FirstOrDefault(name => HttpUtility.UrlDecode(name) == profile);
+                if (keyName == null)
+                {
+                    return null;
+                }
+                using (RegistryKey key = sessions.OpenSubKey(keyName))
+                {
+                    return key == null ? null : key.GetValue(valueName) as string;
+                }
+            }
+        }
+
         public static List<string> GetSessionNames()
         {
             List<string> names = new List<string> {SessionEmptySettings};

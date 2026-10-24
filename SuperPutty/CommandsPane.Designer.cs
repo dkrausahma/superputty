@@ -21,7 +21,7 @@ namespace SuperPutty
             this.toolStripButtonEdit = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonDelete = new System.Windows.Forms.ToolStripButton();
             this.textBoxFilter = new System.Windows.Forms.TextBox();
-            this.treeViewCommands = new System.Windows.Forms.TreeView();
+            this.treeViewCommands = new SuperPutty.Gui.OwnerDrawTreeView();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.typeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,27 +56,30 @@ namespace SuperPutty
             //
             // toolStripButtonAdd
             //
-            this.toolStripButtonAdd.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonAdd.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonAdd.Image = global::SuperPutty.Properties.Resources.pane_add;
             this.toolStripButtonAdd.Name = "toolStripButtonAdd";
-            this.toolStripButtonAdd.Size = new System.Drawing.Size(42, 22);
+            this.toolStripButtonAdd.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonAdd.Text = "Add…";
             this.toolStripButtonAdd.ToolTipText = "Add a command";
             this.toolStripButtonAdd.Click += new System.EventHandler(this.add_Click);
             //
             // toolStripButtonEdit
             //
-            this.toolStripButtonEdit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonEdit.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonEdit.Image = global::SuperPutty.Properties.Resources.pane_edit;
             this.toolStripButtonEdit.Name = "toolStripButtonEdit";
-            this.toolStripButtonEdit.Size = new System.Drawing.Size(39, 22);
+            this.toolStripButtonEdit.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonEdit.Text = "Edit…";
             this.toolStripButtonEdit.ToolTipText = "Edit the selected command (F2)";
             this.toolStripButtonEdit.Click += new System.EventHandler(this.edit_Click);
             //
             // toolStripButtonDelete
             //
-            this.toolStripButtonDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonDelete.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonDelete.Image = global::SuperPutty.Properties.Resources.pane_delete;
             this.toolStripButtonDelete.Name = "toolStripButtonDelete";
-            this.toolStripButtonDelete.Size = new System.Drawing.Size(44, 22);
+            this.toolStripButtonDelete.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonDelete.Text = "Delete";
             this.toolStripButtonDelete.ToolTipText = "Delete the selected command (Del)";
             this.toolStripButtonDelete.Click += new System.EventHandler(this.delete_Click);
@@ -95,7 +98,6 @@ namespace SuperPutty
             //
             this.treeViewCommands.ContextMenuStrip = this.contextMenuStrip;
             this.treeViewCommands.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.treeViewCommands.Font = new System.Drawing.Font("Lucida Console", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.treeViewCommands.HideSelection = false;
             this.treeViewCommands.Location = new System.Drawing.Point(0, 45);
             this.treeViewCommands.Name = "treeViewCommands";
@@ -265,7 +267,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton toolStripButtonEdit;
         private System.Windows.Forms.ToolStripButton toolStripButtonDelete;
         private System.Windows.Forms.TextBox textBoxFilter;
-        private System.Windows.Forms.TreeView treeViewCommands;
+        private SuperPutty.Gui.OwnerDrawTreeView treeViewCommands;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem typeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;

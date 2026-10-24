@@ -230,8 +230,66 @@ namespace SuperPutty.Data
             }
         }
 
+        /// <summary>
+        /// The extra arguments as saved: without a "-pw" password, which is saved encrypted in
+        /// <see cref="ProtectedPasswordXml"/> instead. Old files with a plain "-pw" are read as they are and
+        /// converted on the next save.
+        /// </summary>
+        [XmlAttribute("ExtraArgs")]
+        [Browsable(false)]
+        public string ExtraArgsXml
+        {
+            get
+            {
+                string args = CommandLineOptions.replacePassword(this.ExtraArgs, string.Empty);
+                return string.IsNullOrWhiteSpace(args) ? null : System.Text.RegularExpressions.Regex.Replace(args.Trim(), @"\s{2,}", " ");
+            }
+            set { this.ExtraArgs = value; }
+        }
+
+        /// <summary>The "-pw" password of the extra arguments, encrypted with DPAPI (only this Windows user can read it)</summary>
+        [XmlAttribute("ProtectedPassword")]
+        [Browsable(false)]
+        public string ProtectedPasswordXml
+        {
+            get { return Dpapi.Protect(CommandLineOptions.getcommand(this.ExtraArgs, "-pw")); }
+            set { this.loadedProtectedPassword = value; }
+        }
+
+        /// <summary>Set while loading; merged into the extra arguments by <see cref="RestorePassword"/></summary>
+        private string loadedProtectedPassword;
+
+        /// <summary>
+        /// After loading: decrypt the saved password and put it back into the extra arguments as "-pw", where the
+        /// rest of SuperPuTTY expects it. False if it couldn't be decrypted (another Windows user or machine).
+        /// </summary>
+        public bool RestorePassword()
+        {
+            string protectedPassword = this.loadedProtectedPassword;
+            this.loadedProtectedPassword = null;
+            if (string.IsNullOrEmpty(protectedPassword))
+            {
+                return true;
+            }
+            try
+            {
+                string password = Dpapi.Unprotect(protectedPassword);
+                if (!string.IsNullOrEmpty(password) && string.IsNullOrEmpty(CommandLineOptions.getcommand(this.ExtraArgs, "-pw")))
+                {
+                    string quoted = password.IndexOfAny(new[] { ' ', '\t' }) >= 0 ? "\"" + password + "\"" : password;
+                    this.ExtraArgs = ((this.ExtraArgs ?? string.Empty) + " -pw " + quoted).Trim();
+                }
+                return true;
+            }
+            catch (System.Security.Cryptography.CryptographicException ex)
+            {
+                Log.Warn("Could not decrypt the saved password of session " + this.SessionId + " (saved by another Windows user or on another machine?)", ex);
+                return false;
+            }
+        }
+
         private string _ExtraArgs;
-        [XmlAttribute]
+        [XmlIgnore]
         [DisplayName("Extra Arguments")]
         [Description("Extra PuTTY arguments.")]
         public string ExtraArgs
@@ -377,6 +435,10 @@ namespace SuperPutty.Data
                 using (TextReader r = new StreamReader(fileName))
                 {
                     sessions = (List<SessionData>)s.Deserialize(r);
+                }
+                foreach (SessionData session in sessions)
+                {
+                    session.RestorePassword();
                 }
                 Log.InfoFormat("Loaded {0} sessions from {1}", sessions.Count, fileName);
             }
@@ -537,7 +599,9 @@ namespace SuperPutty.Data
 
             foreach (PropertyInfo pi in SessionToCopy.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
-                if (pi.CanWrite)
+                // the ...Xml properties only shape the saved file (e.g. strip and encrypt the password); copying them
+                // would overwrite the copied ExtraArgs with the stripped version
+                if (pi.CanWrite && !pi.Name.EndsWith("Xml", StringComparison.Ordinal))
                 {
                     pi.SetValue(this, pi.GetValue(SessionToCopy, null), null);
                 }

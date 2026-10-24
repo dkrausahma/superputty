@@ -41,6 +41,11 @@ namespace SuperPutty
 
     public partial class SessionTreeview : ToolWindow, IComparer
     {
+        protected override string HelpPage
+        {
+            get { return "sessions.html"; }
+        }
+
         public event SelectionChangedHandler SelectionChanged;
         private static readonly ILog Log = LogManager.GetLogger(typeof(SessionTreeview));
 
@@ -86,6 +91,7 @@ namespace SuperPutty
             }
             this.ApplySettings();
             HealthMonitor.Updated += HealthMonitor_Updated;
+            new ToolTip(this.components).SetToolTip(this.btnRecent, "Recently opened sessions");
 
             // populate sessions in the treeview from the registry
             this.LoadSessions();
@@ -654,6 +660,18 @@ namespace SuperPutty
             }
         }
 
+        private void runOnHostsFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TreeNode node = this.treeView1.SelectedNode;
+            if (node != null && !IsSessionNode(node))
+            {
+                List<SessionData> sessions = new List<SessionData>();
+                GetAllSessions(node, sessions);
+                Gui.dlgRunOnHosts.ShowFor(this.DockPanel == null ? (IWin32Window)this : this.DockPanel.FindForm(), sessions,
+                    node == this.nodeRoot ? "All sessions" : "Folder " + node.Text);
+            }
+        }
+
         private void checkHealthFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
             TreeNode node = this.treeView1.SelectedNode;
@@ -1102,6 +1120,12 @@ namespace SuperPutty
         private void btnSearch_Click(object sender, EventArgs e)
         {
             this.ApplySearch(this.txtSearch.Text);
+        }
+
+        /// <summary>The last opened sessions, below the clock button</summary>
+        private void btnRecent_Click(object sender, EventArgs e)
+        {
+            RecentSessionsMenu.ShowBelow(this.btnRecent);
         }
 
         private void btnClear_Click(object sender, EventArgs e)

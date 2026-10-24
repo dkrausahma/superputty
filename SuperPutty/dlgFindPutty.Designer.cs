@@ -75,6 +75,7 @@
             this.checkBoxPersistTsHistory = new System.Windows.Forms.CheckBox();
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
             this.checkBoxAllowPuttyPWArg = new System.Windows.Forms.CheckBox();
+            this.checkBoxAutoReconnect = new System.Windows.Forms.CheckBox();
             this.checkConfirmTabClose = new System.Windows.Forms.CheckBox();
             this.tabControl = new System.Windows.Forms.TabControl();
             this.tabPageGeneral = new System.Windows.Forms.TabPage();
@@ -595,10 +596,21 @@
             this.checkBoxAllowPuttyPWArg.Name = "checkBoxAllowPuttyPWArg";
             this.checkBoxAllowPuttyPWArg.Size = new System.Drawing.Size(286, 17);
             this.checkBoxAllowPuttyPWArg.TabIndex = 0;
-            this.checkBoxAllowPuttyPWArg.Text = "Allow plain text passwords on putty command line";
-            this.toolTip.SetToolTip(this.checkBoxAllowPuttyPWArg, "Enabling this will allow plain text passwords to be cached and shown on the comma" +
-        "nd line. It is Recommended you do NOT enable this");
+            this.checkBoxAllowPuttyPWArg.Text = "Pass stored passwords to PuTTY";
+            this.toolTip.SetToolTip(this.checkBoxAllowPuttyPWArg, "Stored passwords (-pw in the extra arguments) are saved encrypted for your Windows user and passed to PuTTY, PSC" +
+        "P and plink through a short-lived file (-pwfile, PuTTY 0.77+), not the command line. Key-based login with Pageant is still recommended.");
             this.checkBoxAllowPuttyPWArg.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxAutoReconnect
+            // 
+            this.checkBoxAutoReconnect.AutoSize = true;
+            this.checkBoxAutoReconnect.Location = new System.Drawing.Point(373, 347);
+            this.checkBoxAutoReconnect.Name = "checkBoxAutoReconnect";
+            this.checkBoxAutoReconnect.Size = new System.Drawing.Size(220, 17);
+            this.checkBoxAutoReconnect.TabIndex = 45;
+            this.checkBoxAutoReconnect.Text = "Reconnect dropped sessions automatically";
+            this.toolTip.SetToolTip(this.checkBoxAutoReconnect, "When PuTTY loses the connection, close its error box and restart the session after 5 s (then 10, 20, 40, 60 s). Without this, the tab offers a Reconnect button.");
+            this.checkBoxAutoReconnect.UseVisualStyleBackColor = true;
             // 
             // checkConfirmTabClose
             // 
@@ -772,6 +784,7 @@
             // 
             // tabPageGUI
             // 
+            this.tabPageGUI.Controls.Add(this.checkBoxAutoReconnect);
             this.tabPageGUI.Controls.Add(this.groupBox9);
             this.tabPageGUI.Controls.Add(this.groupBox8);
             this.tabPageGUI.Controls.Add(this.groupBox7);
@@ -1306,6 +1319,7 @@
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         private System.Windows.Forms.GroupBox groupBox9;
         private System.Windows.Forms.CheckBox checkBoxAllowPuttyPWArg;
+        private System.Windows.Forms.CheckBox checkBoxAutoReconnect;
         private System.Windows.Forms.Button buttonBrowseFilezilla;
         private System.Windows.Forms.Label label22;
         private System.Windows.Forms.TextBox textBoxFilezillaLocation;

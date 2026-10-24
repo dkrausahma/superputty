@@ -26,6 +26,26 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void SplitsCommandsIntoTextAndPlaceholders()
+        {
+            List<KeyValuePair<string, bool>> segments = CommandPlaceholders.Segments("docker logs -f {{service}} | grep {{pattern:error}}");
+
+            CollectionAssert.AreEqual(new[] { "docker logs -f ", "{{service}}", " | grep ", "{{pattern:error}}" }, segments.Select(s => s.Key));
+            CollectionAssert.AreEqual(new[] { false, true, false, true }, segments.Select(s => s.Value));
+            // docker's own templates are plain text
+            ClassicAssert.IsFalse(CommandPlaceholders.Segments("docker ps --format '{{.Names}}'").Any(s => s.Value));
+            CollectionAssert.IsEmpty(CommandPlaceholders.Segments(null));
+        }
+
+        [Test]
+        public void DisplayLeavesOutTheDefaults()
+        {
+            ClassicAssert.AreEqual("docker compose --project-directory {{compose dir}} restart {{service}}",
+                CommandPlaceholders.WithoutDefaults("docker compose --project-directory {{compose dir:~}} restart {{service}}"));
+            ClassicAssert.AreEqual("docker ps --format '{{.Names}}'", CommandPlaceholders.WithoutDefaults("docker ps --format '{{.Names}}'"));
+        }
+
+        [Test]
         public void LeavesShellAndDockerSyntaxAlone()
         {
             ClassicAssert.IsFalse(CommandPlaceholders.HasPlaceholders("docker ps --format '{{.Names}}\\t{{.Status}}'"));

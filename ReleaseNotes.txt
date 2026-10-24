@@ -1,3 +1,47 @@
+1.5.6.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Icon bar: empty spaces as spacers (Customize Icon Bar > Add Space); Toggle Command Mask as an icon
+ - Recent sessions button in front of the session search field
+ - Open Session dialog larger (640 x 480) and resizable; keeps its size while SuperPuTTY runs
+1.5.5.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Help: built-in documentation for all features (Help > Documentation), works offline; F1 in a pane or dialog
+   opens its page
+1.5.4.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Configurable icon bar: every tool has an icon; right-click the bar (or View > Toolbars) to choose and order them
+ - Icons for all panes and tools in the menus
+ - Recent sessions: the last 10 opened sessions next to the session search and on the icon bar
+1.5.3.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Run on Hosts (session tree folder menu, Tools menu): one command on many hosts in the background, results per
+   host in a table (exit code, time, output), copy or save as a report; production hosts need a confirmation
+ - Containers pane: click a port chip to open it in the browser, through an SSH tunnel when not reachable directly
+ - Host Info: NVIDIA GPUs (utilisation, VRAM, temperature) and the processes holding GPU memory
+ - Windows notification when a host turns critical and when it recovers (View > Notify When a Host Turns Critical)
+1.5.2.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Host Info pane (View > Host Info, icon bar): live facts about the active tab's host - name, OS, public/private
+   addresses, uptime, CPU, load, memory, swap, disks, logged-in users, busiest processes - every 5 s over one SSH
+   connection; Copy puts them on the clipboard as text; the values also update the host's health badge
+1.5.1.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Commands and Containers panes redrawn: status dots, uptime and published ports per container, project
+   headers with running/problem counts, command names above the command, highlighted placeholders, icon toolbars
+ - Containers pane and health checks work with sessions whose PuTTY profile stores the host name
+   (plink ran the host as a command: "bash: <host>: command not found")
+1.5.0.0 - Kraus-Ahma IT Consulting edition (2026-10-21)
+ - Ported to .NET 10 (requires the .NET 10 Desktop Runtime), dependencies from NuGet, WiX 5 installer
+ - Icon bar, kiosk mode (F11), menu and toolbars react to the first click
+ - Commands pane: commands per session/folder/all, placeholders remembered per session, Docker Compose commands,
+   Favorites, run in all/folder terminals or a new tab, import/export
+ - Containers pane: docker containers of the active host, shell/logs/inspect/start/stop/restart
+ - SSH tunnels shown on the tab (with conflict detection) and in Tools > SSH Tunnels
+ - File transfer: drag & drop upload onto a tab, Transfer Files dialog (download, host-to-host relay)
+ - Health badges in the session tree (disk, memory, load, failed systemd units, unhealthy containers)
+ - Per-session command history, Copy Session / Copy Last Command, session log files with clean text copies
+ - Session icons by environment (prod/qual/dev) and role
+ - Stored passwords encrypted (DPAPI) and passed via -pwfile instead of the command line
+ - Explain in Claude: review the last command's output, then let Claude explain it
+ - Live input: type into several terminals at once
+ - Reconnect bar on dropped tabs, optional automatic reconnect
+ - Pageant indicator in the status bar (running, number of loaded keys)
+ - All settings in SuperPuTTY.settings (moved from user.config once), File > Back up / Restore Settings
+ - Background tab activity marker and notification
 1.4.0.9
  - Fixes several bugs and feature updates since 1.4.0.8 See https://github.com/jimradford/superputty/compare/1.4.0.8...master for all 79 commits
 1.4.0.8

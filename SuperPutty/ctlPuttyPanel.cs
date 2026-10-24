@@ -71,6 +71,7 @@ namespace SuperPutty
             CreatePanel();
             EnableFileDrop();
             AdjustMenu();
+            WatchConnection();
         }
 
         /// <summary>Gets or sets the text displayed on a tab.</summary>
@@ -163,12 +164,193 @@ namespace SuperPutty
             }
         }
 
+        /// <summary>The session's environment (prod/qual/dev), shown as a marker on the tab</summary>
+        public EnvironmentKind Environment
+        {
+            get { return SessionEnvironment.Of(this.m_Session); }
+        }
+
         private void ApplyTabText()
         {
             string text = base.Text ?? string.Empty;
-            this.TabText = (this.HasActivity ? "● " : string.Empty) + text.Replace("&", "&&") + this.tabTextSuffix;
-            this.ToolTipText = this.tunnelToolTip.Length == 0 ? text : text + "\n\n" + this.tunnelToolTip;
+            // room for the prod badge painted at the tab's right end (EnvironmentTabStripFactory)
+            string badgeSpace = this.m_Session != null && this.Environment == EnvironmentKind.Prod ? "     " : string.Empty;
+            string marker = this.IsDisconnected ? "× " : this.HasActivity ? "● " : string.Empty;
+            this.TabText = marker + text.Replace("&", "&&") + this.tabTextSuffix + badgeSpace;
+            string toolTip = this.tunnelToolTip.Length == 0 ? text : text + "\n\n" + this.tunnelToolTip;
+            this.ToolTipText = this.IsDisconnected ? toolTip + "\n\nDisconnected" : toolTip;
         }
+
+        #region Reconnect
+
+        /// <summary>Automatic reconnects in a row before giving up</summary>
+        private const int MaxAutoReconnects = 6;
+
+        /// <summary>A connection that lasted this long resets the automatic reconnect count</summary>
+        private static readonly TimeSpan StableConnection = TimeSpan.FromSeconds(60);
+
+        private readonly System.Windows.Forms.Timer connectionTimer = new System.Windows.Forms.Timer { Interval = 1000 };
+        private Panel disconnectedBar;
+        private Label disconnectedLabel;
+        private Button reconnectButton;
+        private Button cancelReconnectButton;
+        private DateTime connectedSinceUtc = DateTime.UtcNow;
+        private DateTime? reconnectAtUtc;
+        private int autoReconnects;
+        private bool reconnecting;
+
+        /// <summary>True while PuTTY's connection is closed (error box shown or title "(inactive)")</summary>
+        public bool IsDisconnected { get; private set; }
+
+        private void WatchConnection()
+        {
+            if (!SupportsPuttyCommands)
+            {
+                return;
+            }
+            this.m_AppPanel.WindowTitleChanged += delegate { CheckConnection(); };
+            this.connectionTimer.Tick += delegate { CheckConnection(); };
+            this.connectionTimer.Start();
+            this.FormClosed += delegate { this.connectionTimer.Dispose(); };
+        }
+
+        private void CheckConnection()
+        {
+            if (!this.m_AppPanel.ExternalProcessCaptured || this.reconnecting)
+            {
+                return;
+            }
+            IntPtr window = this.m_AppPanel.AppWindowHandle;
+            bool disconnected = PuttyConnection.IsInactiveTitle(this.m_AppPanel.GetWindowTitle())
+                || PuttyConnection.FindFatalErrorDialogs(window).Count > 0;
+
+            if (disconnected != this.IsDisconnected)
+            {
+                this.IsDisconnected = disconnected;
+                if (disconnected)
+                {
+                    Log.InfoFormat("Connection of {0} closed", this.m_Session.SessionId);
+                    bool auto = SuperPuTTY.Settings.AutoReconnect && this.autoReconnects < MaxAutoReconnects;
+                    this.reconnectAtUtc = auto ? DateTime.UtcNow + PuttyConnection.ReconnectDelay(this.autoReconnects) : (DateTime?)null;
+                }
+                else
+                {
+                    this.connectedSinceUtc = DateTime.UtcNow;
+                    this.reconnectAtUtc = null;
+                }
+                ApplyTabText();
+            }
+
+            if (!this.IsDisconnected)
+            {
+                if (this.autoReconnects > 0 && DateTime.UtcNow - this.connectedSinceUtc > StableConnection)
+                {
+                    this.autoReconnects = 0;
+                }
+                ShowDisconnectedBar(null);
+                return;
+            }
+
+            if (this.reconnectAtUtc.HasValue && DateTime.UtcNow >= this.reconnectAtUtc.Value)
+            {
+                this.autoReconnects++;
+                Reconnect();
+                return;
+            }
+            if (this.reconnectAtUtc.HasValue)
+            {
+                int seconds = (int)Math.Ceiling((this.reconnectAtUtc.Value - DateTime.UtcNow).TotalSeconds);
+                ShowDisconnectedBar(string.Format("Connection lost. Reconnecting in {0} s (attempt {1} of {2})…", seconds, this.autoReconnects + 1, MaxAutoReconnects));
+            }
+            else
+            {
+                ShowDisconnectedBar(SuperPuTTY.Settings.AutoReconnect && this.autoReconnects >= MaxAutoReconnects
+                    ? "Connection lost. Automatic reconnect gave up after " + MaxAutoReconnects + " attempts."
+                    : "Connection lost.");
+            }
+        }
+
+        /// <summary>Restarts PuTTY's session (closes its error box first); a password login asks for the password again</summary>
+        public void Reconnect()
+        {
+            if (!this.m_AppPanel.ExternalProcessCaptured || this.reconnecting)
+            {
+                return;
+            }
+            this.reconnecting = true;
+            this.reconnectAtUtc = null;
+            ShowDisconnectedBar("Reconnecting…");
+            IntPtr window = this.m_AppPanel.AppWindowHandle;
+            ThreadPool.QueueUserWorkItem(delegate
+            {
+                bool restarted = false;
+                try
+                {
+                    restarted = PuttyConnection.Restart(window, () => this.m_AppPanel.GetWindowTitle());
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Reconnect failed", ex);
+                }
+                if (this.IsDisposed)
+                {
+                    return;
+                }
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    this.reconnecting = false;
+                    Log.InfoFormat("Reconnect {0}: {1}", this.m_Session.SessionId, restarted ? "restarted" : "PuTTY did not become inactive");
+                    if (!restarted)
+                    {
+                        ShowDisconnectedBar("PuTTY did not restart the session. Close PuTTY's message and try again.");
+                    }
+                    CheckConnection();
+                });
+            });
+        }
+
+        /// <summary>Shows the bar above the terminal with <paramref name="message"/>, or hides it for null</summary>
+        private void ShowDisconnectedBar(string message)
+        {
+            if (message == null)
+            {
+                if (this.disconnectedBar != null && this.disconnectedBar.Visible)
+                {
+                    this.disconnectedBar.Visible = false;
+                }
+                return;
+            }
+            if (this.disconnectedBar == null)
+            {
+                this.disconnectedBar = new Panel { Dock = DockStyle.Top, Height = 30, BackColor = System.Drawing.Color.FromArgb(255, 240, 200), Visible = false };
+                this.reconnectButton = new Button { Text = "&Reconnect", AutoSize = true, Dock = DockStyle.Right, UseVisualStyleBackColor = true };
+                this.reconnectButton.Click += delegate { Reconnect(); };
+                this.cancelReconnectButton = new Button { Text = "Cancel", AutoSize = true, Dock = DockStyle.Right, UseVisualStyleBackColor = true };
+                this.cancelReconnectButton.Click += delegate
+                {
+                    this.reconnectAtUtc = null;
+                    this.autoReconnects = MaxAutoReconnects;
+                    CheckConnection();
+                };
+                this.disconnectedLabel = new Label { Dock = DockStyle.Fill, TextAlign = System.Drawing.ContentAlignment.MiddleLeft, Padding = new Padding(8, 0, 0, 0) };
+                this.disconnectedBar.Padding = new Padding(3);
+                this.disconnectedBar.Controls.Add(this.disconnectedLabel);
+                this.disconnectedBar.Controls.Add(this.cancelReconnectButton);
+                this.disconnectedBar.Controls.Add(this.reconnectButton);
+                this.Controls.Add(this.disconnectedBar);
+                this.disconnectedBar.BringToFront();
+                this.m_AppPanel.BringToFront(); // Fill is laid out after Top
+            }
+            this.disconnectedLabel.Text = message;
+            this.reconnectButton.Enabled = !this.reconnecting;
+            this.cancelReconnectButton.Visible = this.reconnectAtUtc.HasValue;
+            if (!this.disconnectedBar.Visible)
+            {
+                this.disconnectedBar.Visible = true;
+            }
+        }
+
+        #endregion
 
         private void CreatePanel()
         {

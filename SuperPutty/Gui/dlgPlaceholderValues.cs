@@ -25,6 +25,7 @@ namespace SuperPutty.Gui
         /// <param name="initialValues">Last used value per placeholder (or its default)</param>
         public dlgPlaceholderValues(string command, IList<CommandPlaceholder> placeholders, IDictionary<string, string> initialValues, string target)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "commands.html");
             this.command = command;
             this.Text = "Command Values";
             this.FormBorderStyle = FormBorderStyle.FixedDialog;

@@ -34,6 +34,114 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void ReadsThePortsField()
+        {
+            List<DockerContainer> containers = DockerContainer.ParseList(
+                "verum-api\tapi-image\tUp 15 hours (healthy)\tverum\t0.0.0.0:9088->8082/tcp, :::9088->8082/tcp\n" +
+                "old\tbusybox\tExited (0) 2 days ago\t\n");
+
+            ClassicAssert.AreEqual("0.0.0.0:9088->8082/tcp, :::9088->8082/tcp", containers[0].Ports);
+            ClassicAssert.AreEqual(string.Empty, containers[1].Ports); // older output without the field
+        }
+
+        [Test]
+        public void PublishedPortsAreListedOnceAndShort()
+        {
+            CollectionAssert.AreEqual(new[] { "5013→5005", "9088→8082" },
+                DockerContainer.ParsePorts("0.0.0.0:5013->5005/tcp, :::5013->5005/tcp, 0.0.0.0:9088->8082/tcp, :::9088->8082/tcp"));
+            CollectionAssert.AreEqual(new[] { "127.0.0.1:8080→80", "53→53/udp", "8000-8001→8000-8001" },
+                DockerContainer.ParsePorts("127.0.0.1:8080->80/tcp, 0.0.0.0:53->53/udp, [::]:8000-8001->8000-8001/tcp"));
+            // exposed but not published
+            CollectionAssert.IsEmpty(DockerContainer.ParsePorts("6379/tcp"));
+            CollectionAssert.IsEmpty(DockerContainer.ParsePorts(null));
+        }
+
+        [Test]
+        public void PublishedPortsKnowHowToBeOpened()
+        {
+            List<PublishedPort> ports = DockerContainer.ParsePublishedPorts(
+                "0.0.0.0:9089->8080/tcp, :::9089->8080/tcp, 127.0.0.1:9229->9229/tcp, [::1]:6000->6000/tcp, 10.0.0.5:8443->443/tcp, 0.0.0.0:53->53/udp, 0.0.0.0:8000-8001->8000-8001/tcp");
+
+            CollectionAssert.AreEqual(new[] { "9089→8080", "127.0.0.1:9229→9229", "[::1]:6000→6000", "10.0.0.5:8443→443", "53→53/udp", "8000-8001→8000-8001" },
+                ports.ConvertAll(p => p.Text));
+
+            PublishedPort web = ports[0];
+            ClassicAssert.IsTrue(web.CanOpen);
+            ClassicAssert.IsFalse(web.NeedsTunnel, "bound to all addresses: try directly first");
+            ClassicAssert.AreEqual("127.0.0.1", web.TunnelTarget);
+            ClassicAssert.AreEqual("http://web01.example.com:9089/", web.Url("web01.example.com", 9089));
+            ClassicAssert.AreEqual("http://[2a01:4f8::1]:9089/", web.Url("2a01:4f8::1", 9089));
+
+            ClassicAssert.IsTrue(ports[1].NeedsTunnel, "loopback only");
+            ClassicAssert.IsTrue(ports[2].NeedsTunnel);
+            ClassicAssert.AreEqual("127.0.0.1", ports[2].TunnelTarget, "IPv6 loopback through the IPv4 one");
+            ClassicAssert.IsFalse(ports[3].NeedsTunnel);
+            ClassicAssert.AreEqual("10.0.0.5", ports[3].TunnelTarget);
+            ClassicAssert.AreEqual("https://localhost:50000/", ports[3].Url("localhost", 50000), "container port 443");
+            ClassicAssert.IsFalse(ports[4].CanOpen, "udp");
+            ClassicAssert.AreEqual(8000, ports[5].HostPort, "first port of a range");
+        }
+
+        [Test]
+        public void TunnelArgumentsPutTheForwardingBeforeTheHost()
+        {
+            SessionData session = new SessionData
+            {
+                SessionId = "Test/web01", Host = "web01.example.com", Port = 22, Proto = ConnectionProtocol.SSH, Username = "deploy"
+            };
+
+            List<string> args = Plink.BuildTunnelArguments(session, 50123, "127.0.0.1", 9229);
+
+            CollectionAssert.AreEqual(new[] {
+                "-ssh", "-batch", "-T", "-N", "-L", "127.0.0.1:50123:127.0.0.1:9229", "-P", "22", "-l", "deploy", "web01.example.com" }, args);
+        }
+
+        [Test]
+        public void StateFollowsDockersStatusText()
+        {
+            Dictionary<string, ContainerState> cases = new Dictionary<string, ContainerState>
+            {
+                { "Up 14 hours (healthy)", ContainerState.Healthy },
+                { "Up 2 minutes", ContainerState.Running },
+                { "Up 3 seconds (health: starting)", ContainerState.Starting },
+                { "Up 15 hours (unhealthy)", ContainerState.Unhealthy },
+                { "Up 2 hours (Paused)", ContainerState.Paused },
+                { "Restarting (1) 5 seconds ago", ContainerState.Restarting },
+                { "Exited (0) 2 days ago", ContainerState.Exited },
+                { "Exited (137) 1 hour ago", ContainerState.Exited },
+                { "Exited (143) 1 hour ago", ContainerState.Exited },
+                { "Exited (1) 2 days ago", ContainerState.Failed },
+                { "Dead", ContainerState.Failed },
+                { "Created", ContainerState.Created },
+                { "Removal In Progress", ContainerState.Other },
+            };
+            foreach (KeyValuePair<string, ContainerState> entry in cases)
+            {
+                ClassicAssert.AreEqual(entry.Value, new DockerContainer { Status = entry.Key }.State, entry.Key);
+            }
+        }
+
+        [Test]
+        public void DisplayStatusMovesTheHealthBehindADot()
+        {
+            ClassicAssert.AreEqual("Up 14 hours · healthy", new DockerContainer { Status = "Up 14 hours (healthy)" }.DisplayStatus);
+            ClassicAssert.AreEqual("Up 3 seconds · starting", new DockerContainer { Status = "Up 3 seconds (health: starting)" }.DisplayStatus);
+            ClassicAssert.AreEqual("Exited (1) 2 days ago", new DockerContainer { Status = "Exited (1) 2 days ago" }.DisplayStatus);
+        }
+
+        [Test]
+        public void ShortNameDropsTheComposeProject()
+        {
+            ClassicAssert.AreEqual("api", new DockerContainer { Name = "verum-dev-api", Project = "verum-dev" }.ShortName);
+            ClassicAssert.AreEqual("web_1", new DockerContainer { Name = "app_web_1", Project = "app" }.ShortName); // compose v1
+            ClassicAssert.AreEqual("verum-dev-api", new DockerContainer { Name = "verum-dev-api", Project = "other" }.ShortName);
+            ClassicAssert.AreEqual("verum-dev-api", new DockerContainer { Name = "verum-dev-api", Project = "" }.ShortName);
+            // nothing left after the prefix: keep the name
+            ClassicAssert.AreEqual("app-", new DockerContainer { Name = "app-", Project = "app" }.ShortName);
+            ClassicAssert.AreEqual("appx-web", new DockerContainer { Name = "appx-web", Project = "app" }.ShortName);
+        }
+
+        [Test]
         public void SkipsLinesThatAreNotContainers()
         {
             string output = "WARNING: something\nbad name;rm\timg\tUp 1 second\t\nok\timg\tUp 1 second\n";
@@ -58,7 +166,7 @@ namespace SuperPuttyUnitTests
         [Test]
         public void BuildsDockerCommands()
         {
-            ClassicAssert.AreEqual("docker ps -a --format '{{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project\"}}'", DockerCommands.List(""));
+            ClassicAssert.AreEqual("docker ps -a --format '{{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Label \"com.docker.compose.project\"}}\\t{{.Ports}}'", DockerCommands.List(""));
             ClassicAssert.AreEqual("docker exec -it web sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'", DockerCommands.Shell("", "web", false));
             ClassicAssert.AreEqual("sudo docker exec -it -u 0 web sh -c 'command -v bash >/dev/null 2>&1 && exec bash || exec sh'", DockerCommands.Shell("sudo ", "web", true));
             ClassicAssert.AreEqual("docker logs -f --tail 200 web", DockerCommands.FollowLogs("", "web"));
@@ -91,11 +199,42 @@ namespace SuperPuttyUnitTests
                 ExtraArgs = "-L 8080:localhost:80 -i \"C:\\keys\\deploy.ppk\""
             };
 
-            List<string> args = Plink.BuildArguments(session, "docker ps");
+            List<string> args = Plink.BuildArguments(session, "docker ps", null);
 
             CollectionAssert.AreEqual(new[] {
                 "-ssh", "-batch", "-T", "-P", "2222", "-load", "Prod Profile", "-l", "deploy",
                 "-i", @"C:\keys\deploy.ppk", "web01.example.com", "docker ps" }, args);
+        }
+
+        [Test]
+        public void PlinkTakesTheHostFromAProfileThatHasOne()
+        {
+            // plink reads the first plain argument after such a profile as the command ("bash: <host>: command not found")
+            SessionData session = new SessionData
+            {
+                SessionId = "Test/verum", Host = "10.0.0.5", Port = 22, Proto = ConnectionProtocol.SSH,
+                Username = "root", PuttySession = "verum-test"
+            };
+
+            List<string> args = Plink.BuildArguments(session, "docker ps", "10.0.0.5 ");
+
+            CollectionAssert.AreEqual(new[] {
+                "-ssh", "-batch", "-T", "-P", "22", "-load", "verum-test", "-l", "root", "docker ps" }, args);
+        }
+
+        [Test]
+        public void PlinkSkipsAProfileThatPointsToAnotherHost()
+        {
+            SessionData session = new SessionData
+            {
+                SessionId = "Test/verum", Host = "10.0.0.6", Port = 22, Proto = ConnectionProtocol.SSH,
+                Username = "root", PuttySession = "verum-test"
+            };
+
+            List<string> args = Plink.BuildArguments(session, "docker ps", "10.0.0.5");
+
+            CollectionAssert.AreEqual(new[] {
+                "-ssh", "-batch", "-T", "-P", "22", "-l", "root", "10.0.0.6", "docker ps" }, args);
         }
     }
 }

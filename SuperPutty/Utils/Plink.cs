@@ -16,8 +16,10 @@ namespace SuperPutty.Utils
         public string Output { get; set; }
         public string Error { get; set; }
         public bool TimedOut { get; set; }
+        /// <summary>Stopped by the caller's cancellation token</summary>
+        public bool Cancelled { get; set; }
 
-        public bool Success { get { return !this.TimedOut && this.ExitCode == 0; } }
+        public bool Success { get { return !this.TimedOut && !this.Cancelled && this.ExitCode == 0; } }
     }
 
     /// <summary>
@@ -70,11 +72,38 @@ namespace SuperPutty.Utils
         /// </summary>
         public static List<string> BuildArguments(SessionData session, string remoteCommand)
         {
+            return BuildArguments(session, remoteCommand, ReadProfileHost(session.PuttySession));
+        }
+
+        /// <summary>
+        /// BuildArguments with the host name stored in the session's PuTTY profile (null/empty if none). Unlike
+        /// PuTTY, plink treats the first plain argument after -load of a profile with a host name as the start of
+        /// the remote command, so the host must not be passed again: the host itself would run as a command
+        /// ("bash: 10.0.0.5: command not found"). If the profile points to another host than the session, the
+        /// profile can't be loaded without connecting there, so it is left out.
+        /// </summary>
+        public static List<string> BuildArguments(SessionData session, string remoteCommand, string profileHost)
+        {
             List<string> args = new List<string> { "-ssh", "-batch", "-T", "-P", session.Port.ToString() };
+            bool hostFromProfile = false;
             if (!string.IsNullOrEmpty(session.PuttySession))
             {
-                args.Add("-load");
-                args.Add(session.PuttySession);
+                if (string.IsNullOrEmpty(profileHost))
+                {
+                    args.Add("-load");
+                    args.Add(session.PuttySession);
+                }
+                else if (string.Equals(profileHost.Trim(), session.Host, StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Add("-load");
+                    args.Add(session.PuttySession);
+                    hostFromProfile = true;
+                }
+                else
+                {
+                    Log.WarnFormat("plink: profile '{0}' connects to {1}, session {2} to {3}; not loading the profile",
+                        session.PuttySession, profileHost, session.SessionId, session.Host);
+                }
             }
             if (!string.IsNullOrEmpty(session.Username))
             {
@@ -89,16 +118,123 @@ namespace SuperPutty.Utils
             }
             if (!string.IsNullOrEmpty(session.Password) && SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg)
             {
-                args.Add("-pw");
-                args.Add(session.Password);
+                // a short-lived file instead of -pw, so the password doesn't show in the process list
+                if (PasswordFile.IsSupported(SuperPuTTY.Settings.PuttyExe))
+                {
+                    args.Add("-pwfile");
+                    args.Add(PasswordFile.Create(session.Password));
+                }
+                else
+                {
+                    args.Add("-pw");
+                    args.Add(session.Password);
+                }
             }
-            args.Add(session.Host);
-            args.Add(remoteCommand);
+            if (!hostFromProfile)
+            {
+                args.Add(session.Host);
+            }
+            if (remoteCommand != null)
+            {
+                args.Add(remoteCommand);
+            }
             return args;
+        }
+
+        /// <summary>
+        /// The plink arguments for a local port forwarding without a command (-N): 127.0.0.1:localPort on this PC
+        /// leads to target:targetPort as seen from the session's host
+        /// </summary>
+        public static List<string> BuildTunnelArguments(SessionData session, int localPort, string target, int targetPort)
+        {
+            List<string> args = BuildArguments(session, null);
+            // options before the host name: right after -ssh -batch -T
+            args.InsertRange(3, new[] { "-N", "-L", string.Format("127.0.0.1:{0}:{1}:{2}", localPort, target, targetPort) });
+            return args;
+        }
+
+        /// <summary>The HostName stored in a saved PuTTY/KiTTY profile; null if there is none or it can't be read</summary>
+        private static string ReadProfileHost(string profile)
+        {
+            if (string.IsNullOrEmpty(profile))
+            {
+                return null;
+            }
+            try
+            {
+                return PuttyDataHelper.ReadProfileValue(profile, "HostName");
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException || ex is UnauthorizedAccessException || ex is IOException)
+            {
+                Log.Warn("Could not read the host name of profile " + profile, ex);
+                return null;
+            }
+        }
+
+        private static ProcessStartInfo CreateStartInfo(string exe, SessionData session, string remoteCommand)
+        {
+            ProcessStartInfo startInfo = CreateStartInfo(exe, BuildArguments(session, remoteCommand));
+            Log.InfoFormat("plink: session={0}, command=[{1}]", session.SessionId,
+                remoteCommand.Length > 120 ? remoteCommand.Substring(0, 120) + "…" : remoteCommand);
+            return startInfo;
+        }
+
+        private static ProcessStartInfo CreateStartInfo(string exe, List<string> args)
+        {
+            // redirected output needs UseShellExecute = false
+            ProcessStartInfo startInfo = new ProcessStartInfo(exe)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                RedirectStandardInput = true
+            };
+            foreach (string arg in args)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+            return startInfo;
+        }
+
+        /// <summary>Start a port forwarding (see <see cref="BuildTunnelArguments"/>); the caller kills the process to close it</summary>
+        public static Process StartTunnel(SessionData session, int localPort, string target, int targetPort)
+        {
+            string exe = FindExecutable();
+            if (exe == null)
+            {
+                throw new FileNotFoundException("plink.exe not found next to PuTTY or on the PATH");
+            }
+            Log.InfoFormat("plink tunnel: session={0}, 127.0.0.1:{1} -> {2}:{3}", session.SessionId, localPort, target, targetPort);
+            Process process = Process.Start(CreateStartInfo(exe, BuildTunnelArguments(session, localPort, target, targetPort)));
+            process.StandardInput.Close();
+            return process;
+        }
+
+        /// <summary>
+        /// Start a long-running command on the session's host (e.g. a loop printing values) and return the
+        /// process; the caller reads its output and kills it when done. Standard input is closed already.
+        /// </summary>
+        public static Process Start(SessionData session, string remoteCommand)
+        {
+            string exe = FindExecutable();
+            if (exe == null)
+            {
+                throw new FileNotFoundException("plink.exe not found next to PuTTY or on the PATH");
+            }
+            Process process = Process.Start(CreateStartInfo(exe, session, remoteCommand));
+            process.StandardInput.Close();
+            return process;
         }
 
         /// <summary>Run a command on the session's host and collect its output</summary>
         public static Task<PlinkResult> RunAsync(SessionData session, string remoteCommand, TimeSpan timeout)
+        {
+            return RunAsync(session, remoteCommand, timeout, CancellationToken.None);
+        }
+
+        /// <summary>Run a command on the session's host and collect its output; cancelling kills plink</summary>
+        public static Task<PlinkResult> RunAsync(SessionData session, string remoteCommand, TimeSpan timeout, CancellationToken cancel)
         {
             string exe = FindExecutable();
             if (exe == null)
@@ -108,30 +244,24 @@ namespace SuperPutty.Utils
 
             return Task.Run(() =>
             {
-                // redirected output needs UseShellExecute = false
-                ProcessStartInfo startInfo = new ProcessStartInfo(exe)
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    RedirectStandardInput = true
-                };
-                foreach (string arg in BuildArguments(session, remoteCommand))
-                {
-                    startInfo.ArgumentList.Add(arg);
-                }
-
-                Log.InfoFormat("plink: session={0}, command=[{1}]", session.SessionId, remoteCommand);
-                using (Process process = Process.Start(startInfo))
+                using (Process process = Process.Start(CreateStartInfo(exe, session, remoteCommand)))
                 {
                     process.StandardInput.Close();
                     Task<string> output = process.StandardOutput.ReadToEndAsync();
                     Task<string> error = process.StandardError.ReadToEndAsync();
-                    if (!process.WaitForExit((int)timeout.TotalMilliseconds))
+                    Stopwatch watch = Stopwatch.StartNew();
+                    while (!process.WaitForExit(200))
                     {
-                        try { process.Kill(true); } catch (InvalidOperationException) { }
-                        return new PlinkResult { TimedOut = true, ExitCode = -1, Output = string.Empty, Error = "Timed out after " + timeout.TotalSeconds + " s" };
+                        bool cancelled = cancel.IsCancellationRequested;
+                        if (cancelled || watch.Elapsed >= timeout)
+                        {
+                            try { process.Kill(true); } catch (InvalidOperationException) { }
+                            return new PlinkResult
+                            {
+                                TimedOut = !cancelled, Cancelled = cancelled, ExitCode = -1, Output = string.Empty,
+                                Error = cancelled ? "Stopped" : "Timed out after " + timeout.TotalSeconds + " s"
+                            };
+                        }
                     }
                     process.WaitForExit();
                     return new PlinkResult { ExitCode = process.ExitCode, Output = output.Result, Error = error.Result };

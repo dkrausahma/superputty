@@ -74,8 +74,9 @@ namespace SuperPutty.Utils
                 Log.Warn("SuperPuTTY is set to NOT allow the use of the -pw <password> argument, this can be overriden in Tools -> Options -> GUI");
 
             string args = "-" + session.Proto.ToString().ToLower() + " ";
-            args += !String.IsNullOrEmpty(session.Password) && session.Password.Length > 0 && SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg 
-                ? "-pw " + (includePassword ? session.Password : "XXXXX") + " " 
+            // the password goes through a short-lived file (-pwfile), not the command line
+            args += !String.IsNullOrEmpty(session.Password) && session.Password.Length > 0 && SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg
+                ? (includePassword ? PasswordFile.Argument(session.Password) : "-pwfile <password file>") + " "
                 : "";
             args += "-P " + session.Port + " ";
             args += !String.IsNullOrEmpty(session.PuttySession) ? "-load \"" + session.PuttySession + "\" " : "";

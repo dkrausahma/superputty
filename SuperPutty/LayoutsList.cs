@@ -9,6 +9,11 @@ namespace SuperPutty
 {
     public partial class LayoutsList : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "tabs-and-layouts.html"; }
+        }
+
         public LayoutsList()
         {
             InitializeComponent();

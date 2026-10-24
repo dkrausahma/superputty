@@ -23,6 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Anthropic" Version="12.60.0" />
     <PackageReference Include="DockPanelSuite" Version="3.1.1" />
     <PackageReference Include="DockPanelSuite.ThemeVS2005" Version="3.1.1" />
     <PackageReference Include="log4net" Version="3.5.0" />
@@ -34,6 +35,12 @@
          SuperPutty.Log4netLogViewer) the old project produced; the forms load them by type name. -->
     <EmbeddedResource Update="ctlApplicationPanel.resx" DependentUpon="ctlApplicationPanel.cs" />
     <EmbeddedResource Update="Log4netDebugLogForm.resx" DependentUpon="Log4netDebugLogForm.cs" />
+    <!-- frmSuperPutty is split by feature into partial files: nest them under the form and keep
+         Visual Studio from opening them in the form designer -->
+    <Compile Update="frmSuperPutty.Commands.cs;frmSuperPutty.Hooks.cs;frmSuperPutty.IconBar.cs;frmSuperPutty.Kiosk.cs;frmSuperPutty.Monitoring.cs;frmSuperPutty.TerminalText.cs;frmSuperPutty.Upload.cs">
+      <DependentUpon>frmSuperPutty.cs</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -74,6 +81,13 @@
     <None Remove="Resources\themes\**" />
     <None Include="Resources\themes\**\*">
       <Link>themes\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Help: generated from docs/ by tools/help-docs/build.py (committed), opened offline from help/ next to the exe -->
+  <ItemGroup>
+    <None Update="help\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

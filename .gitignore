@@ -44,3 +44,6 @@ skills-lock.json
 
 # Claude Code personal settings (local permissions, hooks) - never committed
 .claude/settings.local.json
+
+# Help build environment (tools/help-docs/build.py creates it)
+.venv/

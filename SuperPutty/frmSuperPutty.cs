@@ -60,6 +60,7 @@ namespace SuperPutty
         private SingletonToolWindowHelper<SessionDetail> sessionDetail;
         private SingletonToolWindowHelper<CommandsPane> commandsPane;
         private SingletonToolWindowHelper<ContainersPane> containersPane;
+        private SingletonToolWindowHelper<HostInfoPane> hostInfoPane;
 
         private TextBoxFocusHelper tbFocusHelperHost;
         private TextBoxFocusHelper tbFocusHelperUserName;
@@ -99,6 +100,7 @@ namespace SuperPutty
 
         /// <summary>Checks the SSH tunnels of the open tabs and updates their tab markers</summary>
         private readonly System.Windows.Forms.Timer tunnelTimer = new System.Windows.Forms.Timer { Interval = 5000 };
+        private PageantIndicator pageantIndicator;
 
         /// <summary>The main SuperPuTTY application form</summary>
         public frmSuperPutty()
@@ -115,10 +117,16 @@ namespace SuperPutty
             this.DockPanel.Theme.Extender.DockPaneCaptionFactory = new NoAutoHideCaptionFactory(this.DockPanel.Theme.Extender.DockPaneCaptionFactory);
             // tab tooltips also while PuTTY has the focus (the main window then counts as inactive)
             this.DockPanel.Theme.Extender.DockPaneStripFactory = new ShowAlwaysTabToolTipFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory);
+            // environment marker on terminal tabs (prod red bar and badge, qual amber, dev green)
+            this.DockPanel.Theme.Extender.DockPaneStripFactory = new EnvironmentTabStripFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory,
+                content => content is ctlPuttyPanel ? ((ctlPuttyPanel)content).Environment : EnvironmentKind.None);
             // files dropped from Explorer on a terminal tab's header are uploaded to that host
             this.DockPanel.Theme.Extender.DockPaneStripFactory = new FileDropTabStripFactory(this.DockPanel.Theme.Extender.DockPaneStripFactory,
                 content => content is ctlPuttyPanel && CanUpload(((ctlPuttyPanel)content).Session),
                 (content, files) => UploadFiles((ctlPuttyPanel)content, files));
+
+            // the icons of the IconBarLayout setting, before the command bar is placed after the icon bar
+            ApplyIconBarLayout();
 
             // force toolbar locations...designer likes to flip them around
             // row 1: menu; row 2: icon bar with the command bar right after it; row 3: quick connection bar (hidden)
@@ -147,6 +155,7 @@ namespace SuperPutty
             this.sessions.InstanceChanged += SessionsInstanceChanged;
             this.commandsPane = new SingletonToolWindowHelper<CommandsPane>("Commands", this.DockPanel, null, x => new CommandsPane(SendToActiveSession, RunInAllSessions, RunInNewTab, ActiveSession, RunInFolder));
             this.containersPane = new SingletonToolWindowHelper<ContainersPane>("Containers", this.DockPanel, null, x => new ContainersPane(ActiveSession));
+            this.hostInfoPane = new SingletonToolWindowHelper<HostInfoPane>("Host Info", this.DockPanel, null, x => new HostInfoPane(ActiveSession));
 
             // for toolbar
             this.tbFocusHelperHost = new TextBoxFocusHelper(this.tbTxtBoxHost.TextBox);
@@ -205,6 +214,14 @@ namespace SuperPutty
             // command files of tabs opened with a remote command and relay folders, left behind by an earlier run
             RemoteCommandTab.CleanUp();
             FileTransferJob.CleanUp();
+            PasswordFile.CleanUp();
+
+            // Pageant state and key count in the status bar, before the version
+            this.pageantIndicator = new PageantIndicator(this.statusStrip1, this.statusStrip1.Items.IndexOf(this.toolStripStatusLabelVersion));
+            this.FormClosed += delegate { this.pageantIndicator.Dispose(); };
+            this.FormClosed += delegate { PortOpener.CloseAll(); };
+            // F1 outside a pane or dialog (those open their own page)
+            HelpFiles.Attach(this, HelpFiles.Index);
 
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
@@ -214,6 +231,10 @@ namespace SuperPutty
             this.healthTimer.Tick += delegate { CheckOpenTabsHealth(); };
             this.healthTimer.Start();
             this.healthChecksToolStripMenuItem.Checked = SuperPuTTY.Settings.AutoHealthCheck;
+            this.notifyHealthToolStripMenuItem.Checked = SuperPuTTY.Settings.NotifyHealthChanges;
+            HealthMonitor.Updated += HealthMonitor_Updated;
+            this.FormClosed += delegate { HealthMonitor.Updated -= HealthMonitor_Updated; };
+            this.healthAlertTimer.Tick += delegate { ShowHealthAlerts(); };
             this.sessionLoggingToolStripMenuItem.Checked = SuperPuTTY.Settings.SessionLogging;
             this.notifyActivityToolStripMenuItem.Checked = SuperPuTTY.Settings.NotifyBackgroundActivity;
 
@@ -305,11 +326,11 @@ namespace SuperPutty
         }
 
         /// <summary>A Windows notification from the tray icon, shown even when the icon is normally hidden</summary>
-        private void ShowNotification(string title, string text)
+        private void ShowNotification(string title, string text, ToolTipIcon icon = ToolTipIcon.Info)
         {
             bool wasVisible = this.notifyicon.Visible;
             this.notifyicon.Visible = true;
-            this.notifyicon.ShowBalloonTip(5000, title, text, ToolTipIcon.Info);
+            this.notifyicon.ShowBalloonTip(5000, title, text, icon);
             if (!wasVisible)
             {
                 EventHandler hide = null;
@@ -403,6 +424,10 @@ namespace SuperPutty
             {
                 this.containersPane.Instance.ActiveSessionChanged();
             }
+            if (this.hostInfoPane.Instance != null)
+            {
+                this.hostInfoPane.Instance.ActiveSessionChanged();
+            }
             if (this.commandsPane.Instance != null)
             {
                 this.commandsPane.Instance.ActiveSessionChanged();
@@ -465,6 +490,79 @@ namespace SuperPutty
             if (saveDialog.ShowDialog(this) == DialogResult.OK)
             {
                 SessionData.SaveSessionsToFile(SuperPuTTY.GetAllSessions(), saveDialog.FileName);
+            }
+        }
+
+        private void backUpSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog
+            {
+                Filter = "Zip files|*.zip|All files|*.*",
+                FileName = string.Format("SuperPuTTY-backup-{0:yyyyMMdd-HHmm}.zip", DateTime.Now),
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (saveDialog.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+            try
+            {
+                // write the current state first, so the backup holds what is shown
+                SuperPuTTY.Settings.Save();
+                SuperPuTTY.SaveSessions();
+                int count = SettingsBackup.Create(saveDialog.FileName, SuperPuTTY.Settings.SettingsFilePath, SuperPuTTY.Settings.SettingsFolder, SuperPuTTY.Version);
+                SuperPuTTY.ReportStatus("Backed up {0} files to {1}", count, saveDialog.FileName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Backup failed", ex);
+                MessageBox.Show(this, "The backup could not be written:\n" + ex.Message, "Back up Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void restoreSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openDialog = new OpenFileDialog
+            {
+                Filter = "Zip files|*.zip|All files|*.*",
+                CheckFileExists = true,
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+            if (openDialog.ShowDialog(this) != DialogResult.OK)
+            {
+                return;
+            }
+            try
+            {
+                string description = SettingsBackup.Describe(openDialog.FileName);
+                if (description == null)
+                {
+                    MessageBox.Show(this, "This file is not a SuperPuTTY settings backup.", "Restore Settings", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+                if (MessageBox.Show(this,
+                    (description.Length > 0 ? description + "\n\n" : string.Empty) +
+                    "Settings, sessions, commands and layouts are replaced by the backup the next time SuperPuTTY starts. " +
+                    "A backup of the current state is saved first.\n\nRestore this backup?",
+                    "Restore Settings", MessageBoxButtons.OKCancel, MessageBoxIcon.Question) != DialogResult.OK)
+                {
+                    return;
+                }
+                string safety = Path.Combine(SuperPuTTY.Settings.SettingsFolder, "backups", string.Format("before-restore-{0:yyyyMMdd-HHmmss}.zip", DateTime.Now));
+                SuperPuTTY.Settings.Save();
+                SettingsBackup.Create(safety, SuperPuTTY.Settings.SettingsFilePath, SuperPuTTY.Settings.SettingsFolder, SuperPuTTY.Version);
+                SettingsBackup.StageRestore(openDialog.FileName, SettingsBackup.PendingFolder, SuperPuTTY.Settings.SettingsFolder);
+                if (MessageBox.Show(this,
+                    "The backup is restored when SuperPuTTY starts again. The previous state was saved to\n" + safety + "\n\nClose SuperPuTTY now?",
+                    "Restore Settings", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                {
+                    Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Restore failed", ex);
+                MessageBox.Show(this, "The backup could not be restored:\n" + ex.Message, "Restore Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -689,6 +787,20 @@ namespace SuperPutty
             UpdateIconBar();
         }
 
+        /// <summary>Host Info icon: opens the Host Info pane, or closes it when pressed</summary>
+        private void btnHostInfoPane_Click(object sender, EventArgs e)
+        {
+            if (IsOpen(this.hostInfoPane))
+            {
+                this.hostInfoPane.Instance.Close();
+            }
+            else
+            {
+                ShowHostInfo();
+            }
+            UpdateIconBar();
+        }
+
         private void btnLayoutsPane_Click(object sender, EventArgs e)
         {
             if (IsOpen(this.layouts))
@@ -709,6 +821,7 @@ namespace SuperPutty
             this.btnLayoutsPane.Checked = IsOpen(this.layouts);
             this.btnCommandsPane.Checked = IsOpen(this.commandsPane);
             this.btnContainersPane.Checked = IsOpen(this.containersPane);
+            this.btnHostInfoPane.Checked = IsOpen(this.hostInfoPane);
             this.btnKioskToggle.Checked = this.isKioskMode;
 
             ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
@@ -716,288 +829,10 @@ namespace SuperPutty
             this.btnCopySession.Enabled = canCopy;
             this.copySessionToolStripMenuItem.Enabled = canCopy;
             this.copyLastCommandToolStripMenuItem.Enabled = canCopy;
+            this.explainInClaudeToolStripMenuItem.Enabled = canCopy;
             this.openSessionLogToolStripMenuItem.Enabled = panel != null && panel.LogFile != null;
             this.btnUploadFiles.Enabled = panel != null && CanUpload(panel.Session);
-        }
-
-        #region Upload
-
-        /// <summary>Uploads need an SSH session and pscp</summary>
-        private static bool CanUpload(SessionData session)
-        {
-            return RemoteCommandTab.IsSupported(session) && SuperPuTTY.IsScpEnabled;
-        }
-
-        private void btnUploadFiles_Click(object sender, EventArgs e)
-        {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            if (panel != null && this.openFileDialogUpload.ShowDialog(this) == DialogResult.OK)
-            {
-                UploadFiles(panel, this.openFileDialogUpload.FileNames);
-            }
-        }
-
-        /// <summary>Files dropped on the icon bar's upload button go to the active terminal's host</summary>
-        private void tsIcons_DragOver(object sender, DragEventArgs e)
-        {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            bool overButton = this.tsIcons.GetItemAt(this.tsIcons.PointToClient(new Point(e.X, e.Y))) == this.btnUploadFiles;
-            e.Effect = overButton && panel != null && CanUpload(panel.Session) && e.Data.GetDataPresent(DataFormats.FileDrop)
-                ? DragDropEffects.Copy : DragDropEffects.None;
-        }
-
-        private void tsIcons_DragDrop(object sender, DragEventArgs e)
-        {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
-            if (panel != null && files != null && files.Length > 0)
-            {
-                this.BeginInvoke((MethodInvoker)delegate { UploadFiles(panel, files); });
-            }
-        }
-
-        /// <summary>
-        /// Upload files and folders to a tab's host with pscp, into the folder confirmed in a dialog (preset with
-        /// the shell's current directory if the window title shows it). Runs in the background; progress and
-        /// result appear in the status bar.
-        /// </summary>
-        private void UploadFiles(ctlPuttyPanel panel, string[] paths)
-        {
-            SessionData session = panel.Session;
-            if (!RemoteCommandTab.IsSupported(session))
-            {
-                SuperPuTTY.ReportStatus("Uploads need an SSH session");
-                return;
-            }
-            if (!SuperPuTTY.IsScpEnabled)
-            {
-                MessageBox.Show(this, "pscp.exe is not set or not found. Set its location in Tools > Options.", "Upload Files", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            List<BrowserFileInfo> sources = new List<BrowserFileInfo>();
-            foreach (string path in paths)
-            {
-                if (Directory.Exists(path)) { sources.Add(new BrowserFileInfo(new DirectoryInfo(path))); }
-                else if (File.Exists(path)) { sources.Add(new BrowserFileInfo(new FileInfo(path))); }
-            }
-            if (sources.Count == 0)
-            {
-                return;
-            }
-
-            string detected = RemotePath.FromWindowTitle(panel.AppPanel.GetWindowTitle());
-            string targetFolder;
-            using (dlgUploadFiles dialog = new dlgUploadFiles(panel.Text, paths, detected ?? "~", detected != null))
-            {
-                if (dialog.ShowDialog(this) != DialogResult.OK)
-                {
-                    return;
-                }
-                targetFolder = dialog.TargetFolder;
-            }
-
-            BrowserFileInfo target = new BrowserFileInfo { Path = RemotePath.ToPscpPath(targetFolder), Source = SourceType.Remote, Type = FileType.Directory };
-            string where = string.Format("{0}:{1}", panel.Text, targetFolder);
-            SuperPuTTY.ReportStatus("Uploading {0} item(s) to {1}…", sources.Count, where);
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                FileTransferResult result;
-                try
-                {
-                    PscpClient client = new PscpClient(new PscpOptions { PscpLocation = SuperPuTTY.Settings.PscpExe }, session);
-                    result = client.CopyFiles(sources, target, (complete, cancelAll, status) =>
-                    {
-                        this.BeginInvoke((MethodInvoker)delegate
-                        {
-                            SuperPuTTY.ReportStatus("Uploading to {0}: {1} {2}%", where, status.Filename, status.PercentComplete);
-                        });
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Upload failed", ex);
-                    result = new FileTransferResult();
-                    result.SetError(ex.Message, ex);
-                }
-
-                this.BeginInvoke((MethodInvoker)delegate
-                {
-                    if (result.StatusCode == ResultStatusCode.Success)
-                    {
-                        SuperPuTTY.ReportStatus("Uploaded {0} item(s) to {1}", sources.Count, where);
-                    }
-                    else
-                    {
-                        SuperPuTTY.ReportStatus("Upload to {0} failed: {1}", where, result.ErrorMsg);
-                        MessageBox.Show(this, string.Format("Upload to {0} failed:\n\n{1}\n\nUploads need key-based login (e.g. Pageant) or a stored password, and write access to the folder.", where, result.ErrorMsg),
-                            "Upload Files", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                });
-            });
-        }
-
-        /// <summary>
-        /// Transfer Files dialog: source preset with the active tab and its current directory, target with another
-        /// open tab (or the Downloads folder); the copy runs in the background, progress in the status bar
-        /// </summary>
-        private void transferFiles_Click(object sender, EventArgs e)
-        {
-            if (!SuperPuTTY.IsScpEnabled)
-            {
-                MessageBox.Show(this, "pscp.exe is not set or not found. Set its location in Tools > Options.", "Transfer Files", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            // sessions of open tabs first (with their current directory), then all other SSH sessions
-            List<ctlPuttyPanel> tabs = VisualOrderTabSwitchStrategy.GetDocuments(this.DockPanel).OfType<ctlPuttyPanel>()
-                .Where(p => RemoteCommandTab.IsSupported(p.Session)).ToList();
-            List<SessionData> sessions = tabs.Select(p => p.Session).Distinct().ToList();
-            sessions.AddRange(SuperPuTTY.GetAllSessions()
-                .Where(s => RemoteCommandTab.IsSupported(s) && !sessions.Contains(s))
-                .OrderBy(s => s.SessionId));
-
-            // preset: the active tab and its neighbour, the left one as source and the right one as target
-            ctlPuttyPanel fromTab, toTab;
-            FileTransferJob.PreselectPair(tabs, this.DockPanel.ActiveDocument as ctlPuttyPanel, (a, b) => a.Session == b.Session, out fromTab, out toTab);
-
-            TransferEndpoint source = fromTab == null
-                ? new TransferEndpoint { Path = string.Empty }
-                : new TransferEndpoint { Session = fromTab.Session, Path = (RemotePath.FromWindowTitle(fromTab.AppPanel.GetWindowTitle()) ?? "~") + "/" };
-            ctlPuttyPanel other = toTab;
-            TransferEndpoint target = other == null
-                ? new TransferEndpoint { Path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads") }
-                : new TransferEndpoint { Session = other.Session, Path = RemotePath.FromWindowTitle(other.AppPanel.GetWindowTitle()) ?? "~" };
-
-            // a session's current directory, from its open tab's window title
-            Func<SessionData, string> remoteDirectory = session =>
-            {
-                ctlPuttyPanel tab = tabs.FirstOrDefault(p => p.Session == session);
-                return (tab == null ? null : RemotePath.FromWindowTitle(tab.AppPanel.GetWindowTitle())) ?? "~";
-            };
-            string downloads = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-
-            using (dlgTransferFiles dialog = new dlgTransferFiles(sessions, source, target, remoteDirectory, downloads))
-            {
-                if (dialog.ShowDialog(this) != DialogResult.OK)
-                {
-                    return;
-                }
-                source = dialog.Source;
-                target = dialog.Target;
-            }
-
-            string what = string.Format("{0} → {1}", source, target);
-            SuperPuTTY.ReportStatus("Copying {0}…", what);
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                FileTransferResult result;
-                try
-                {
-                    result = FileTransferJob.Run(source, target, text => this.BeginInvoke((MethodInvoker)delegate { SuperPuTTY.ReportStatus("Copying: {0}", text); }));
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Transfer failed", ex);
-                    result = new FileTransferResult();
-                    result.SetError(ex.Message, ex);
-                }
-                this.BeginInvoke((MethodInvoker)delegate
-                {
-                    if (result.StatusCode == ResultStatusCode.Success)
-                    {
-                        SuperPuTTY.ReportStatus("Copied {0}", what);
-                    }
-                    else
-                    {
-                        SuperPuTTY.ReportStatus("Copy failed: {0}", result.ErrorMsg);
-                        MessageBox.Show(this, string.Format("Copying {0} failed:\n\n{1}\n\nTransfers need key-based login (e.g. Pageant) or a stored password, and access to the paths.", what, result.ErrorMsg),
-                            "Transfer Files", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                });
-            });
-        }
-
-        #endregion
-
-        private void copySession_Click(object sender, EventArgs e)
-        {
-            CopyActiveSessionToClipboard(false);
-        }
-
-        private void copyLastCommand_Click(object sender, EventArgs e)
-        {
-            CopyActiveSessionToClipboard(true);
-        }
-
-        /// <summary>
-        /// Copy the active terminal's screen and scrollback to the clipboard (PuTTY's "Copy All to Clipboard"),
-        /// e.g. to paste a session into a chat, and report the number of lines in the status bar. With
-        /// <paramref name="lastCommandOnly"/> only the last command and its output are kept (cut at the prompts).
-        /// </summary>
-        private void CopyActiveSessionToClipboard(bool lastCommandOnly)
-        {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            if (panel == null || !panel.SupportsPuttyCommands)
-            {
-                SuperPuTTY.ReportStatus("Copy to clipboard: no PuTTY terminal tab is active");
-                return;
-            }
-
-            string tabName = panel.Text;
-            ThreadPool.QueueUserWorkItem(delegate
-            {
-                bool copied = false;
-                try
-                {
-                    copied = panel.CopyAllToClipboard();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error("Error copying session to clipboard", ex);
-                }
-
-                this.BeginInvoke((MethodInvoker)delegate
-                {
-                    if (!copied)
-                    {
-                        SuperPuTTY.ReportStatus("Copy to clipboard failed for {0}", tabName);
-                        return;
-                    }
-                    int lines = 0;
-                    bool cut = false;
-                    try
-                    {
-                        if (Clipboard.ContainsText())
-                        {
-                            string text = Clipboard.GetText();
-                            if (lastCommandOnly)
-                            {
-                                string last = TerminalText.LastCommand(text);
-                                if (last != null)
-                                {
-                                    Clipboard.SetText(last);
-                                    text = last;
-                                    cut = true;
-                                }
-                            }
-                            lines = text.Split('\n').Length;
-                        }
-                    }
-                    catch (System.Runtime.InteropServices.ExternalException ex)
-                    {
-                        Log.Warn("Could not read clipboard to count lines", ex);
-                    }
-                    if (lastCommandOnly && !cut)
-                    {
-                        SuperPuTTY.ReportStatus("No shell prompt recognised in {0}: copied the whole session ({1} lines)", tabName, lines);
-                    }
-                    else
-                    {
-                        SuperPuTTY.ReportStatus("Copied {0} {1} lines from {2} to the clipboard", lines, lastCommandOnly ? "last-command" : "session", tabName);
-                    }
-                });
-            });
+            UpdateExtraIconBarButtons();
         }
 
         /// <summary>Update the icon bar once the current docking operation has finished</summary>
@@ -1062,98 +897,37 @@ namespace SuperPutty
             }
         }
 
-        /// <summary>The session of the active terminal tab, or null</summary>
-        private SessionData ActiveSession()
+        private void hostInfoPaneToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            return panel == null ? null : panel.Session;
+            ShowHostInfo();
         }
 
         /// <summary>
-        /// Type a command into the active terminal tab, optionally followed by Enter, and put the focus there.
-        /// Run commands are recorded in that session's command bar history. Returns false without an active terminal.
+        /// Host Info: in front, as a tab next to Session Detail; otherwise below the Sessions pane; otherwise on
+        /// the right. An open Host Info is only brought to the front.
         /// </summary>
-        private bool SendToActiveSession(string command, bool execute)
+        private void ShowHostInfo()
         {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            if (panel == null || !panel.AppPanel.ExternalProcessCaptured)
+            HostInfoPane pane = this.hostInfoPane.Instance;
+            if (pane != null && !pane.IsHidden)
             {
-                return false;
+                pane.Activate();
+                return;
             }
-
-            // line breaks of multi-line commands are typed as Enter
-            string text = CommandSnippet.ForTerminal(command);
-            CommandData data = execute ? new CommandData(text, new KeyEventArgs(Keys.Enter)) : new CommandData(text);
-            data.SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
-            if (execute)
+            if (this.sessionDetail.IsVisibleAsToolWindow && !this.sessionDetail.Instance.IsHidden)
             {
-                this.commandHistory.Add(CommandHistory.KeyFor(panel.Session), command.Trim());
-                RefreshCommandHistory();
+                this.hostInfoPane.ShowWindow(this.sessionDetail.Instance.DockHandler.Pane, null);
             }
-            panel.SetFocusToChildApplication("CommandsPane");
-            return true;
-        }
-
-        /// <summary>
-        /// Run a command in all terminal tabs that accept commands, after a confirmation, and record it in each
-        /// session's history. Returns the number of terminals it was sent to.
-        /// </summary>
-        private int RunInAllSessions(string command)
-        {
-            return RunInSessions(command, GetCommandTargets(), "Run in All Terminals");
-        }
-
-        /// <summary>Run a command in the open tabs (that accept commands) of sessions below a folder of the session tree</summary>
-        private int RunInFolder(string command, string folder)
-        {
-            List<ctlPuttyPanel> targets = GetCommandTargets()
-                .Where(p => CommandLibrary.FolderChain(p.Session.ScopeSessionId).Contains(folder)).ToList();
-            return RunInSessions(command, targets, "Run in Terminals of " + folder);
-        }
-
-        /// <summary>Run a command in the given tabs after a confirmation, recording it in each session's history</summary>
-        private int RunInSessions(string command, List<ctlPuttyPanel> targets, string title)
-        {
-            if (targets.Count == 0)
+            else if (this.sessions.IsVisibleAsToolWindow && !this.sessions.Instance.IsHidden
+                && this.sessions.Instance.DockHandler.Pane.DockState != DockState.Float)
             {
-                SuperPuTTY.ReportStatus("{0}: no open terminal tab accepts commands", title);
-                return 0;
+                this.hostInfoPane.ShowWindow(this.sessions.Instance.DockHandler.Pane, DockAlignment.Bottom, 0.5);
             }
-            if (MessageBox.Show(this, string.Format("Run this command in {0} terminal(s)?\n\n{1}\n\n{2}", targets.Count, command.Trim(),
-                    string.Join(", ", targets.Select(t => t.Text))),
-                title, MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK)
+            else
             {
-                return 0;
+                this.hostInfoPane.ShowWindow(DockState.DockRight);
             }
-
-            foreach (ctlPuttyPanel panel in targets)
-            {
-                new CommandData(CommandSnippet.ForTerminal(command), new KeyEventArgs(Keys.Enter)).SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
-                this.commandHistory.Add(CommandHistory.KeyFor(panel.Session), command.Trim());
-            }
-            RefreshCommandHistory();
-            SuperPuTTY.ReportStatus("Ran \"{0}\" in {1} terminal(s)", command.Trim(), targets.Count);
-            return targets.Count;
-        }
-
-        /// <summary>
-        /// Run a command in a new tab on the active terminal's host; the tab keeps a shell open after the command.
-        /// Returns false without an active SSH terminal.
-        /// </summary>
-        private bool RunInNewTab(string command)
-        {
-            ctlPuttyPanel panel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            if (panel == null || !RemoteCommandTab.IsSupported(panel.Session))
-            {
-                SuperPuTTY.ReportStatus("Run in new tab: no SSH terminal tab is active");
-                return false;
-            }
-            string title = command.Trim();
-            if (title.Length > 30)
-            {
-                title = title.Substring(0, 29) + "…";
-            }
-            return RemoteCommandTab.Open(panel.Session, RemoteCommandTab.KeepShellAfter(command), title) != null;
+            this.hostInfoPane.Instance.Activate();
         }
 
         private void logViewerToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1239,144 +1013,6 @@ namespace SuperPutty
             };
         }
 
-
-        private void btnKioskToggle_Click(object sender, EventArgs e)
-        {
-            ToggleKiosk();
-        }
-
-        void ToggleKiosk()
-        {
-            if (!isKioskMode)
-            {
-                Log.InfoFormat("Enter Kiosk Mode");
-                kioskViewState.SaveState();
-                kioskViewState.Hide();
-                isKioskMode = true;
-                this.tsKiosk.Visible = true;
-            }
-            else
-            {
-                Log.InfoFormat("Exit Kiosk Mode");
-                kioskViewState.Restore();
-                isKioskMode = false;
-                this.tsKiosk.Visible = false;
-            }
-            UpdateIconBar();
-        }
-
-        /// <summary>Saves the window layout before kiosk mode hides everything but the terminal tabs, and restores it</summary>
-        class ViewState
-        {
-            public ViewState(frmSuperPutty mainForm)
-            {
-                this.MainForm = mainForm;
-            }
-
-            public frmSuperPutty MainForm { get; set; }
-            public bool SessionsWindow { get; set; }
-            public bool LogWindow { get; set; }
-            public bool LayoutWindow { get; set; }
-            public bool SessionDetail { get; set; }
-            public bool CommandsWindow { get; set; }
-            public bool ContainersWindow { get; set; }
-
-            public FormBorderStyle FormBorderStyle { get; set; }
-            public FormWindowState FormWindowState { get; set; }
-
-            /// <summary>Toolbar positions; showing the toolbars again can otherwise reorder their rows</summary>
-            public Point IconBarLocation { get; set; }
-            public Point CommandBarLocation { get; set; }
-            public Point ConnectionBarLocation { get; set; }
-
-            public void SaveState()
-            {
-                this.IconBarLocation = this.MainForm.tsIcons.Location;
-                this.CommandBarLocation = this.MainForm.tsCommands.Location;
-                this.ConnectionBarLocation = this.MainForm.tsConnect.Location;
-
-                this.SessionsWindow = this.MainForm.sessions.IsVisible;
-                this.LogWindow = this.MainForm.logViewer.IsVisible;
-                this.LayoutWindow = this.MainForm.layouts.IsVisible;
-                this.SessionDetail = this.MainForm.sessionDetail.IsVisible;
-                this.CommandsWindow = this.MainForm.commandsPane.IsVisible;
-                this.ContainersWindow = this.MainForm.containersPane.IsVisible;
-
-                this.FormBorderStyle = this.MainForm.FormBorderStyle;
-                this.FormWindowState = this.MainForm.WindowState;
-
-            }
-
-            public void Hide()
-            {
-                try
-                {
-                    this.MainForm.DockPanel.Visible = false;
-
-                    // windows
-                    this.MainForm.sessions.Hide();
-                    this.MainForm.layouts.Hide();
-                    this.MainForm.logViewer.Hide();
-                    this.MainForm.sessionDetail.Hide();
-                    this.MainForm.commandsPane.Hide();
-                    this.MainForm.containersPane.Hide();
-
-                    // status bar
-                    this.MainForm.statusStrip1.Hide();
-
-                    // toolbars
-                    this.MainForm.tsIcons.Visible = false;
-                    this.MainForm.tsCommands.Visible = false;
-                    this.MainForm.tsConnect.Visible = false;
-
-                    // menubar
-                    this.MainForm.menuStrip1.Hide();
-
-                    this.MainForm.FormBorderStyle = FormBorderStyle.None;
-                    if (this.MainForm.WindowState == FormWindowState.Maximized)
-                    {
-                        // if maximized, goto normal first
-                        this.MainForm.WindowState = FormWindowState.Normal;
-                    }
-                    this.MainForm.WindowState = FormWindowState.Maximized;
-                }
-                finally
-                {
-                    this.MainForm.DockPanel.Visible = true;
-                }
-
-            }
-
-            public void Restore()
-            {
-                try
-                {
-                    this.MainForm.DockPanel.Visible = false;
-
-                    // windows
-                    if (this.SessionsWindow) { this.MainForm.sessions.Restore(); }
-                    if (this.LayoutWindow) { this.MainForm.layouts.Restore(); }
-                    if (this.LogWindow) { this.MainForm.logViewer.Restore(); }
-                    if (this.SessionDetail) { this.MainForm.sessionDetail.Restore(); }
-                    if (this.CommandsWindow) { this.MainForm.commandsPane.Restore(); }
-                    if (this.ContainersWindow) { this.MainForm.containersPane.Restore(); }
-
-                    // status bar, toolbars, menu bar and always-on-top as set in the View menu
-                    this.MainForm.ApplySettingsToToolbars();
-                    this.MainForm.tsIcons.Location = this.IconBarLocation;
-                    this.MainForm.tsCommands.Location = this.CommandBarLocation;
-                    this.MainForm.tsConnect.Location = this.ConnectionBarLocation;
-
-                    this.MainForm.WindowState = this.FormWindowState;
-                    this.MainForm.FormBorderStyle = this.FormBorderStyle;
-                }
-                finally
-                {
-                    this.MainForm.DockPanel.Visible = true;
-
-                }
-            }
-        }
 
         #endregion
 
@@ -1531,6 +1167,10 @@ namespace SuperPutty
             {
                 return this.logViewer.Instance ?? this.logViewer.Initialize();
             }
+            else if (typeof(HostInfoPane).FullName == persistString)
+            {
+                return this.hostInfoPane.Instance ?? this.hostInfoPane.Initialize();
+            }
             else if (typeof(ContainersPane).FullName == persistString)
             {
                 return this.containersPane.Instance ?? this.containersPane.Initialize();
@@ -1608,20 +1248,10 @@ namespace SuperPutty
             Process.Start(new ProcessStartInfo("https://github.com/jimradford/superputty/") { UseShellExecute = true });
         }
 
+        /// <summary>Help → Documentation: the local help (help\ next to the exe), F1 in panes and dialogs opens their page</summary>
         private void helpToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            if (File.Exists(Application.StartupPath + @"\superputty.chm"))
-            {
-                Process.Start(new ProcessStartInfo(Application.StartupPath + @"\superputty.chm") { UseShellExecute = true });
-            }
-            else
-            {
-                DialogResult result = MessageBox.Show("Local documentation could not be found. Would you like to view the documentation online instead?", "Documentation Not Found", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (result == DialogResult.Yes)
-                {
-                    Process.Start(new ProcessStartInfo("https://github.com/jimradford/superputty/wiki/Documentation") { UseShellExecute = true });
-                }
-            }
+            HelpFiles.Open(HelpFiles.Index);
         }
 
         #endregion
@@ -1802,130 +1432,6 @@ namespace SuperPutty
             this.tsSendCommandCombo.ComboBox.Refresh();
         }
 
-        /// <summary>The state of one tunnel of an open tab (tab markers and the tunnel overview)</summary>
-        private class TunnelEntry
-        {
-            public ctlPuttyPanel Panel { get; set; }
-            public SshTunnel Tunnel { get; set; }
-            public TunnelState State { get; set; }
-            /// <summary>Who holds the port for a conflict, otherwise null</summary>
-            public string Holder { get; set; }
-        }
-
-        /// <summary>
-        /// The state of every tunnel of the open tabs: is its local port held by the tab's PuTTY (or by another tab
-        /// of the same host)? Null if the listener table can't be read.
-        /// </summary>
-        private List<TunnelEntry> CollectTunnelStates()
-        {
-            List<ctlPuttyPanel> panels = this.DockPanel.Contents.OfType<ctlPuttyPanel>().ToList();
-            List<TunnelEntry> entries = new List<TunnelEntry>();
-            if (!panels.Any(p => p.Tunnels != null && p.Tunnels.Count > 0))
-            {
-                return entries;
-            }
-
-            Dictionary<int, HashSet<int>> listeners;
-            try
-            {
-                listeners = TcpListeners.Snapshot();
-            }
-            catch (Exception ex) when (ex is DllNotFoundException || ex is EntryPointNotFoundException)
-            {
-                Log.Warn("Could not read the TCP listener table, tunnel markers disabled", ex);
-                this.tunnelTimer.Stop();
-                return null;
-            }
-
-            // PuTTY process -> tab, to name the tab that holds a port
-            Dictionary<int, ctlPuttyPanel> tabsByProcess = new Dictionary<int, ctlPuttyPanel>();
-            foreach (ctlPuttyPanel panel in panels)
-            {
-                int id = panel.AppPanel.ProcessId;
-                if (id != 0)
-                {
-                    tabsByProcess[id] = panel;
-                }
-            }
-
-            foreach (ctlPuttyPanel panel in panels.Where(p => p.Tunnels != null && p.Tunnels.Count > 0))
-            {
-                int processId = panel.AppPanel.ProcessId;
-                List<int> sameHost = tabsByProcess
-                    .Where(t => t.Key != processId && TunnelMonitor.SameTarget(t.Value.Session, panel.Session))
-                    .Select(t => t.Key).ToList();
-                bool inStartup = DateTime.UtcNow - panel.StartedUtc < TunnelMonitor.StartupGrace;
-                foreach (SshTunnel tunnel in panel.Tunnels)
-                {
-                    TunnelState state = TunnelMonitor.StateOf(tunnel, processId, listeners, sameHost, inStartup);
-                    entries.Add(new TunnelEntry
-                    {
-                        Panel = panel,
-                        Tunnel = tunnel,
-                        State = state,
-                        Holder = state == TunnelState.Conflict ? DescribeProcesses(listeners[tunnel.ListenPort], tabsByProcess) : null
-                    });
-                }
-            }
-            return entries;
-        }
-
-        /// <summary>
-        /// Show on each tab with SSH tunnels how many it has and whether their local ports are held by its PuTTY
-        /// (or by another SuperPuTTY tab of the same host); details in the tab tooltip
-        /// </summary>
-        private void UpdateTunnelDisplays()
-        {
-            List<TunnelEntry> entries = CollectTunnelStates();
-            if (entries == null)
-            {
-                return;
-            }
-            foreach (IGrouping<ctlPuttyPanel, TunnelEntry> tab in entries.GroupBy(e => e.Panel))
-            {
-                List<TunnelState> states = tab.Select(e => e.State).ToList();
-                Dictionary<int, string> holders = tab.Where(e => e.Holder != null)
-                    .GroupBy(e => e.Tunnel.ListenPort).ToDictionary(g => g.Key, g => g.First().Holder);
-                tab.Key.SetTunnelDisplay(TunnelMonitor.TabSuffix(states), TunnelMonitor.ToolTip(tab.Select(e => e.Tunnel).ToList(), states, holders));
-            }
-        }
-
-        /// <summary>Tools → SSH Tunnels: all tunnels of the open tabs; double-click switches to the tab</summary>
-        private void tunnelsOverview_Click(object sender, EventArgs e)
-        {
-            List<TunnelEntry> entries = CollectTunnelStates() ?? new List<TunnelEntry>();
-            List<string[]> rows = entries.Select(entry => new[]
-            {
-                entry.Panel.Text,
-                entry.Tunnel.Describe(),
-                entry.State == TunnelState.Up ? "up"
-                    : entry.State == TunnelState.Down ? "NOT listening"
-                    : entry.State == TunnelState.Conflict ? "port in use by " + entry.Holder
-                    : entry.State == TunnelState.NotCheckable ? "on the server (not checked)" : "connecting…",
-                entry.Tunnel.Origin
-            }).ToList();
-
-            using (dlgTunnels dialog = new dlgTunnels(rows))
-            {
-                if (dialog.ShowDialog(this) == DialogResult.OK && dialog.SelectedIndex >= 0)
-                {
-                    entries[dialog.SelectedIndex].Panel.Activate();
-                }
-            }
-        }
-
-        /// <summary>Check the hosts of the open terminal tabs (command tabs count as their original session)</summary>
-        private void CheckOpenTabsHealth()
-        {
-            if (!SuperPuTTY.Settings.AutoHealthCheck)
-            {
-                return;
-            }
-            HealthMonitor.Check(this.DockPanel.Contents.OfType<ctlPuttyPanel>()
-                .Select(p => SuperPuTTY.GetSessionById(p.Session.ScopeSessionId))
-                .Where(s => s != null).Distinct().ToList(), false);
-        }
-
         private void notifyActivityToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.notifyActivityToolStripMenuItem.Checked = !this.notifyActivityToolStripMenuItem.Checked;
@@ -1973,434 +1479,6 @@ namespace SuperPutty
         {
             Directory.CreateDirectory(SessionLog.Folder);
             Process.Start(new ProcessStartInfo(SessionLog.Folder) { UseShellExecute = true });
-        }
-
-        private void healthChecksToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            this.healthChecksToolStripMenuItem.Checked = !this.healthChecksToolStripMenuItem.Checked;
-            SuperPuTTY.Settings.AutoHealthCheck = this.healthChecksToolStripMenuItem.Checked;
-            SuperPuTTY.Settings.Save();
-            CheckOpenTabsHealth();
-        }
-
-        /// <summary>The holders of a port, for tunnel conflicts: "tab 'name'" for SuperPuTTY tabs, else "name (PID)"</summary>
-        private static string DescribeProcesses(IEnumerable<int> processIds, Dictionary<int, ctlPuttyPanel> tabsByProcess)
-        {
-            return string.Join(", ", processIds.Select(id =>
-            {
-                ctlPuttyPanel tab;
-                if (tabsByProcess.TryGetValue(id, out tab))
-                {
-                    return string.Format("tab '{0}'", tab.Text);
-                }
-                try
-                {
-                    using (Process process = Process.GetProcessById(id))
-                    {
-                        return string.Format("{0} (PID {1})", process.ProcessName, id);
-                    }
-                }
-                catch (ArgumentException)
-                {
-                    return "PID " + id;
-                }
-            }));
-        }
-
-        /// <summary>Send command from send command toolbar to open sessions</summary>
-        /// <param name="saveHistory">If true, save the history in the command toolbar combobox</param>
-        /// <returns>The number of commands sent</returns>
-        private int TrySendCommandsFromToolbar(bool saveHistory)
-        {
-            return TrySendCommandsFromToolbar(new CommandData(this.tsSendCommandCombo.Text), saveHistory);
-        }
-
-        /// <summary>Send commands to open sessions</summary>
-        /// <param name="command">The <seealso cref="CommandData"/> object containing text and or keyboard commands</param>
-        /// <param name="saveHistory">If True, save the history in the command toolbar combobox</param>
-        /// <returns>The number terminals commands have been sent to</returns>
-        /// <summary>
-        /// The terminal tabs that receive commands sent to several sessions (command bar, "Run in All Terminals"),
-        /// in tab order: tabs with "Accept Commands" checked, or only visible tabs if so chosen in the document selector
-        /// </summary>
-        private List<ctlPuttyPanel> GetCommandTargets()
-        {
-            return VisualOrderTabSwitchStrategy.GetDocuments(this.DockPanel)
-                .OfType<ctlPuttyPanel>()
-                .Where(panel => this.sendCommandsDocumentSelector.IsDocumentSelected(panel) && panel.AppPanel.ExternalProcessCaptured)
-                .ToList();
-        }
-
-        private int TrySendCommandsFromToolbar(CommandData command, bool saveHistory)
-        {
-            int sent = 0;
-            List<string> sessionKeys = new List<string>();
-
-            if(this.DockPanel.Contents.Count > 0)
-            {
-                foreach (ctlPuttyPanel panel in GetCommandTargets())
-                {
-                    command.SendToTerminal(panel.AppPanel.AppWindowHandle.ToInt32());
-
-                    sent++;
-                    sessionKeys.Add(CommandHistory.KeyFor(panel.Session));
-                }
-
-                if (sent > 0)
-                {
-                    // success...clear text and save in the history of every session that got the command
-                    bool addToHistory = command != null && !string.IsNullOrEmpty(command.Command) && saveHistory;
-                    MethodInvoker update = delegate {
-                        if (addToHistory)
-                        {
-                            foreach (string sessionKey in sessionKeys)
-                            {
-                                this.commandHistory.Add(sessionKey, command.Command);
-                            }
-                        }
-                        this.tsSendCommandCombo.Text = string.Empty;
-                        RefreshCommandHistory();
-                    };
-
-                    if (this.InvokeRequired)
-                    {
-                        this.BeginInvoke(update);
-                    }
-                    else
-                    {
-                        update();
-                    }
-                }
-            }
-            return sent;
-        }
-
-        #endregion
-
-        #region Mouse and Keyboard Hooks
-
-        private static IntPtr SetKBHook(NativeMethods.LowLevelKMProc proc)
-        {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                return NativeMethods.SetWindowsHookEx(NativeMethods.WH_KEYBOARD_LL, proc, NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
-            }
-        }
-
-        // Intercept keyboard messages for Ctrl-F4 and Ctrl-Tab handling
-        private IntPtr KBHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0)
-            {
-                int vkCode = Marshal.ReadInt32(lParam);
-                Keys keys = (Keys)vkCode;
-
-                // track key state globally for control/alt/shift is up/down
-                bool isKeyDown = wParam == (IntPtr)NativeMethods.WM_KEYDOWN || wParam == (IntPtr)NativeMethods.WM_SYSKEYDOWN;
-                if (keys == Keys.LControlKey || keys == Keys.RControlKey) { isControlDown = isKeyDown; }
-                if (keys == Keys.LShiftKey || keys == Keys.RShiftKey) { isShiftDown = isKeyDown; }
-                if (keys == Keys.LMenu || keys == Keys.RMenu) { isAltDown = isKeyDown; }
-
-                if (Log.Logger.IsEnabledFor(Level.Trace))
-                {
-                    Log.DebugFormat("### KBHook: nCode={0}, wParam={1}, lParam={2} ({4,-4} - {3}) [{5}{6}{7}]",
-                        nCode, wParam, vkCode, keys, isKeyDown ? "Down" : "Up",
-                        isControlDown ? "Ctrl" : "", isAltDown ? "Alt" : "", isAltDown ? "Shift" : "");
-                }
-
-                if (IsForegroundWindow(this))
-                {
-                    // SuperPutty or Putty is the window in front...
-
-                    if (keys == Keys.LControlKey || keys == Keys.RControlKey)
-                    {
-                        // If Ctrl-Tab has been pressed to move to an older panel then
-                        // make it current panel when Ctrl key is finally released.
-                        if (SuperPuTTY.Settings.EnableControlTabSwitching && !isControlDown && !isShiftDown)
-                        {
-                            this.tabSwitcher.CurrentDocument = (ToolWindow)this.DockPanel.ActiveDocument;
-                        }
-                    }
-
-                    if (keys == Keys.LShiftKey || keys == Keys.RShiftKey)
-                    {
-                        // If Ctrl-Shift-Tab has been pressed to move to an older panel then
-                        // make it current panel when both keys are finally released.
-                        if (SuperPuTTY.Settings.EnableControlTabSwitching && !isControlDown && !isShiftDown)
-                        {
-                            this.tabSwitcher.CurrentDocument = (ToolWindow)this.DockPanel.ActiveDocument;
-                        }
-                    }
-
-                    if (SuperPuTTY.Settings.EnableControlTabSwitching && isControlDown && !isShiftDown && keys == Keys.Tab)
-                    {
-                        // Operator has pressed Ctrl-Tab, make next PuTTY panel active
-                        if (isKeyDown && this.DockPanel.ActiveDocument is ToolWindowDocument)
-                        {
-                            if (this.tabSwitcher.MoveToNextDocument())
-                            {
-                                // Eat the keystroke
-                                return (IntPtr)1;
-                            }
-                        }
-                    }
-
-                    if (SuperPuTTY.Settings.EnableControlTabSwitching && isControlDown && isShiftDown && keys == Keys.Tab)
-                    {
-                        // Operator has pressed Ctrl-Shift-Tab, make previous PuTTY panel active
-                        if (isKeyDown && this.DockPanel.ActiveDocument is ToolWindowDocument)
-                        {
-                            if (this.tabSwitcher.MoveToPrevDocument())
-                            {
-                                // Eat the keystroke
-                                return (IntPtr)1;
-                            }
-                        }
-                    }
-
-                    // misc action handling (eat keyup and down)
-                    if (SuperPuTTY.Settings.EnableKeyboadShortcuts &&
-                        isKeyDown &&
-                        keys != Keys.LControlKey && keys != Keys.RControlKey &&
-                        keys != Keys.LMenu && keys != Keys.RMenu &&
-                        keys != Keys.LShiftKey && keys != Keys.RShiftKey)
-                    {
-                        if (isControlDown) keys |= Keys.Control;
-                        if (isShiftDown) keys |= Keys.Shift;
-                        if (isAltDown) keys |= Keys.Alt;
-
-                        if (Log.Logger.IsEnabledFor(Level.Trace))
-                        {
-                            Log.DebugFormat("#### TryExecute shortcut: keys={0}", keys);
-                        }
-                        SuperPuttyAction action;
-                        if (this.shortcuts.TryGetValue(keys, out action))
-                        {
-                            // post action to avoid getting errant keystrokes (e.g. allow current to be eaten)
-                            this.BeginInvoke(new Action(() =>
-                            {
-                                ExecuteSuperPuttyAction(action);
-                            }));
-                            return (IntPtr)1;
-                        }
-                    }
-                }
-
-
-            }
-
-            return NativeMethods.CallNextHookEx(kbHookID, nCode, wParam, lParam);
-        }
-
-        private static IntPtr SetMHook(NativeMethods.LowLevelKMProc proc)
-        {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                return NativeMethods.SetWindowsHookEx(NativeMethods.WH_MOUSE_LL, proc, NativeMethods.GetModuleHandle(curModule.ModuleName), 0);
-            }
-        }
-
-        private IntPtr MHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0 && (wParam == (IntPtr)NativeMethods.WM.LBUTTONUP || wParam == (IntPtr)NativeMethods.WM.RBUTTONUP) && IsForegroundWindow(this))
-            {
-                this.BringToFront();
-                //if (!Menu_IsMouseOver()) dockPanel.Focus();
-            }
-            return NativeMethods.CallNextHookEx(mHookID, nCode, wParam, lParam);
-        }
-
-        private static bool IsForegroundWindow(Form parent)
-        {
-            IntPtr fgWindow = NativeMethods.GetForegroundWindow();
-            if (parent.Handle == fgWindow) return true; // main form is FG
-            //foreach (Form f in Application.OpenForms) { if (f.Handle == fgWindow) return true; }
-            List<IntPtr> result = new List<IntPtr>();
-            GCHandle listHandle = GCHandle.Alloc(result);
-            try
-            {
-                NativeMethods.EnumWindowProc childProc = new NativeMethods.EnumWindowProc(EnumWindow);
-                NativeMethods.EnumChildWindows(parent.Handle, childProc, GCHandle.ToIntPtr(listHandle));
-            }
-            finally
-            {
-                if (listHandle.IsAllocated)
-                    listHandle.Free();
-            }
-            return result.Count > 0;
-        }
-
-        private static bool EnumWindow(IntPtr handle, IntPtr pointer)
-        {
-            GCHandle gch = GCHandle.FromIntPtr(pointer);
-            List<IntPtr> list = gch.Target as List<IntPtr>;
-            if (handle == NativeMethods.GetForegroundWindow()) list.Add(handle);
-            if (list.Count == 0) return true; else return false;
-        }
-
-        void UpdateShortcutsFromSettings()
-        {
-            // remove old
-            this.shortcuts.Clear();
-            this.optionsToolStripMenuItem.ShortcutKeys = Keys.None;
-            this.kioskModeToolStripMenuItem.ShortcutKeys = Keys.None;
-            this.copySessionToolStripMenuItem.ShortcutKeys = Keys.None;
-            this.copyLastCommandToolStripMenuItem.ShortcutKeys = Keys.None;
-
-            // reload new definitions
-            foreach (KeyboardShortcut ks in SuperPuTTY.Settings.LoadShortcuts())
-            {
-                try
-                {
-                    // shortcuts
-                    SuperPuttyAction action = (SuperPuttyAction)Enum.Parse(typeof(SuperPuttyAction), ks.Name);
-                    Keys keys = ks.Key | ks.Modifiers;
-                    if (keys != Keys.None)
-                    {
-                        this.shortcuts.Add(keys, action);
-                    }
-
-                    // sync menu items
-                    switch (action)
-                    {
-                        case SuperPuttyAction.Options:
-                            this.optionsToolStripMenuItem.ShortcutKeys = keys;
-                            break;
-                        case SuperPuttyAction.KioskMode:
-                            this.kioskModeToolStripMenuItem.ShortcutKeys = keys;
-                            break;
-                        case SuperPuttyAction.CopySessionToClipboard:
-                            this.copySessionToolStripMenuItem.ShortcutKeys = keys;
-                            break;
-                        case SuperPuttyAction.CopyLastCommand:
-                            this.copyLastCommandToolStripMenuItem.ShortcutKeys = keys;
-                            break;
-                        case SuperPuttyAction.OpenSession:
-                            this.openSessionToolStripMenuItem.ShortcutKeys = keys;
-                            break;
-                        case SuperPuttyAction.SwitchSession:
-                            this.switchSessionToolStripMenuItem.ShortcutKeys = keys;
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.ErrorFormat("Error creating shortcut: " + ks + ", disabled.", ex);
-                }
-
-            }
-        }
-
-        bool ExecuteSuperPuttyAction(SuperPuttyAction action)
-        {
-            ctlPuttyPanel activePanel = this.DockPanel.ActiveDocument as ctlPuttyPanel;
-            bool success = true;
-
-            Log.InfoFormat("Executing action, name={0}", action);
-            switch (action)
-            {
-                case SuperPuttyAction.CloseTab:
-                    ToolWindow win = this.DockPanel.ActiveDocument as ToolWindow;
-                    if (win != null) { win.Close(); }
-                    break;
-                case SuperPuttyAction.NextTab:
-                    this.tabSwitcher.MoveToNextDocument();
-                    break;
-                case SuperPuttyAction.PrevTab:
-                    this.tabSwitcher.MoveToPrevDocument();
-                    break;
-                case SuperPuttyAction.KioskMode:
-                    this.ToggleKiosk();
-                    break;
-                case SuperPuttyAction.CopySessionToClipboard:
-                    this.CopyActiveSessionToClipboard(false);
-                    break;
-                case SuperPuttyAction.CopyLastCommand:
-                    this.CopyActiveSessionToClipboard(true);
-                    break;
-                case SuperPuttyAction.OpenSession:
-                    KeyEventWindowActivator.ActivateForm(this);
-                    this.openSessionToolStripMenuItem.PerformClick();
-                    break;
-                case SuperPuttyAction.SwitchSession:
-                    KeyEventWindowActivator.ActivateForm(this);
-                    this.switchSessionToolStripMenuItem.PerformClick();
-                    break;
-                case SuperPuttyAction.Options:
-                    KeyEventWindowActivator.ActivateForm(this);
-                    this.optionsToolStripMenuItem.PerformClick();
-                    break;
-                case SuperPuttyAction.DuplicateSession:
-                    if (activePanel != null && activePanel.Session != null)
-                        SuperPuTTY.OpenPuttySession(activePanel.Session);
-                    break;
-                case SuperPuttyAction.GotoCommandBar:
-                    if (!this.isKioskMode)
-                    {
-                        KeyEventWindowActivator.ActivateForm(this);
-                        if (!this.tsCommands.Visible)
-                        {
-                            this.toggleCheckedState(this.sendCommandsToolStripMenuItem, EventArgs.Empty);
-                        }
-                        this.tsSendCommandCombo.Focus();
-                    }
-                    break;
-                case SuperPuttyAction.GotoConnectionBar:
-                    // perhaps consider allowing this later...need to really have a better approach to the state saving/invoking the toggle.
-                    if (QuickConnectionBarEnabled && !this.isKioskMode)
-                    {
-                        KeyEventWindowActivator.ActivateForm(this);
-                        if (!this.tsConnect.Visible)
-                        {
-                            this.toggleCheckedState(this.quickConnectionToolStripMenuItem, EventArgs.Empty);
-                        }
-                        this.tbTxtBoxHost.Focus();
-                    }
-                    break;
-                case SuperPuttyAction.FocusActiveSession:
-                    // focus on current super putty session...or at least try to
-                    KeyEventWindowActivator.ActivateForm(this);
-                    if (activePanel != null)
-                        activePanel.SetFocusToChildApplication("ExecuteAction");
-                    break;
-                case SuperPuttyAction.OpenScriptEditor:
-                    KeyEventWindowActivator.ActivateForm(this);
-                    toolStripButtonRunScript_Click(this, EventArgs.Empty);
-                    break;
-                case SuperPuttyAction.RenameTab:                    
-                    if (activePanel != null && activePanel.Session != null)
-                    {
-                        dlgRenameItem dialog = new dlgRenameItem
-                        {
-                            ItemName = activePanel.Text,
-                            DetailName = activePanel.Session.SessionId
-                        };
-
-                        if (dialog.ShowDialog(this) == DialogResult.OK)
-                        {
-                            activePanel.Text = activePanel.TextOverride = dialog.ItemName;                            
-                        }                        
-                    }
-                    break;
-                default:
-                    success = false;
-                    break;
-            }
-
-            return success;
-        }
-
-
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-        {
-            if ((keyData & Keys.Alt) == Keys.Alt)
-            {
-                menuStrip1.Visible = true;
-            }
-
-            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         #endregion
@@ -2542,7 +1620,9 @@ namespace SuperPutty
             Log.Info("Checking for application update");
             try {
                 httpRequest httpUpdateRequest = new httpRequest();
-                httpUpdateRequest.MakeRequest("https://api.github.com/repos/jimradford/superputty/releases/latest", delegate (bool success, string content)
+                // a manual check (menu) reports every outcome; the automatic one at start-up only logs failures
+                bool manual = sender == this.checkForUpdatesToolStripMenuItem;
+                httpUpdateRequest.MakeRequest(UpdateCheck.ReleasesUrl, delegate (bool success, string content)
                 {
                     if (success)
                     {
@@ -2551,10 +1631,7 @@ namespace SuperPutty
                         GitRelease latest = (GitRelease)js.ReadObject(ms);
                         ms.Close();
 
-                        Version latest_version = new Version(latest.version.Trim());
-                        Version SuperPuTTY_version = new Version(SuperPuTTY.Version);
-
-                        if (latest_version.CompareTo(SuperPuTTY_version) > 0)
+                        if (UpdateCheck.IsNewer(latest.version, SuperPuTTY.Version))
                         {
                             Log.Info("New Application version found! " + latest.version);
 
@@ -2570,7 +1647,7 @@ namespace SuperPutty
                         }
                         else
                         {
-                            if (sender.ToString().Equals(checkForUpdatesToolStripMenuItem.Text))
+                            if (manual)
                             {
                                 MessageBox.Show("You are running the latest version of SuperPutty", "SuperPuTTY Update Check", MessageBoxButtons.OK, MessageBoxIcon.Information);
                             }
@@ -2578,8 +1655,11 @@ namespace SuperPutty
                     }
                     else
                     {
-                        MessageBox.Show("There was an error while checking for updates. Please try again later.", "Error during update check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        Log.Warn("An Error occurred trying to check for program updates: " + content);                        
+                        Log.Warn("An Error occurred trying to check for program updates: " + content);
+                        if (manual)
+                        {
+                            MessageBox.Show("There was an error while checking for updates. Please try again later.", "Error during update check", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
                     }
                 });
             }

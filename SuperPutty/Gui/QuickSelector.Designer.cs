@@ -49,7 +49,7 @@
             this.textBoxData.Dock = System.Windows.Forms.DockStyle.Top;
             this.textBoxData.Location = new System.Drawing.Point(0, 0);
             this.textBoxData.Name = "textBoxData";
-            this.textBoxData.Size = new System.Drawing.Size(334, 20);
+            this.textBoxData.Size = new System.Drawing.Size(640, 20);
             this.textBoxData.TabIndex = 0;
             this.textBoxData.TextChanged += new System.EventHandler(this.textBoxData_TextChanged);
             this.textBoxData.KeyDown += new System.Windows.Forms.KeyEventHandler(this.textBoxData_KeyDown);
@@ -77,7 +77,7 @@
             this.dataGridViewData.RowHeadersVisible = false;
             this.dataGridViewData.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.dataGridViewData.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewData.Size = new System.Drawing.Size(334, 224);
+            this.dataGridViewData.Size = new System.Drawing.Size(640, 460);
             this.dataGridViewData.TabIndex = 1;
             this.dataGridViewData.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.dataGridViewData_CellFormatting);
             this.dataGridViewData.CellMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dataGridViewData_CellMouseDoubleClick);
@@ -129,10 +129,11 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(334, 244);
+            this.ClientSize = new System.Drawing.Size(640, 480);
+            this.MinimumSize = new System.Drawing.Size(360, 240);
             this.Controls.Add(this.dataGridViewData);
             this.Controls.Add(this.textBoxData);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.Name = "QuickSelector";
             this.Opacity = 1.0D;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

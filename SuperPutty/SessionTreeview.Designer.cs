@@ -60,10 +60,12 @@
             this.txtSearch = new System.Windows.Forms.TextBox();
             this.btnSearch = new System.Windows.Forms.Button();
             this.btnClear = new System.Windows.Forms.Button();
+            this.btnRecent = new System.Windows.Forms.Button();
             this.winSCPToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fileZillaToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkHealthToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.checkHealthFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.runOnHostsFolderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStripAddTreeItem.SuspendLayout();
             this.contextMenuStripFolder.SuspendLayout();
             this.panelSearch.SuspendLayout();
@@ -201,7 +203,8 @@
             this.toolStripMenuItem2,
             this.expandAllToolStripMenuItem,
             this.collapseAllToolStripMenuItem,
-            this.checkHealthFolderToolStripMenuItem});
+            this.checkHealthFolderToolStripMenuItem,
+            this.runOnHostsFolderToolStripMenuItem});
             this.contextMenuStripFolder.Name = "contextMenuStripAddTreeItem";
             this.contextMenuStripFolder.ShowImageMargin = false;
             this.contextMenuStripFolder.Size = new System.Drawing.Size(129, 182);
@@ -286,6 +289,7 @@
             this.panelSearch.Controls.Add(this.txtSearch);
             this.panelSearch.Controls.Add(this.btnSearch);
             this.panelSearch.Controls.Add(this.btnClear);
+            this.panelSearch.Controls.Add(this.btnRecent);
             this.panelSearch.Dock = System.Windows.Forms.DockStyle.Top;
             this.panelSearch.Location = new System.Drawing.Point(0, 0);
             this.panelSearch.Margin = new System.Windows.Forms.Padding(4);
@@ -299,10 +303,10 @@
             this.txtSearch.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtSearch.Location = new System.Drawing.Point(0, 3);
+            this.txtSearch.Location = new System.Drawing.Point(23, 3);
             this.txtSearch.Margin = new System.Windows.Forms.Padding(4);
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(384, 19);
+            this.txtSearch.Size = new System.Drawing.Size(362, 19);
             this.txtSearch.TabIndex = 0;
             this.txtSearch.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtSearch_KeyDown);
             // 
@@ -333,6 +337,19 @@
             this.btnClear.TabIndex = 2;
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
+            //
+            // btnRecent
+            //
+            this.btnRecent.AutoSize = true;
+            this.btnRecent.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.btnRecent.Dock = System.Windows.Forms.DockStyle.Left;
+            this.btnRecent.Image = global::SuperPutty.Properties.Resources.recent_sessions;
+            this.btnRecent.Margin = new System.Windows.Forms.Padding(0);
+            this.btnRecent.Name = "btnRecent";
+            this.btnRecent.Size = new System.Drawing.Size(22, 21);
+            this.btnRecent.TabIndex = 3;
+            this.btnRecent.UseVisualStyleBackColor = true;
+            this.btnRecent.Click += new System.EventHandler(this.btnRecent_Click);
             // 
             // winSCPToolStripMenuItem
             // 
@@ -356,6 +373,14 @@
             this.checkHealthFolderToolStripMenuItem.Text = "Check &Health";
             this.checkHealthFolderToolStripMenuItem.ToolTipText = "Check the health of all sessions in this folder (via plink)";
             this.checkHealthFolderToolStripMenuItem.Click += new System.EventHandler(this.checkHealthFolderToolStripMenuItem_Click);
+            //
+            // runOnHostsFolderToolStripMenuItem
+            //
+            this.runOnHostsFolderToolStripMenuItem.Name = "runOnHostsFolderToolStripMenuItem";
+            this.runOnHostsFolderToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
+            this.runOnHostsFolderToolStripMenuItem.Text = "Run Command on H&osts…";
+            this.runOnHostsFolderToolStripMenuItem.ToolTipText = "Run a command on all hosts in this folder and compare the results (via plink)";
+            this.runOnHostsFolderToolStripMenuItem.Click += new System.EventHandler(this.runOnHostsFolderToolStripMenuItem_Click);
             // 
             // fileZillaToolStripMenuItem
             // 
@@ -412,11 +437,13 @@
         private System.Windows.Forms.ToolStripMenuItem collapseAllToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem checkHealthToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem checkHealthFolderToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runOnHostsFolderToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectExternalToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem connectInNewSuperPuTTYToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         private System.Windows.Forms.ToolStripMenuItem connectAllToolStripMenuItem;
         private System.Windows.Forms.Panel panelSearch;
+        private System.Windows.Forms.Button btnRecent;
         private System.Windows.Forms.TextBox txtSearch;
         private System.Windows.Forms.Button btnSearch;
         private System.Windows.Forms.Button btnClear;

@@ -20,6 +20,11 @@ namespace SuperPutty
     /// </summary>
     public partial class CommandsPane : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "commands.html"; }
+        }
+
         private static readonly ILog Log = LogManager.GetLogger(typeof(CommandsPane));
 
         /// <summary>Sends a command to the active terminal: (command, execute) => sent</summary>
@@ -76,6 +81,13 @@ namespace SuperPutty
             this.activeSession = activeSession;
             this.runInFolder = runInFolder;
             this.contextMenuStrip.Opening += delegate { FillRunInFolderMenu(); };
+            // headers and unnamed commands two units high, named commands (name above command) three
+            this.treeViewCommands.RowUnits = node =>
+            {
+                CommandSnippet command = node.Tag as CommandSnippet;
+                return command != null && !string.IsNullOrEmpty(command.Name) ? 3 : 2;
+            };
+            this.treeViewCommands.DrawRow += treeViewCommands_DrawRow;
 
             this.singleClickTimer.Interval = SystemInformation.DoubleClickTime;
             this.singleClickTimer.Tick += singleClickTimer_Tick;
@@ -212,13 +224,12 @@ namespace SuperPutty
                     {
                         TreeNode sectionNode = this.treeViewCommands.Nodes.Add(entry.Key.Title);
                         sectionNode.Tag = new GroupTag { Section = entry.Key };
-                        sectionNode.NodeFont = new Font(this.treeViewCommands.Font, FontStyle.Bold);
-                        sectionNode.Text = entry.Key.Title; // re-set so the bold text isn't clipped
                         parent = sectionNode.Nodes;
                     }
                     AddCategories(parent, entry.Key, entry.Value, entry.Key.ShowEmptyFavorites && !filtering, select);
                 }
                 this.treeViewCommands.ExpandAll();
+                this.treeViewCommands.ApplyRowHeights();
             }
             finally
             {
@@ -297,6 +308,135 @@ namespace SuperPutty
         private void treeViewCommands_AfterSelect(object sender, TreeViewEventArgs e)
         {
             UpdateButtons();
+        }
+
+        #endregion
+
+        #region Drawing
+
+        private void treeViewCommands_DrawRow(object sender, TreeRowDrawEventArgs e)
+        {
+            CommandSnippet command = e.Node.Tag as CommandSnippet;
+            GroupTag group = e.Node.Tag as GroupTag;
+            if (command != null)
+            {
+                DrawCommand(e, command);
+            }
+            else if (group != null && group.Category == null)
+            {
+                DrawSection(e, group.Section);
+            }
+            else if (group != null)
+            {
+                DrawCategory(e, group.Category);
+            }
+        }
+
+        /// <summary>Section ("This session", "Folder …", "All sessions"): grey bold title, count, rule below</summary>
+        private void DrawSection(TreeRowDrawEventArgs e, Section section)
+        {
+            OwnerDrawTreeView tree = this.treeViewCommands;
+            int count = e.Node.Nodes.Cast<TreeNode>().Sum(category => category.Nodes.Count);
+            int right = DrawCount(e, count);
+            PaneStyle.DrawText(e.Graphics, section.Title, tree.BoldFont, Rectangle.FromLTRB(e.Bounds.Left, e.Bounds.Top, right, e.Bounds.Bottom), e.SubtleColor);
+            PaneStyle.DrawRule(e.Graphics, e.Bounds.Left, e.RowBounds.Right - 4, e.RowBounds.Bottom - 2, tree.BackColor);
+        }
+
+        /// <summary>Category: a star for Favorites, bold name, count</summary>
+        private void DrawCategory(TreeRowDrawEventArgs e, string category)
+        {
+            OwnerDrawTreeView tree = this.treeViewCommands;
+            Rectangle b = e.Bounds;
+            int left = b.Left;
+            if (CommandLibrary.IsFavorites(category))
+            {
+                PaneStyle.DrawStar(e.Graphics, new Point(left + 6, b.Top + b.Height / 2), 6, PaneStyle.Gold);
+                left += 16;
+            }
+            int right = DrawCount(e, e.Node.Nodes.Count);
+            PaneStyle.DrawText(e.Graphics, category, tree.BoldFont, Rectangle.FromLTRB(left, b.Top, right, b.Bottom), e.ForeColor);
+        }
+
+        /// <summary>The number of commands at the right of a header; returns where the title must end</summary>
+        private int DrawCount(TreeRowDrawEventArgs e, int count)
+        {
+            string text = count.ToString();
+            int width = PaneStyle.MeasureText(e.Graphics, text, this.treeViewCommands.SmallFont);
+            PaneStyle.DrawText(e.Graphics, text, this.treeViewCommands.SmallFont,
+                Rectangle.FromLTRB(e.Bounds.Right - width, e.Bounds.Top, e.Bounds.Right, e.Bounds.Bottom), e.SubtleColor);
+            return e.Bounds.Right - width - 8;
+        }
+
+        /// <summary>
+        /// Named command: name, below it the command in grey monospace. Unnamed: the command only.
+        /// Placeholders are highlighted; the row under the mouse shows a run marker at the right.
+        /// </summary>
+        private void DrawCommand(TreeRowDrawEventArgs e, CommandSnippet command)
+        {
+            OwnerDrawTreeView tree = this.treeViewCommands;
+            Rectangle b = e.Bounds;
+            int right = b.Right;
+            if (e.Hot)
+            {
+                PaneStyle.DrawPlay(e.Graphics, Rectangle.FromLTRB(right - 12, b.Top, right, b.Bottom), PaneStyle.Green);
+                right -= 18;
+            }
+            if (string.IsNullOrEmpty(command.Name))
+            {
+                DrawCommandText(e.Graphics, command.Command, Rectangle.FromLTRB(b.Left, b.Top, right, b.Bottom), e.ForeColor);
+                return;
+            }
+            int lineHeight = (b.Height - 6) / 2;
+            Rectangle line1 = Rectangle.FromLTRB(b.Left, b.Top + 3, right, b.Top + 3 + lineHeight);
+            Rectangle line2 = Rectangle.FromLTRB(b.Left, line1.Bottom, right, line1.Bottom + lineHeight);
+            PaneStyle.DrawText(e.Graphics, command.Name, tree.Font, line1, e.ForeColor);
+            DrawCommandText(e.Graphics, command.Command, line2, e.SubtleColor);
+        }
+
+        /// <summary>
+        /// The first line of a command in the monospace font, placeholders (without their defaults) in the accent
+        /// colour; too long a command loses its middle, so the differing end stays visible
+        /// </summary>
+        private void DrawCommandText(Graphics g, string command, Rectangle bounds, Color color)
+        {
+            Font font = this.treeViewCommands.MonoFont;
+            string text = command ?? string.Empty;
+            int newline = text.IndexOfAny(new[] { '\r', '\n' });
+            if (newline >= 0)
+            {
+                text = text.Substring(0, newline) + " …";
+            }
+            // monospace: every character has the same advance, so segments can be placed by character count
+            double advance = PaneStyle.MeasureText(g, new string('m', 50), font) / 50.0;
+            int fits = advance <= 0 ? 0 : (int)(bounds.Width / advance);
+            text = CommandPlaceholders.WithoutDefaults(text);
+            if (fits <= 0)
+            {
+                return;
+            }
+            if (text.Length <= fits)
+            {
+                DrawSegments(g, text, font, bounds, advance, 0, color);
+                return;
+            }
+            // cut out the middle; the gap is drawn as centred dots (a baseline "…" reads like "_" in a command)
+            int head = (fits - 1) * 2 / 5;
+            int tail = fits - 1 - head;
+            DrawSegments(g, text.Substring(0, head), font, bounds, advance, 0, color);
+            PaneStyle.DrawGap(g, new Rectangle(bounds.Left + (int)Math.Round(head * advance), bounds.Top, (int)Math.Ceiling(advance), bounds.Height), color);
+            DrawSegments(g, text.Substring(text.Length - tail), font, bounds, advance, head + 1, color);
+        }
+
+        /// <summary>Monospace text from the given column on, placeholders in the accent colour</summary>
+        private static void DrawSegments(Graphics g, string text, Font font, Rectangle bounds, double advance, int column, Color color)
+        {
+            foreach (KeyValuePair<string, bool> segment in CommandPlaceholders.Segments(text))
+            {
+                Rectangle at = Rectangle.FromLTRB(bounds.Left + (int)Math.Round(column * advance), bounds.Top, bounds.Right, bounds.Bottom);
+                TextRenderer.DrawText(g, segment.Key, font, at, segment.Value ? PaneStyle.Accent : color,
+                    TextFormatFlags.NoPrefix | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding | TextFormatFlags.VerticalCenter);
+                column += segment.Key.Length;
+            }
         }
 
         #endregion

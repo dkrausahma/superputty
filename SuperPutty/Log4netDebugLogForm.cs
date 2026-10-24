@@ -11,6 +11,11 @@ namespace SuperPutty
 {
     public partial class Log4netLogViewer : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "troubleshooting.html"; }
+        }
+
         private static readonly ILog Log = LogManager.GetLogger(typeof(Log4netLogViewer));
 
         private MemoryAppender memoryAppender;

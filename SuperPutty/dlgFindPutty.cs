@@ -45,6 +45,7 @@ namespace SuperPutty
 
         public dlgFindPutty()
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "settings.html");
             InitializeComponent();
 
             string puttyExe = SuperPuTTY.Settings.PuttyExe;
@@ -191,6 +192,7 @@ namespace SuperPutty
             this.checkBoxPersistTsHistory.Checked = SuperPuTTY.Settings.PersistCommandBarHistory;
             this.numericUpDown1.Value = SuperPuTTY.Settings.SaveCommandHistoryDays;
             this.checkBoxAllowPuttyPWArg.Checked = SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg;
+            this.checkBoxAutoReconnect.Checked = SuperPuTTY.Settings.AutoReconnect;
             this.textBoxPuttyDefaultParameters.Text = SuperPuTTY.Settings.PuttyDefaultParameters;
 
             if (SuperPuTTY.IsFirstRun)
@@ -360,6 +362,7 @@ namespace SuperPutty
                 SuperPuTTY.Settings.PersistCommandBarHistory = this.checkBoxPersistTsHistory.Checked;
                 SuperPuTTY.Settings.SaveCommandHistoryDays = (int)this.numericUpDown1.Value;
                 SuperPuTTY.Settings.AllowPlainTextPuttyPasswordArg = this.checkBoxAllowPuttyPWArg.Checked;
+                SuperPuTTY.Settings.AutoReconnect = this.checkBoxAutoReconnect.Checked;
                 SuperPuTTY.Settings.PuttyDefaultParameters = this.textBoxPuttyDefaultParameters.Text;
 
                 // save shortcuts
