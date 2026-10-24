@@ -70,11 +70,38 @@ namespace SuperPutty.Utils
         /// </summary>
         public static List<string> BuildArguments(SessionData session, string remoteCommand)
         {
+            return BuildArguments(session, remoteCommand, ReadProfileHost(session.PuttySession));
+        }
+
+        /// <summary>
+        /// BuildArguments with the host name stored in the session's PuTTY profile (null/empty if none). Unlike
+        /// PuTTY, plink treats the first plain argument after -load of a profile with a host name as the start of
+        /// the remote command, so the host must not be passed again: the host itself would run as a command
+        /// ("bash: 10.0.0.5: command not found"). If the profile points to another host than the session, the
+        /// profile can't be loaded without connecting there, so it is left out.
+        /// </summary>
+        public static List<string> BuildArguments(SessionData session, string remoteCommand, string profileHost)
+        {
             List<string> args = new List<string> { "-ssh", "-batch", "-T", "-P", session.Port.ToString() };
+            bool hostFromProfile = false;
             if (!string.IsNullOrEmpty(session.PuttySession))
             {
-                args.Add("-load");
-                args.Add(session.PuttySession);
+                if (string.IsNullOrEmpty(profileHost))
+                {
+                    args.Add("-load");
+                    args.Add(session.PuttySession);
+                }
+                else if (string.Equals(profileHost.Trim(), session.Host, StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Add("-load");
+                    args.Add(session.PuttySession);
+                    hostFromProfile = true;
+                }
+                else
+                {
+                    Log.WarnFormat("plink: profile '{0}' connects to {1}, session {2} to {3}; not loading the profile",
+                        session.PuttySession, profileHost, session.SessionId, session.Host);
+                }
             }
             if (!string.IsNullOrEmpty(session.Username))
             {
@@ -101,9 +128,30 @@ namespace SuperPutty.Utils
                     args.Add(session.Password);
                 }
             }
-            args.Add(session.Host);
+            if (!hostFromProfile)
+            {
+                args.Add(session.Host);
+            }
             args.Add(remoteCommand);
             return args;
+        }
+
+        /// <summary>The HostName stored in a saved PuTTY/KiTTY profile; null if there is none or it can't be read</summary>
+        private static string ReadProfileHost(string profile)
+        {
+            if (string.IsNullOrEmpty(profile))
+            {
+                return null;
+            }
+            try
+            {
+                return PuttyDataHelper.ReadProfileValue(profile, "HostName");
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException || ex is UnauthorizedAccessException || ex is IOException)
+            {
+                Log.Warn("Could not read the host name of profile " + profile, ex);
+                return null;
+            }
         }
 
         /// <summary>Run a command on the session's host and collect its output</summary>
