@@ -19,6 +19,7 @@
     <Feature Id="ProductFeature" Title="SuperPuTTY" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="DefaultTheme" />
+      <ComponentGroupRef Id="HelpFiles" />
       <ComponentRef Id="ApplicationShortcuts" /> 
     </Feature>
 
@@ -41,6 +42,7 @@
   <Fragment>
       <StandardDirectory Id="ProgramFiles6432Folder">
         <Directory Id="INSTALLFOLDER" Name="SuperPuTTY">
+          <Directory Id="INSTALLHELPFOLDER" Name="help" />
           <Directory Id="INSTALLTHEMEFOLDER" Name="themes">
             <Directory Id="INSTALLDEFAULTTHEME" Name="default">
               <Directory Id="INSTALLTHEMEICONSFOLDER" Name="icons" />
@@ -100,6 +102,10 @@
       <Component Id="ProductLibClaudeAbstractions">
         <File Id="Microsoft.Extensions.AI.Abstractions.dll" Source="$(var.SuperPutty.TargetDir)\Microsoft.Extensions.AI.Abstractions.dll" />
       </Component>
+    </ComponentGroup>
+    <!-- The help (generated from docs/ by tools/help-docs/build.py): the whole folder, subfolders included -->
+    <ComponentGroup Id="HelpFiles" Directory="INSTALLHELPFOLDER">
+      <Files Include="$(var.SuperPutty.TargetDir)help\**" />
     </ComponentGroup>
     <ComponentGroup Id="DefaultTheme" Directory="INSTALLTHEMEICONSFOLDER">
       <Component Id="ThemeIconFiles" Guid="C834A688-708A-4DE1-8B64-7582CFF47F7C">

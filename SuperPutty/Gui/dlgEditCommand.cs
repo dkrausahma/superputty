@@ -15,6 +15,7 @@ namespace SuperPutty.Gui
         /// <param name="scopes">Where the command may apply (all sessions, folders and session of the active tab)</param>
         public dlgEditCommand(CommandSnippet command, IEnumerable<string> categories, IList<CommandScopeOption> scopes, bool isNew)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "commands.html");
             InitializeComponent();
 
             this.Command = command.Clone();

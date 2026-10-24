@@ -635,6 +635,7 @@ namespace SuperPutty
             this.documentationToolStripMenuItem.Name = "documentationToolStripMenuItem";
             this.documentationToolStripMenuItem.Size = new System.Drawing.Size(175, 22);
             this.documentationToolStripMenuItem.Text = "&Documentation";
+            this.documentationToolStripMenuItem.ShortcutKeyDisplayString = "F1";
             this.documentationToolStripMenuItem.Click += new System.EventHandler(this.helpToolStripMenuItem1_Click);
             // 
             // diagnosticsToolStripMenuItem

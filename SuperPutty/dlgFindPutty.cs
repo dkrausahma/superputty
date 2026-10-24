@@ -45,6 +45,7 @@ namespace SuperPutty
 
         public dlgFindPutty()
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "settings.html");
             InitializeComponent();
 
             string puttyExe = SuperPuTTY.Settings.PuttyExe;

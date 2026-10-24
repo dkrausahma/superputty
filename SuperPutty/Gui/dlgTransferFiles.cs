@@ -34,6 +34,7 @@ namespace SuperPutty.Gui
         public dlgTransferFiles(IList<SessionData> sessions, TransferEndpoint source, TransferEndpoint target,
             Func<SessionData, string> remoteDirectory, string localTargetFolder)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "file-transfer.html");
             InitializeComponent();
             this.remoteDirectory = remoteDirectory;
             this.localTargetFolder = localTargetFolder;

@@ -220,6 +220,8 @@ namespace SuperPutty
             this.pageantIndicator = new PageantIndicator(this.statusStrip1, this.statusStrip1.Items.IndexOf(this.toolStripStatusLabelVersion));
             this.FormClosed += delegate { this.pageantIndicator.Dispose(); };
             this.FormClosed += delegate { PortOpener.CloseAll(); };
+            // F1 outside a pane or dialog (those open their own page)
+            HelpFiles.Attach(this, HelpFiles.Index);
 
             // SSH tunnel markers on the tabs
             this.tunnelTimer.Tick += delegate { UpdateTunnelDisplays(); };
@@ -1246,20 +1248,10 @@ namespace SuperPutty
             Process.Start(new ProcessStartInfo("https://github.com/jimradford/superputty/") { UseShellExecute = true });
         }
 
+        /// <summary>Help → Documentation: the local help (help\ next to the exe), F1 in panes and dialogs opens their page</summary>
         private void helpToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            if (File.Exists(Application.StartupPath + @"\superputty.chm"))
-            {
-                Process.Start(new ProcessStartInfo(Application.StartupPath + @"\superputty.chm") { UseShellExecute = true });
-            }
-            else
-            {
-                DialogResult result = MessageBox.Show("Local documentation could not be found. Would you like to view the documentation online instead?", "Documentation Not Found", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-                if (result == DialogResult.Yes)
-                {
-                    Process.Start(new ProcessStartInfo("https://github.com/jimradford/superputty/wiki/Documentation") { UseShellExecute = true });
-                }
-            }
+            HelpFiles.Open(HelpFiles.Index);
         }
 
         #endregion

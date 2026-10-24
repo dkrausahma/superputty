@@ -30,5 +30,17 @@ namespace SuperPutty
             InitializeComponent();
             
         }
+
+        /// <summary>The help page F1 opens for this pane ("host-info.html"); null = the start page</summary>
+        protected virtual string HelpPage
+        {
+            get { return null; }
+        }
+
+        protected override void OnHelpRequested(System.Windows.Forms.HelpEventArgs hevent)
+        {
+            SuperPutty.Utils.HelpFiles.Open(this.HelpPage);
+            hevent.Handled = true;
+        }
     }
 }

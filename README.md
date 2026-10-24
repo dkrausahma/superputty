@@ -132,7 +132,12 @@ dotnet test SuperPuttyUnitTests/SuperPuttyUnitTests.csproj --filter "TestCategor
 
 # installer (x64 MSI)
 dotnet build SuperPuttyInstaller -c Release
+
+# user help: docs/*.md -> SuperPutty/help (MkDocs; first run creates a venv)
+python tools/help-docs/build.py
 ```
+
+The user help ships with the app (Help → Documentation, or F1 in a pane or dialog) and works offline.
 
 Architecture, configuration, the full command reference and known pitfalls are in
 [development.md](development.md).

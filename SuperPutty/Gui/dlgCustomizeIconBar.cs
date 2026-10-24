@@ -35,6 +35,7 @@ namespace SuperPutty.Gui
 
         public dlgCustomizeIconBar(IEnumerable<frmSuperPutty.IconBarTool> allTools, List<string> current, List<string> defaultLayout)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "icon-bar.html");
             this.tools = allTools.ToDictionary(t => t.Id);
             this.defaults = defaultLayout;
             foreach (frmSuperPutty.IconBarTool tool in this.tools.Values.Where(t => t.Image != null))
