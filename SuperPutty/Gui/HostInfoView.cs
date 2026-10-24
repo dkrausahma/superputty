@@ -184,6 +184,17 @@ namespace SuperPutty.Gui
                     this.SmallFont, Rectangle.FromLTRB(left + LabelWidth, y, right, y + RowHeight), subtle);
                 y += RowHeight;
             }
+
+            // GPUs: busy share coloured by temperature (a busy GPU is fine, a hot one isn't). VRAM is only amber when
+            // practically full: inference servers such as vLLM reserve ~90 % on purpose, so a high fill level is normal
+            foreach (GpuInfo gpu in host.Gpus)
+            {
+                string detail = string.Join(" · ", new[] { gpu.Name, gpu.TemperatureC == null ? null : gpu.TemperatureC + " °C" }
+                    .Where(s => !string.IsNullOrEmpty(s)));
+                y = BarRow(g, "GPU " + gpu.Index, gpu.UtilizationPercent, Level(gpu.TemperatureC ?? 0, 83, 90), detail, left, right, y, subtle);
+                string memory = HostInfo.FormatSize(gpu.MemoryUsedMb * 1024) + " / " + HostInfo.FormatSize(gpu.MemoryTotalMb * 1024);
+                y = BarRow(g, "   VRAM", gpu.MemoryPercent, Level(gpu.MemoryPercent, 98, 101), memory, left, right, y, subtle);
+            }
             return y;
         }
 
@@ -246,6 +257,18 @@ namespace SuperPutty.Gui
                     string percent = process.CpuPercent.ToString(process.CpuPercent >= 10 ? "0" : "0.0", CultureInfo.InvariantCulture) + " %";
                     PaneStyle.DrawText(g, percent, this.Font, new Rectangle(left + LabelWidth, y, 46, RowHeight), this.ForeColor, TextFormatFlags.Right);
                     PaneStyle.DrawText(g, process.Name, this.Font, Rectangle.FromLTRB(left + LabelWidth + 54, y, right, y + RowHeight), this.ForeColor);
+                    y += RowHeight;
+                }
+            }
+
+            if (host.GpuProcesses.Count > 0)
+            {
+                Label(g, "GPU memory", left, y);
+                foreach (GpuProcess process in host.GpuProcesses.Take(5))
+                {
+                    PaneStyle.DrawText(g, HostInfo.FormatSize(process.MemoryMb * 1024), this.Font, new Rectangle(left + LabelWidth, y, 46, RowHeight), this.ForeColor, TextFormatFlags.Right);
+                    string name = process.Name + (host.Gpus.Count > 1 && process.GpuIndex >= 0 ? "  (GPU " + process.GpuIndex + ")" : string.Empty);
+                    PaneStyle.DrawText(g, name, this.Font, Rectangle.FromLTRB(left + LabelWidth + 54, y, right, y + RowHeight), this.ForeColor);
                     y += RowHeight;
                 }
             }

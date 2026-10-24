@@ -47,6 +47,34 @@ namespace SuperPutty.Data
         public string Since { get; set; }
     }
 
+    /// <summary>One NVIDIA GPU as nvidia-smi reports it</summary>
+    public class GpuInfo
+    {
+        public int Index { get; set; }
+        public string Uuid { get; set; }
+        public string Name { get; set; }
+        /// <summary>Busy share in percent; null when the driver doesn't report it</summary>
+        public int? UtilizationPercent { get; set; }
+        public long MemoryUsedMb { get; set; }
+        public long MemoryTotalMb { get; set; }
+        public int? TemperatureC { get; set; }
+
+        public int MemoryPercent
+        {
+            get { return this.MemoryTotalMb <= 0 ? 0 : (int)(this.MemoryUsedMb * 100 / this.MemoryTotalMb); }
+        }
+    }
+
+    /// <summary>A process holding GPU memory</summary>
+    public class GpuProcess
+    {
+        public int GpuIndex { get; set; }
+        public string Pid { get; set; }
+        /// <summary>The program's file name, without its path</summary>
+        public string Name { get; set; }
+        public long MemoryMb { get; set; }
+    }
+
     public class ProcessUsage
     {
         public string Name { get; set; }
@@ -87,6 +115,11 @@ namespace SuperPutty.Data
                 "echo unhealthy=$(docker ps -q --filter health=unhealthy 2>/dev/null | wc -l); " +
                 "echo slow=1; " +
             "fi; " +
+            // NVIDIA GPUs, only where nvidia-smi exists: one line per GPU and per process holding GPU memory
+            "if command -v nvidia-smi >/dev/null 2>&1; then " +
+                "nvidia-smi --query-gpu=index,uuid,name,utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null | awk '{print \"gpu=\"$0}'; " +
+                "nvidia-smi --query-compute-apps=gpu_uuid,pid,process_name,used_memory --format=csv,noheader,nounits 2>/dev/null | awk '{print \"gpuapp=\"$0}'; " +
+            "fi; " +
             "echo uptime=$(cut -d' ' -f1 /proc/uptime); " +
             "echo loadavg=$(cat /proc/loadavg); " +
             "echo cpustat=$(head -1 /proc/stat); " +
@@ -117,6 +150,10 @@ namespace SuperPutty.Data
         public long SwapFreeKb { get; set; }
 
         public List<DiskUsage> Disks { get; set; } = new List<DiskUsage>();
+        /// <summary>NVIDIA GPUs; empty on hosts without nvidia-smi</summary>
+        public List<GpuInfo> Gpus { get; set; } = new List<GpuInfo>();
+        /// <summary>Processes holding GPU memory, most memory first</summary>
+        public List<GpuProcess> GpuProcesses { get; set; } = new List<GpuProcess>();
         public List<LoggedInUser> Users { get; set; } = new List<LoggedInUser>();
         public List<string> FailedUnits { get; set; } = new List<string>();
         public int UnhealthyContainers { get; set; }
@@ -255,6 +292,16 @@ namespace SuperPutty.Data
             Line(sb, "Logged-in users", this.HasSlowData ? string.Format(CultureInfo.InvariantCulture, "{0}{1}", this.Users.Count,
                 this.Users.Count == 0 ? string.Empty : " (" + string.Join(", ", this.Users.Select(u => u.User).Distinct()) + ")") : null);
             Line(sb, "Processes", this.Processes == null ? null : this.Processes.Value.ToString(CultureInfo.InvariantCulture));
+            foreach (GpuInfo gpu in this.Gpus)
+            {
+                Line(sb, "GPU " + gpu.Index, string.Join(", ", new[]
+                {
+                    gpu.Name,
+                    gpu.UtilizationPercent == null ? null : gpu.UtilizationPercent + " % busy",
+                    string.Format(CultureInfo.InvariantCulture, "{0} / {1} MB", gpu.MemoryUsedMb, gpu.MemoryTotalMb),
+                    gpu.TemperatureC == null ? null : gpu.TemperatureC + " °C"
+                }.Where(s => !string.IsNullOrEmpty(s))));
+            }
             if (this.FailedUnits.Count > 0)
             {
                 Line(sb, "Failed units", string.Join(", ", this.FailedUnits));
@@ -283,6 +330,8 @@ namespace SuperPutty.Data
             copy.Addresses = new List<HostAddress>(this.Addresses);
             copy.TopProcesses = new List<ProcessUsage>(this.TopProcesses);
             copy.Disks = new List<DiskUsage>(this.Disks);
+            copy.Gpus = new List<GpuInfo>(this.Gpus);
+            copy.GpuProcesses = new List<GpuProcess>(this.GpuProcesses);
             copy.Users = new List<LoggedInUser>(this.Users);
             copy.FailedUnits = new List<string>(this.FailedUnits);
             copy.Load = this.Load == null ? null : (double[])this.Load.Clone();
@@ -305,6 +354,8 @@ namespace SuperPutty.Data
         private List<string> failedUnits = new List<string>();
         private List<HostAddress> addresses = new List<HostAddress>();
         private bool addressesSeen;
+        private List<GpuInfo> gpus = new List<GpuInfo>();
+        private List<KeyValuePair<string, GpuProcess>> gpuApps = new List<KeyValuePair<string, GpuProcess>>();
 
         private long[] lastCpu;
         private long[] cpu;
@@ -424,6 +475,23 @@ namespace SuperPutty.Data
                         }
                     }
                     break;
+                case "gpu":
+                    GpuInfo gpu = ParseGpu(value);
+                    if (gpu != null) { this.gpus.Add(gpu); }
+                    break;
+                case "gpuapp":
+                    // gpu_uuid, pid, process_name, used_memory (MiB); name or memory may be "[N/A]" or "[Insufficient Permissions]"
+                    parts = value.Split(',').Select(p => p.Trim()).ToArray();
+                    if (parts.Length >= 4 && long.TryParse(parts[parts.Length - 1], out number))
+                    {
+                        this.gpuApps.Add(new KeyValuePair<string, GpuProcess>(parts[0], new GpuProcess
+                        {
+                            Pid = parts[1],
+                            Name = ProgramName(string.Join(",", parts.Skip(2).Take(parts.Length - 3))),
+                            MemoryMb = number
+                        }));
+                    }
+                    break;
                 case "proc":
                     // proc=<pid>=<utime+stime>=<name>
                     parts = value.Split(new[] { '=' }, 3);
@@ -454,8 +522,63 @@ namespace SuperPutty.Data
             }
         }
 
+        /// <summary>"0, GPU-0652…, NVIDIA H100 80GB HBM3, 45, 30100, 81559, 64"; values may be "[N/A]"</summary>
+        public static GpuInfo ParseGpu(string line)
+        {
+            string[] parts = (line ?? string.Empty).Split(',').Select(p => p.Trim()).ToArray();
+            int index;
+            if (parts.Length < 7 || !int.TryParse(parts[0], out index))
+            {
+                return null;
+            }
+            // the name is everything between uuid and the four numbers (in case it contains a comma)
+            int n = parts.Length;
+            long used, total;
+            return new GpuInfo
+            {
+                Index = index,
+                Uuid = parts[1],
+                Name = string.Join(", ", parts.Skip(2).Take(n - 6)),
+                UtilizationPercent = Number(parts[n - 4]),
+                MemoryUsedMb = long.TryParse(parts[n - 3], out used) ? used : 0,
+                MemoryTotalMb = long.TryParse(parts[n - 2], out total) ? total : 0,
+                TemperatureC = Number(parts[n - 1])
+            };
+        }
+
+        private static int? Number(string text)
+        {
+            int value;
+            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) ? value : (int?)null;
+        }
+
+        /// <summary>"/opt/conda/bin/python3" -> "python3"; "[Insufficient Permissions]" stays as it is</summary>
+        private static string ProgramName(string path)
+        {
+            if (path.StartsWith("["))
+            {
+                return path;
+            }
+            int slash = path.LastIndexOfAny(new[] { '/', '\\' });
+            return slash >= 0 && slash < path.Length - 1 ? path.Substring(slash + 1) : path;
+        }
+
         private HostInfo EndRound()
         {
+            // GPUs come every round; processes are matched to their GPU by its uuid
+            this.current.Gpus = this.gpus;
+            this.current.GpuProcesses = this.gpuApps
+                .Select(app =>
+                {
+                    GpuInfo owner = this.gpus.FirstOrDefault(g => g.Uuid == app.Key);
+                    app.Value.GpuIndex = owner == null ? -1 : owner.Index;
+                    return app.Value;
+                })
+                .OrderByDescending(p => p.MemoryMb)
+                .ToList();
+            this.gpus = new List<GpuInfo>();
+            this.gpuApps = new List<KeyValuePair<string, GpuProcess>>();
+
             if (this.addressesSeen)
             {
                 this.current.Addresses = this.addresses;
