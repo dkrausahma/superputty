@@ -57,6 +57,46 @@ namespace SuperPuttyUnitTests
         }
 
         [Test]
+        public void PublishedPortsKnowHowToBeOpened()
+        {
+            List<PublishedPort> ports = DockerContainer.ParsePublishedPorts(
+                "0.0.0.0:9089->8080/tcp, :::9089->8080/tcp, 127.0.0.1:9229->9229/tcp, [::1]:6000->6000/tcp, 10.0.0.5:8443->443/tcp, 0.0.0.0:53->53/udp, 0.0.0.0:8000-8001->8000-8001/tcp");
+
+            CollectionAssert.AreEqual(new[] { "9089→8080", "127.0.0.1:9229→9229", "[::1]:6000→6000", "10.0.0.5:8443→443", "53→53/udp", "8000-8001→8000-8001" },
+                ports.ConvertAll(p => p.Text));
+
+            PublishedPort web = ports[0];
+            ClassicAssert.IsTrue(web.CanOpen);
+            ClassicAssert.IsFalse(web.NeedsTunnel, "bound to all addresses: try directly first");
+            ClassicAssert.AreEqual("127.0.0.1", web.TunnelTarget);
+            ClassicAssert.AreEqual("http://web01.example.com:9089/", web.Url("web01.example.com", 9089));
+            ClassicAssert.AreEqual("http://[2a01:4f8::1]:9089/", web.Url("2a01:4f8::1", 9089));
+
+            ClassicAssert.IsTrue(ports[1].NeedsTunnel, "loopback only");
+            ClassicAssert.IsTrue(ports[2].NeedsTunnel);
+            ClassicAssert.AreEqual("127.0.0.1", ports[2].TunnelTarget, "IPv6 loopback through the IPv4 one");
+            ClassicAssert.IsFalse(ports[3].NeedsTunnel);
+            ClassicAssert.AreEqual("10.0.0.5", ports[3].TunnelTarget);
+            ClassicAssert.AreEqual("https://localhost:50000/", ports[3].Url("localhost", 50000), "container port 443");
+            ClassicAssert.IsFalse(ports[4].CanOpen, "udp");
+            ClassicAssert.AreEqual(8000, ports[5].HostPort, "first port of a range");
+        }
+
+        [Test]
+        public void TunnelArgumentsPutTheForwardingBeforeTheHost()
+        {
+            SessionData session = new SessionData
+            {
+                SessionId = "Test/web01", Host = "web01.example.com", Port = 22, Proto = ConnectionProtocol.SSH, Username = "deploy"
+            };
+
+            List<string> args = Plink.BuildTunnelArguments(session, 50123, "127.0.0.1", 9229);
+
+            CollectionAssert.AreEqual(new[] {
+                "-ssh", "-batch", "-T", "-N", "-L", "127.0.0.1:50123:127.0.0.1:9229", "-P", "22", "-l", "deploy", "web01.example.com" }, args);
+        }
+
+        [Test]
         public void StateFollowsDockersStatusText()
         {
             Dictionary<string, ContainerState> cases = new Dictionary<string, ContainerState>

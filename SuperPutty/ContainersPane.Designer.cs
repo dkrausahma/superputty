@@ -45,6 +45,7 @@ namespace SuperPutty
             this.restartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripSeparator();
             this.copyNameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.openPortToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.labelStatus = new System.Windows.Forms.Label();
             this.toolStripContainers.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
@@ -109,6 +110,7 @@ namespace SuperPutty
             this.rootShellToolStripMenuItem,
             this.logsToolStripMenuItem,
             this.inspectToolStripMenuItem,
+            this.openPortToolStripMenuItem,
             this.toolStripMenuItem1,
             this.startToolStripMenuItem,
             this.stopToolStripMenuItem,
@@ -187,6 +189,12 @@ namespace SuperPutty
             this.copyNameToolStripMenuItem.Text = "&Copy Name";
             this.copyNameToolStripMenuItem.Click += new System.EventHandler(this.copyNameToolStripMenuItem_Click);
             //
+            // openPortToolStripMenuItem
+            //
+            this.openPortToolStripMenuItem.Name = "openPortToolStripMenuItem";
+            this.openPortToolStripMenuItem.Size = new System.Drawing.Size(199, 22);
+            this.openPortToolStripMenuItem.Text = "Open in &Browser";
+            //
             // labelStatus
             //
             this.labelStatus.AutoEllipsis = true;
@@ -235,6 +243,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripMenuItem restartToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
         private System.Windows.Forms.ToolStripMenuItem copyNameToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem openPortToolStripMenuItem;
         private System.Windows.Forms.Label labelStatus;
     }
 }

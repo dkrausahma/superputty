@@ -49,6 +49,8 @@ and Pageant integration) but adds the window management on top.
 - **Host Info pane** — live facts about the active tab's host: name, OS, public and private addresses, uptime,
   CPU, load, memory, swap, disks, logged-in users and the busiest processes, updated every 5 seconds over a single
   SSH connection; Copy puts it on the clipboard as text. Opens as a tab in front of Session Detail.
+- **Open container ports** — click a port chip (`9089→8080`) in the Containers pane to open it in the browser;
+  ports that aren't reachable from your PC (bound to localhost, firewalled) get an SSH tunnel automatically.
 - **Containers pane** — the docker containers on the active tab's host, grouped by compose project, with a
   status dot (green healthy/running, amber starting, red unhealthy/failed), uptime and published ports at a glance.
   Double-click opens a shell inside a container in a new tab; follow logs, inspect, start/stop/restart
