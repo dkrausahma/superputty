@@ -44,7 +44,8 @@ and Pageant integration) but adds the window management on top.
   single session (the pane shows what applies to the active tab). Placeholders like `{{service}}` are
   asked for before sending and remembered per session; ready-made Docker Compose commands remember each
   host's project directory.
-- **Containers pane** — the docker containers on the active tab's host, grouped by compose project.
+- **Containers pane** — the docker containers on the active tab's host, grouped by compose project, with a
+  status dot (green healthy/running, amber starting, red unhealthy/failed), uptime and published ports at a glance.
   Double-click opens a shell inside a container in a new tab; follow logs, inspect, start/stop/restart
   from the context menu. Uses plink with your PuTTY profile and Pageant keys.
 - **SSH tunnels on the tab** — tabs show how many tunnels their session opens (`web01 ↔2`), with `!`

@@ -1599,6 +1599,41 @@ namespace SuperPutty.Utils
             EVENT_MAX = 0x7FFFFFFF,
         }
         #endregion
+
+        #region Tree view (owner-drawn panes)
+
+        public const uint TVM_SETEXTENDEDSTYLE = 0x112C;
+        public const uint TVM_SETITEMW = 0x113F;
+        public const int TVS_EX_DOUBLEBUFFER = 0x0004;
+        public const int TVS_NOHSCROLL = 0x8000;
+        public const uint TVIF_HANDLE = 0x0010;
+        public const uint TVIF_INTEGRAL = 0x0080;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct TVITEMEX
+        {
+            public uint mask;
+            public IntPtr hItem;
+            public uint state;
+            public uint stateMask;
+            public IntPtr pszText;
+            public int cchTextMax;
+            public int iImage;
+            public int iSelectedImage;
+            public int cChildren;
+            public IntPtr lParam;
+            /// <summary>Height of the item in multiples of the tree's ItemHeight</summary>
+            public int iIntegral;
+            public uint uStateEx;
+            public IntPtr hwnd;
+            public int iExpandedImage;
+            public int iReserved;
+        }
+
+        [DllImport("user32.dll", EntryPoint = "SendMessageW")]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, ref TVITEMEX lParam);
+
+        #endregion
     }
 
 }

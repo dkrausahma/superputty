@@ -33,10 +33,7 @@ namespace SuperPutty
             this.toolStripButtonRefresh = new System.Windows.Forms.ToolStripButton();
             this.toolStripButtonShowStopped = new System.Windows.Forms.ToolStripButton();
             this.toolStripLabelHost = new System.Windows.Forms.ToolStripLabel();
-            this.listViewContainers = new System.Windows.Forms.ListView();
-            this.columnHeaderName = new System.Windows.Forms.ColumnHeader();
-            this.columnHeaderStatus = new System.Windows.Forms.ColumnHeader();
-            this.columnHeaderImage = new System.Windows.Forms.ColumnHeader();
+            this.treeViewContainers = new SuperPutty.Gui.OwnerDrawTreeView();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.shellToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rootShellToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -67,9 +64,10 @@ namespace SuperPutty
             //
             // toolStripButtonRefresh
             //
-            this.toolStripButtonRefresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonRefresh.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonRefresh.Image = global::SuperPutty.Properties.Resources.pane_refresh;
             this.toolStripButtonRefresh.Name = "toolStripButtonRefresh";
-            this.toolStripButtonRefresh.Size = new System.Drawing.Size(50, 22);
+            this.toolStripButtonRefresh.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonRefresh.Text = "Refresh";
             this.toolStripButtonRefresh.ToolTipText = "Reload the containers (F5)";
             this.toolStripButtonRefresh.Click += new System.EventHandler(this.toolStripButtonRefresh_Click);
@@ -77,9 +75,10 @@ namespace SuperPutty
             // toolStripButtonShowStopped
             //
             this.toolStripButtonShowStopped.CheckOnClick = true;
-            this.toolStripButtonShowStopped.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
+            this.toolStripButtonShowStopped.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.toolStripButtonShowStopped.Image = global::SuperPutty.Properties.Resources.pane_show_stopped;
             this.toolStripButtonShowStopped.Name = "toolStripButtonShowStopped";
-            this.toolStripButtonShowStopped.Size = new System.Drawing.Size(55, 22);
+            this.toolStripButtonShowStopped.Size = new System.Drawing.Size(23, 22);
             this.toolStripButtonShowStopped.Text = "Stopped";
             this.toolStripButtonShowStopped.ToolTipText = "Also show stopped containers";
             this.toolStripButtonShowStopped.Click += new System.EventHandler(this.toolStripButtonShowStopped_Click);
@@ -91,41 +90,17 @@ namespace SuperPutty
             this.toolStripLabelHost.Name = "toolStripLabelHost";
             this.toolStripLabelHost.Size = new System.Drawing.Size(0, 22);
             //
-            // listViewContainers
+            // treeViewContainers
             //
-            this.listViewContainers.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-            this.columnHeaderName,
-            this.columnHeaderStatus,
-            this.columnHeaderImage});
-            this.listViewContainers.ContextMenuStrip = this.contextMenuStrip;
-            this.listViewContainers.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listViewContainers.FullRowSelect = true;
-            this.listViewContainers.HideSelection = false;
-            this.listViewContainers.Location = new System.Drawing.Point(0, 25);
-            this.listViewContainers.MultiSelect = false;
-            this.listViewContainers.Name = "listViewContainers";
-            this.listViewContainers.ShowItemToolTips = true;
-            this.listViewContainers.Size = new System.Drawing.Size(300, 335);
-            this.listViewContainers.TabIndex = 1;
-            this.listViewContainers.UseCompatibleStateImageBehavior = false;
-            this.listViewContainers.View = System.Windows.Forms.View.Details;
-            this.listViewContainers.DoubleClick += new System.EventHandler(this.listViewContainers_DoubleClick);
-            this.listViewContainers.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listViewContainers_KeyDown);
-            //
-            // columnHeaderName
-            //
-            this.columnHeaderName.Text = "Container";
-            this.columnHeaderName.Width = 130;
-            //
-            // columnHeaderStatus
-            //
-            this.columnHeaderStatus.Text = "Status";
-            this.columnHeaderStatus.Width = 110;
-            //
-            // columnHeaderImage
-            //
-            this.columnHeaderImage.Text = "Image";
-            this.columnHeaderImage.Width = 160;
+            this.treeViewContainers.ContextMenuStrip = this.contextMenuStrip;
+            this.treeViewContainers.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.treeViewContainers.Location = new System.Drawing.Point(0, 25);
+            this.treeViewContainers.Name = "treeViewContainers";
+            this.treeViewContainers.ShowNodeToolTips = true;
+            this.treeViewContainers.Size = new System.Drawing.Size(300, 335);
+            this.treeViewContainers.TabIndex = 1;
+            this.treeViewContainers.NodeMouseDoubleClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.treeViewContainers_NodeMouseDoubleClick);
+            this.treeViewContainers.KeyDown += new System.Windows.Forms.KeyEventHandler(this.treeViewContainers_KeyDown);
             //
             // contextMenuStrip
             //
@@ -228,7 +203,7 @@ namespace SuperPutty
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(300, 400);
-            this.Controls.Add(this.listViewContainers);
+            this.Controls.Add(this.treeViewContainers);
             this.Controls.Add(this.labelStatus);
             this.Controls.Add(this.toolStripContainers);
             this.Name = "ContainersPane";
@@ -248,10 +223,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton toolStripButtonRefresh;
         private System.Windows.Forms.ToolStripButton toolStripButtonShowStopped;
         private System.Windows.Forms.ToolStripLabel toolStripLabelHost;
-        private System.Windows.Forms.ListView listViewContainers;
-        private System.Windows.Forms.ColumnHeader columnHeaderName;
-        private System.Windows.Forms.ColumnHeader columnHeaderStatus;
-        private System.Windows.Forms.ColumnHeader columnHeaderImage;
+        private SuperPutty.Gui.OwnerDrawTreeView treeViewContainers;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem shellToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem rootShellToolStripMenuItem;
