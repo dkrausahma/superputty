@@ -18,6 +18,11 @@ namespace SuperPutty
     /// </summary>
     public partial class ContainersPane : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "containers.html"; }
+        }
+
         private static readonly ILog Log = LogManager.GetLogger(typeof(ContainersPane));
 
         private static readonly TimeSpan PlinkTimeout = TimeSpan.FromSeconds(20);

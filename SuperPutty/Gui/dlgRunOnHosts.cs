@@ -60,6 +60,7 @@ namespace SuperPutty.Gui
 
         private dlgRunOnHosts(List<SessionData> sessions, string targetDescription)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "run-on-hosts.html");
             this.results = sessions.Select(s => new HostRunResult
             {
                 Session = s,

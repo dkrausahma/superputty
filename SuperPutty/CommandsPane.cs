@@ -20,6 +20,11 @@ namespace SuperPutty
     /// </summary>
     public partial class CommandsPane : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "commands.html"; }
+        }
+
         private static readonly ILog Log = LogManager.GetLogger(typeof(CommandsPane));
 
         /// <summary>Sends a command to the active terminal: (command, execute) => sent</summary>

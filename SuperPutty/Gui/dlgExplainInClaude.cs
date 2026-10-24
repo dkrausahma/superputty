@@ -25,6 +25,7 @@ namespace SuperPutty.Gui
 
         public dlgExplainInClaude(string sessionName, string text)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "terminal-text.html");
             this.sessionName = sessionName;
             this.Text = "Explain in Claude - " + sessionName;
             this.StartPosition = FormStartPosition.CenterParent;

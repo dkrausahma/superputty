@@ -15,6 +15,11 @@ namespace SuperPutty
     /// </summary>
     public partial class HostInfoPane : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "host-info.html"; }
+        }
+
         private static readonly ILog Log = LogManager.GetLogger(typeof(HostInfoPane));
 
         /// <summary>After a failed connection, wait this long before trying the same host again on its own</summary>

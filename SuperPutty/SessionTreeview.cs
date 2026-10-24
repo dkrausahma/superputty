@@ -41,6 +41,11 @@ namespace SuperPutty
 
     public partial class SessionTreeview : ToolWindow, IComparer
     {
+        protected override string HelpPage
+        {
+            get { return "sessions.html"; }
+        }
+
         public event SelectionChangedHandler SelectionChanged;
         private static readonly ILog Log = LogManager.GetLogger(typeof(SessionTreeview));
 

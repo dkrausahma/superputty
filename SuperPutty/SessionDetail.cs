@@ -7,6 +7,11 @@ namespace SuperPutty
 {
     public partial class SessionDetail : ToolWindow
     {
+        protected override string HelpPage
+        {
+            get { return "sessions.html"; }
+        }
+
         private SessionTreeview TreeViewInstance;
         SingletonToolWindowHelper<SessionTreeview> SessionsToolWindowHelper;
         private SessionDetail()

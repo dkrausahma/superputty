@@ -18,6 +18,7 @@ namespace SuperPutty.Gui
         /// <param name="rows">One row per tunnel: tab, tunnel, state, origin</param>
         public dlgTunnels(IList<string[]> rows)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "ssh-tunnels.html");
             this.Text = "SSH Tunnels of Open Tabs";
             this.StartPosition = FormStartPosition.CenterParent;
             this.ShowInTaskbar = false;

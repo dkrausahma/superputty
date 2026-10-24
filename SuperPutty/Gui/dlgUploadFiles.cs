@@ -13,6 +13,7 @@ namespace SuperPutty.Gui
 
         public dlgUploadFiles(string sessionName, IEnumerable<string> paths, string targetFolder, bool targetDetected)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "file-transfer.html");
             InitializeComponent();
 
             this.labelHeader.Text = string.Format("Upload to {0}:", sessionName);

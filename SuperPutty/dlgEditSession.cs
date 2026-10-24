@@ -44,6 +44,7 @@ namespace SuperPutty
 
         public dlgEditSession(SessionData session, ImageList iconList)
         {
+            SuperPutty.Utils.HelpFiles.Attach(this, "sessions.html");
             Session = session;
             InitializeComponent();
 

@@ -1,3 +1,6 @@
+1.5.5.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
+ - Help: built-in documentation for all features (Help > Documentation), works offline; F1 in a pane or dialog
+   opens its page
 1.5.4.0 - Kraus-Ahma IT Consulting edition (2026-10-24)
  - Configurable icon bar: every tool has an icon; right-click the bar (or View > Toolbars) to choose and order them
  - Icons for all panes and tools in the menus

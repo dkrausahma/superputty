@@ -1,0 +1,75 @@
+# SuperPuTTY help: Markdown in docs/, built into SuperPutty/help/ (shipped with the app, opened offline).
+# Build with:  python tools/help-docs/build.py
+site_name: SuperPuTTY Help
+site_description: Help for the Kraus-Ahma IT Consulting edition of SuperPuTTY
+copyright: SuperPuTTY &copy; 2009–2018 Jim Radford and contributors, Kraus-Ahma IT Consulting 2026 – MIT licence
+docs_dir: ../../docs
+site_dir: ../../SuperPutty/help
+# file:// pages: links to page.html, not page/
+use_directory_urls: false
+
+theme:
+  name: material
+  language: en
+  # no Google Fonts: the help must work without internet
+  font: false
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+
+plugins:
+  - search
+  # inlines the search index etc. so search and navigation work from file:// without a web server
+  - offline
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.keys
+
+nav:
+  - Overview: index.md
+  - Getting started: getting-started.md
+  - Working with sessions:
+      - Sessions and Session Detail: sessions.md
+      - Tabs and layouts: tabs-and-layouts.md
+      - Icon bar and menus: icon-bar.md
+  - Running commands:
+      - Command bar and live input: command-bar.md
+      - Commands pane: commands.md
+      - Run on Hosts: run-on-hosts.md
+      - Scripts (SPSL): scripting.md
+  - Hosts and containers:
+      - Host Info: host-info.md
+      - Containers: containers.md
+      - Health checks and notifications: health.md
+      - SSH tunnels: ssh-tunnels.md
+  - Files and text:
+      - File transfer: file-transfer.md
+      - Copy, logs and Explain in Claude: terminal-text.md
+  - Settings: settings.md
+  - Troubleshooting: troubleshooting.md

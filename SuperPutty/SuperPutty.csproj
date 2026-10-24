@@ -85,4 +85,11 @@
     </None>
   </ItemGroup>
 
+  <!-- Help: generated from docs/ by tools/help-docs/build.py (committed), opened offline from help/ next to the exe -->
+  <ItemGroup>
+    <None Update="help\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
