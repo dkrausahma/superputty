@@ -75,6 +75,7 @@ namespace SuperPutty
             this.containersPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.hostInfoPaneToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.healthChecksToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.notifyHealthToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.logViewerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem8 = new System.Windows.Forms.ToolStripSeparator();
             this.toolbarsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -360,6 +361,7 @@ namespace SuperPutty
             this.showMenuBarToolStripMenuItem,
             this.alwaysOnTopToolStripMenuItem,
             this.healthChecksToolStripMenuItem,
+            this.notifyHealthToolStripMenuItem,
             this.sessionLoggingToolStripMenuItem,
             this.notifyActivityToolStripMenuItem,
             this.toolStripMenuItem9,
@@ -413,6 +415,14 @@ namespace SuperPutty
             this.healthChecksToolStripMenuItem.Text = "&Health Checks for Open Tabs";
             this.healthChecksToolStripMenuItem.ToolTipText = "Check load, disk, memory, failed units and containers of open tabs' hosts every 5 minutes (via plink)";
             this.healthChecksToolStripMenuItem.Click += new System.EventHandler(this.healthChecksToolStripMenuItem_Click);
+            //
+            // notifyHealthToolStripMenuItem
+            //
+            this.notifyHealthToolStripMenuItem.Name = "notifyHealthToolStripMenuItem";
+            this.notifyHealthToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.notifyHealthToolStripMenuItem.Text = "&Notify When a Host Turns Critical";
+            this.notifyHealthToolStripMenuItem.ToolTipText = "Windows notification when a checked host becomes critical (full disk, unhealthy container, …) and when it recovers";
+            this.notifyHealthToolStripMenuItem.Click += new System.EventHandler(this.notifyHealthToolStripMenuItem_Click);
             // 
             // sessionLoggingToolStripMenuItem
             // 
@@ -1355,6 +1365,7 @@ namespace SuperPutty
         private System.Windows.Forms.ToolStripButton btnHostInfoPane;
         private System.Windows.Forms.ToolStripMenuItem hostInfoPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem healthChecksToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem notifyHealthToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem commandsPaneToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparatorIcons;
         private System.Windows.Forms.ToolStripButton btnCopySession;

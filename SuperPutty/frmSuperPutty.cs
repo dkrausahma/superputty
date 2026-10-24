@@ -225,6 +225,10 @@ namespace SuperPutty
             this.healthTimer.Tick += delegate { CheckOpenTabsHealth(); };
             this.healthTimer.Start();
             this.healthChecksToolStripMenuItem.Checked = SuperPuTTY.Settings.AutoHealthCheck;
+            this.notifyHealthToolStripMenuItem.Checked = SuperPuTTY.Settings.NotifyHealthChanges;
+            HealthMonitor.Updated += HealthMonitor_Updated;
+            this.FormClosed += delegate { HealthMonitor.Updated -= HealthMonitor_Updated; };
+            this.healthAlertTimer.Tick += delegate { ShowHealthAlerts(); };
             this.sessionLoggingToolStripMenuItem.Checked = SuperPuTTY.Settings.SessionLogging;
             this.notifyActivityToolStripMenuItem.Checked = SuperPuTTY.Settings.NotifyBackgroundActivity;
 
@@ -316,11 +320,11 @@ namespace SuperPutty
         }
 
         /// <summary>A Windows notification from the tray icon, shown even when the icon is normally hidden</summary>
-        private void ShowNotification(string title, string text)
+        private void ShowNotification(string title, string text, ToolTipIcon icon = ToolTipIcon.Info)
         {
             bool wasVisible = this.notifyicon.Visible;
             this.notifyicon.Visible = true;
-            this.notifyicon.ShowBalloonTip(5000, title, text, ToolTipIcon.Info);
+            this.notifyicon.ShowBalloonTip(5000, title, text, icon);
             if (!wasVisible)
             {
                 EventHandler hide = null;
